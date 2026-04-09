@@ -20,6 +20,11 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: wrangler.toml 生成
+        run: pnpm generate:wrangler
+        env:
+          DOTENV_PRIVATE_KEY: ${{ secrets.DOTENV_PRIVATE_KEY }}
+
       # D1マイグレーション（デプロイ前に実行）
       # wrangler d1 migrations applyはCIで自動実行される（確認プロンプトなし）
       # - name: D1 マイグレーション
@@ -28,7 +33,7 @@ jobs:
       #     CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       - name: Workers デプロイ
-        run: pnpm --filter workers deploy
+        run: wrangler deploy --config workers/wrangler.toml
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
