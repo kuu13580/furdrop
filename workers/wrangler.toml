@@ -1,0 +1,28 @@
+#:schema node_modules/wrangler/config-schema.json
+name = "image-share-api"
+main = "src/index.ts"
+compatibility_date = "2026-04-01"
+
+# D1データベース
+# database_idはwrangler d1 create後に設定する
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "image-share"
+# database_id = ""
+
+# R2バケット
+# バケット作成後にコメント解除する
+# [[r2_buckets]]
+# binding = "R2_ORIGINALS"
+# bucket_name = "image-share-originals"
+
+# [[r2_buckets]]
+# binding = "R2_THUMBS"
+# bucket_name = "image-share-thumbs"
+
+[vars]
+FIREBASE_PROJECT_ID = ""
+
+# Cronトリガー（クリーンアップジョブ）
+# [[triggers]]
+# crons = ["0 * * * *"]

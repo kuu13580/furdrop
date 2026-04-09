@@ -2,3 +2,7 @@ packages:
   - "frontend"
   - "workers"
   - "e2e"
+onlyBuiltDependencies:
+  - esbuild
+  - workerd
+  - sharp
