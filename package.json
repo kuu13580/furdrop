@@ -7,13 +7,15 @@
   "scripts": {
     "check": "biome check .",
     "fix": "biome check --write .",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "generate:wrangler": "dotenvx run -f workers/.env -- node scripts/generate-wrangler.mjs"
   },
   "pnpm": {
     "minReleaseAge": "7d"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.11"
+    "@biomejs/biome": "^2.4.11",
+    "@dotenvx/dotenvx": "^1.61.0"
   },
   "packageManager": "pnpm@10.33.0"
 }

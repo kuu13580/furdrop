@@ -3,12 +3,10 @@ name = "furdrop-api"
 main = "src/index.ts"
 compatibility_date = "2026-04-01"
 
-# D1データベース
-# database_idはwrangler d1 create後に設定する
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "furdrop"
-# database_id = ""
+[[d1_databases]]
+binding = "DB"
+database_name = "furdrop"
+database_id = "{{D1_DATABASE_ID}}"
 
 # R2バケット
 # バケット作成後にコメント解除する
