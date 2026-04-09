@@ -1,7 +1,7 @@
 function App() {
   return (
     <div className="flex min-h-screen items-center justify-center">
-      <h1 className="text-2xl font-bold">image-share</h1>
+      <h1 className="text-2xl font-bold">FurDrop</h1>
     </div>
   );
 }

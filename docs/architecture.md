@@ -1,4 +1,4 @@
-# アーキテクチャ設計書 - image-share
+# アーキテクチャ設計書 - FurDrop
 
 ## 1. システム構成
 
@@ -143,16 +143,16 @@ WHERE id = :receiver_id
 
 | バケット名 | 用途 | アクセス |
 |---|---|---|
-| `image-share-originals` | オリジナル画像 (~10MB/枚) | プライベート |
-| `image-share-thumbs` | サムネイル (~50KB/枚) | プライベート |
+| `furdrop-originals` | オリジナル画像 (~10MB/枚) | プライベート |
+| `furdrop-thumbs` | サムネイル (~50KB/枚) | プライベート |
 
 ### 3.2 オブジェクトキー
 
 ```
-image-share-originals/
+furdrop-originals/
   {receiver_handle}/{YYYY-MM}/{photo_id}.jpg
 
-image-share-thumbs/
+furdrop-thumbs/
   {receiver_handle}/{YYYY-MM}/{photo_id}_thumb.jpg
 ```
 
@@ -180,7 +180,7 @@ Workers内で `@aws-sdk/s3-request-presigner` を使ってPresigned URLを生成
 ### 4.1 共通仕様
 
 ```
-Base URL: https://api.image-share.example.com
+Base URL: https://api.furdrop.example.com
 Content-Type: application/json
 
 認証ヘッダー（受信者エンドポイントのみ）:
@@ -229,7 +229,7 @@ Response: 201
     "display_name": "太郎カメラ",
     "storage_used": 0,
     "storage_quota": 10737418240,
-    "receive_url": "https://image-share.example.com/send/taro_camera"
+    "receive_url": "https://furdrop.example.com/send/taro_camera"
   }
 }
 ```
@@ -583,7 +583,7 @@ crons = ["0 * * * *"]
 ## 8. プロジェクト構成
 
 ```
-image-share/
+furdrop/
   frontend/                   # Cloudflare Pages (PWA)
     src/
       components/             # UIコンポーネント (Tailwind CSS)
@@ -632,25 +632,25 @@ image-share/
 ### wrangler.toml Bindings
 
 ```toml
-name = "image-share-api"
+name = "furdrop-api"
 main = "src/index.ts"
 compatibility_date = "2026-01-01"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "image-share"
+database_name = "furdrop"
 database_id = "..."
 
 [[r2_buckets]]
 binding = "R2_ORIGINALS"
-bucket_name = "image-share-originals"
+bucket_name = "furdrop-originals"
 
 [[r2_buckets]]
 binding = "R2_THUMBS"
-bucket_name = "image-share-thumbs"
+bucket_name = "furdrop-thumbs"
 
 [vars]
-FIREBASE_PROJECT_ID = "image-share-xxxxx"
+FIREBASE_PROJECT_ID = "furdrop-xxxxx"
 
 # wrangler secret put で設定:
 # R2_ACCESS_KEY_ID

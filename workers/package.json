@@ -5,8 +5,8 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "typecheck": "tsc --noEmit",
-    "migrate:local": "wrangler d1 migrations apply image-share --local",
-    "migrate:prod": "wrangler d1 migrations apply image-share --remote"
+    "migrate:local": "wrangler d1 migrations apply furdrop --local",
+    "migrate:prod": "wrangler d1 migrations apply furdrop --remote"
   },
   "dependencies": {
     "hono": "^4.12.12"

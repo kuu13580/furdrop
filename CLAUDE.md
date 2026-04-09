@@ -1,4 +1,4 @@
-# image-share
+# FurDrop
 
 写真を匿名で受け取るためのWebサービス。
 

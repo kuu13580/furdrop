@@ -1,5 +1,5 @@
 {
-  "name": "image-share",
+  "name": "furdrop",
   "private": true,
   "engines": {
     "node": ">=22.0.0"

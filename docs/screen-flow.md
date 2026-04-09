@@ -1,4 +1,4 @@
-# 画面フロー・UX設計書 - image-share
+# 画面フロー・UX設計書 - FurDrop
 
 ## 1. 画面一覧
 
@@ -59,7 +59,7 @@ flowchart TD
 |  [  写真を送る  ] (CTA)    |
 |                             |
 |  ----                       |
-|  image-share | Privacy      |
+|  FurDrop | Privacy      |
 +-----------------------------+
 ```
 
@@ -192,7 +192,7 @@ UploaderPage
 ```
 +-----------------------------+
 |                             |
-|     [image-share ロゴ]      |
+|     [FurDrop ロゴ]      |
 |                             |
 |  写真を受け取るための       |
 |  あなた専用URLを作ろう      |
@@ -212,11 +212,11 @@ UploaderPage
 
 ```
 +-----------------------------+
-|  image-share    [@] [設定]  |
+|  FurDrop    [@] [設定]  |
 |-----------------------------|
 |                             |
 |  あなたの受信URL:           |
-|  image-share.dev/send/taro  |
+|  furdrop.dev/send/taro  |
 |  [コピー] [QR] [シェア]    |
 |                             |
 |-----------------------------|
@@ -438,8 +438,8 @@ function applyWatermark(canvas, ctx, options) {
 
 ```json
 {
-  "name": "image-share",
-  "short_name": "image-share",
+  "name": "furdrop",
+  "short_name": "furdrop",
   "display": "standalone",
   "start_url": "/dashboard",
   "theme_color": "#1a1a2e",
