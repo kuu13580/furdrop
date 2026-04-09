@@ -479,6 +479,31 @@ sequenceDiagram
     C->>C: /dashboard へ遷移
 ```
 
+### 5.2.1 登録失敗時のリカバリ
+
+Firebase Auth成功後にD1 INSERTが失敗するケースへの対処。
+
+```mermaid
+flowchart TD
+    LOGIN[Firebase signInWithPopup] --> TOKEN[IDトークン取得]
+    TOKEN --> ME[GET /auth/me]
+    ME -->|200 OK| DASH[/dashboard へ遷移/]
+    ME -->|404 NOT_FOUND| REG_FORM[/settings へ遷移<br/>スラッグ入力フォーム/]
+    REG_FORM --> REGISTER[POST /auth/register]
+    REGISTER -->|201 Created| DASH
+    REGISTER -->|409 HANDLE_TAKEN| REG_FORM_RETRY[スラッグ重複エラー表示<br/>別のスラッグを入力]
+    REG_FORM_RETRY --> REGISTER
+    REGISTER -->|500 D1障害| ERROR[エラー表示<br/>リトライボタン]
+    ERROR -->|リトライ| REGISTER
+```
+
+**設計ポイント:**
+- Firebase AuthとD1は別システムなので分散トランザクションは行わない
+- Firebase Authが成功してD1が失敗しても、次回ログイン時に `GET /auth/me → 404` で登録画面に誘導される（自然なリカバリ）
+- `POST /auth/register` はUID重複時に既存レコードを返す（べき等性を確保）
+- handle重複（409）はユーザーに別のスラッグ選択を促す
+- D1一時障害（500）はリトライボタンで再試行
+
 ### 5.3 アクセス制御マトリクス
 
 | エンドポイント | 認証 | 認可ルール |
@@ -634,3 +659,23 @@ FIREBASE_PROJECT_ID = "image-share-xxxxx"
 [[triggers]]
 crons = ["0 * * * *"]
 ```
+
+### 秘密情報管理
+
+| 環境 | 方式 | ファイル |
+|---|---|---|
+| ローカル開発 | wrangler標準 `.dev.vars` | `.dev.vars` (gitignore対象) |
+| 本番 | `wrangler secret put` | Cloudflareで暗号化管理 |
+| フロントエンド | Vite環境変数 | `.env.local` (gitignore対象) |
+
+**秘密情報一覧:**
+
+| 変数名 | 用途 | 管理方法 |
+|---|---|---|
+| `R2_ACCESS_KEY_ID` | R2 Presigned URL署名 | wrangler secret |
+| `R2_SECRET_ACCESS_KEY` | R2 Presigned URL署名 | wrangler secret |
+| `FIREBASE_PROJECT_ID` | IDトークン検証 | wrangler.toml [vars]（非秘密） |
+| `VITE_FIREBASE_API_KEY` | Firebase SDK初期化 | .env.local（公開可、ドメイン制限で保護） |
+| `VITE_FIREBASE_AUTH_DOMAIN` | Firebase SDK初期化 | .env.local（公開可） |
+
+> `.dev.vars` はwranglerが自動で読み込むため追加設定不要。チーム開発で暗号化共有が必要になった場合にdotenvx導入を検討。
