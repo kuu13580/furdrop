@@ -1,15 +1,46 @@
-import { Hono } from "hono";
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { addStorageUsage } from "../lib/quota";
 import { buildR2Key, createThumbUploadUrl, createThumbViewUrl, createUploadUrl } from "../lib/r2";
+import { ErrorSchema, HandleParam, PhotoIdParam, SessionIdParam } from "../lib/schema";
 import type { Env } from "../types";
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 
-const sender = new Hono<{ Bindings: Env }>();
+const sender = new OpenAPIHono<{ Bindings: Env }>();
 
-// ---------- GET /send/:handle ----------
-sender.get("/:handle", async (c) => {
-  const handle = c.req.param("handle");
+// ========== GET /send/:handle ==========
+
+const getReceiverRoute = createRoute({
+  method: "get",
+  path: "/{handle}",
+  tags: ["Sender"],
+  summary: "受信者の公開プロフィール取得",
+  request: { params: HandleParam },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            receiver: z.object({
+              handle: z.string(),
+              display_name: z.string(),
+              avatar_url: z.string().nullable(),
+              is_accepting: z.boolean(),
+            }),
+          }),
+        },
+      },
+      description: "受信者プロフィール",
+    },
+    404: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "User not found",
+    },
+  },
+});
+
+sender.openapi(getReceiverRoute, async (c) => {
+  const { handle } = c.req.valid("param");
 
   const user = await c.env.DB.prepare(
     "SELECT handle, display_name, avatar_url, is_active, storage_used, storage_quota FROM users WHERE handle = ?",
@@ -24,19 +55,66 @@ sender.get("/:handle", async (c) => {
   const isAccepting =
     user.is_active === 1 && (user.storage_used as number) < (user.storage_quota as number);
 
-  return c.json({
-    receiver: {
-      handle: user.handle,
-      display_name: user.display_name,
-      avatar_url: user.avatar_url,
-      is_accepting: isAccepting,
+  return c.json(
+    {
+      receiver: {
+        handle: user.handle as string,
+        display_name: user.display_name as string,
+        avatar_url: user.avatar_url as string | null,
+        is_accepting: isAccepting,
+      },
     },
-  });
+    200,
+  );
 });
 
-// ---------- POST /send/:handle/sessions ----------
-sender.post("/:handle/sessions", async (c) => {
-  const handle = c.req.param("handle");
+// ========== POST /send/:handle/sessions ==========
+
+const createSessionRoute = createRoute({
+  method: "post",
+  path: "/{handle}/sessions",
+  tags: ["Sender"],
+  summary: "アップロードセッション作成",
+  request: {
+    params: HandleParam,
+    body: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            sender_name: z.string().optional(),
+            photo_count: z.number().int().min(1),
+          }),
+        },
+      },
+    },
+  },
+  responses: {
+    201: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            session_id: z.string().uuid(),
+            expires_at: z.number(),
+          }),
+        },
+      },
+      description: "セッション作成成功",
+    },
+    403: { content: { "application/json": { schema: ErrorSchema } }, description: "受付停止中" },
+    404: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "User not found",
+    },
+    507: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "クォータ超過",
+    },
+  },
+});
+
+sender.openapi(createSessionRoute, async (c) => {
+  const { handle } = c.req.valid("param");
+  const body = c.req.valid("json");
 
   const user = await c.env.DB.prepare(
     "SELECT id, is_active, storage_used, storage_quota FROM users WHERE handle = ?",
@@ -62,18 +140,9 @@ sender.post("/:handle/sessions", async (c) => {
     );
   }
 
-  const body = await c.req.json<{ sender_name?: string; photo_count: number }>();
-
-  if (!body.photo_count || body.photo_count < 1) {
-    return c.json(
-      { error: { code: "INVALID_REQUEST", message: "photo_count must be at least 1" } },
-      400,
-    );
-  }
-
   const sessionId = crypto.randomUUID();
   const now = Math.floor(Date.now() / 1000);
-  const expiresAt = now + 3600; // 1時間後
+  const expiresAt = now + 3600;
 
   await c.env.DB.prepare(
     `INSERT INTO upload_sessions (id, receiver_id, sender_name, photo_count, status, expires_at, created_at, updated_at)
@@ -85,12 +154,69 @@ sender.post("/:handle/sessions", async (c) => {
   return c.json({ session_id: sessionId, expires_at: expiresAt }, 201);
 });
 
-// ---------- POST /send/:handle/sessions/:sessionId/photos ----------
-sender.post("/:handle/sessions/:sessionId/photos", async (c) => {
-  const handle = c.req.param("handle");
-  const sessionId = c.req.param("sessionId");
+// ========== POST /send/:handle/sessions/:sessionId/photos ==========
 
-  // セッションと受信者の整合性を検証
+const PhotoInput = z.object({
+  filename: z.string(),
+  file_size: z.number().int().min(1).max(MAX_FILE_SIZE),
+  width: z.number().int().optional(),
+  height: z.number().int().optional(),
+  camera_model: z.string().optional(),
+  watermark_text: z.string().optional(),
+});
+
+const createPhotosRoute = createRoute({
+  method: "post",
+  path: "/{handle}/sessions/{sessionId}/photos",
+  tags: ["Sender"],
+  summary: "Presigned URL発行 (バッチ対応)",
+  request: {
+    params: HandleParam.merge(SessionIdParam),
+    body: {
+      content: {
+        "application/json": {
+          schema: z.object({ photos: z.array(PhotoInput).min(1) }),
+        },
+      },
+    },
+  },
+  responses: {
+    201: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            uploads: z.array(
+              z.object({
+                photo_id: z.string().uuid(),
+                upload_url: z.string().url(),
+                thumb_upload_url: z.string().url(),
+              }),
+            ),
+            expires_in: z.number(),
+          }),
+        },
+      },
+      description: "Presigned URL発行成功",
+    },
+    403: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "セッション無効",
+    },
+    404: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "Session not found",
+    },
+    507: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "クォータ超過",
+    },
+  },
+});
+
+sender.openapi(createPhotosRoute, async (c) => {
+  const { handle, sessionId } = c.req.valid("param");
+  const { photos } = c.req.valid("json");
+
   const session = await c.env.DB.prepare(
     `SELECT s.id, s.receiver_id, s.status, s.expires_at, u.handle, u.storage_used, u.storage_quota
      FROM upload_sessions s
@@ -109,38 +235,8 @@ sender.post("/:handle/sessions/:sessionId/photos", async (c) => {
     return c.json({ error: { code: "FORBIDDEN", message: "Session expired or inactive" } }, 403);
   }
 
-  const body = await c.req.json<{
-    photos: Array<{
-      filename: string;
-      file_size: number;
-      width?: number;
-      height?: number;
-      camera_model?: string;
-      watermark_text?: string;
-    }>;
-  }>();
-
-  if (!body.photos || body.photos.length === 0) {
-    return c.json({ error: { code: "INVALID_REQUEST", message: "photos array is required" } }, 400);
-  }
-
-  // ファイルサイズバリデーション
-  const totalSize = body.photos.reduce((sum, p) => sum + p.file_size, 0);
-  for (const photo of body.photos) {
-    if (photo.file_size > MAX_FILE_SIZE) {
-      return c.json(
-        {
-          error: {
-            code: "FILE_TOO_LARGE",
-            message: `File exceeds ${MAX_FILE_SIZE / 1024 / 1024}MB limit`,
-          },
-        },
-        413,
-      );
-    }
-  }
-
   // 楽観的クォータチェック
+  const totalSize = photos.reduce((sum, p) => sum + p.file_size, 0);
   const remaining = (session.storage_quota as number) - (session.storage_used as number);
   if (totalSize > remaining) {
     return c.json(
@@ -151,7 +247,7 @@ sender.post("/:handle/sessions/:sessionId/photos", async (c) => {
 
   // 各写真のレコード作成 + Presigned URL発行
   const uploads = await Promise.all(
-    body.photos.map(async (photo) => {
+    photos.map(async (photo) => {
       const photoId = crypto.randomUUID();
       const r2KeyOriginal = buildR2Key(handle, photoId, "original");
       const r2KeyThumb = buildR2Key(handle, photoId, "thumb");
@@ -168,7 +264,7 @@ sender.post("/:handle/sessions/:sessionId/photos", async (c) => {
           sessionId,
           r2KeyOriginal,
           r2KeyThumb,
-          null, // sender_name はセッションから取得
+          null,
           photo.camera_model ?? null,
           photo.watermark_text ?? null,
           photo.filename,
@@ -185,33 +281,67 @@ sender.post("/:handle/sessions/:sessionId/photos", async (c) => {
         createThumbUploadUrl(c.env, r2KeyThumb),
       ]);
 
-      return {
-        photo_id: photoId,
-        upload_url: uploadUrl,
-        thumb_upload_url: thumbUploadUrl,
-      };
+      return { photo_id: photoId, upload_url: uploadUrl, thumb_upload_url: thumbUploadUrl };
     }),
   );
 
-  // セッションの合計サイズ更新
   await c.env.DB.prepare(
-    `UPDATE upload_sessions
-     SET total_size = total_size + ?, photo_count = photo_count + ?, updated_at = ?
-     WHERE id = ?`,
+    `UPDATE upload_sessions SET total_size = total_size + ?, photo_count = photo_count + ?, updated_at = ? WHERE id = ?`,
   )
-    .bind(totalSize, body.photos.length, now, sessionId)
+    .bind(totalSize, photos.length, now, sessionId)
     .run();
 
   return c.json({ uploads, expires_in: 900 }, 201);
 });
 
-// ---------- PATCH /send/:handle/sessions/:sessionId/photos/:photoId/confirm ----------
-sender.patch("/:handle/sessions/:sessionId/photos/:photoId/confirm", async (c) => {
-  const handle = c.req.param("handle");
-  const sessionId = c.req.param("sessionId");
-  const photoId = c.req.param("photoId");
+// ========== PATCH /send/:handle/sessions/:sessionId/photos/:photoId/confirm ==========
 
-  // 写真の所有権チェック (handle → session → photo)
+const confirmPhotoRoute = createRoute({
+  method: "patch",
+  path: "/{handle}/sessions/{sessionId}/photos/{photoId}/confirm",
+  tags: ["Sender"],
+  summary: "アップロード完了確認",
+  request: {
+    params: HandleParam.merge(SessionIdParam).merge(PhotoIdParam),
+    body: {
+      content: {
+        "application/json": {
+          schema: z.object({ thumb_size: z.number().int().optional() }),
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            photo_id: z.string().uuid(),
+            upload_status: z.literal("completed"),
+          }),
+        },
+      },
+      description: "確認成功",
+    },
+    400: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "バリデーションエラー",
+    },
+    404: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "Photo not found",
+    },
+    507: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "クォータ超過",
+    },
+  },
+});
+
+sender.openapi(confirmPhotoRoute, async (c) => {
+  const { handle, sessionId, photoId } = c.req.valid("param");
+  const { thumb_size } = c.req.valid("json");
+
   const photo = await c.env.DB.prepare(
     `SELECT p.id, p.receiver_id, p.r2_key_original, p.r2_key_thumb, p.file_size, p.upload_status
        FROM photos p
@@ -233,7 +363,6 @@ sender.patch("/:handle/sessions/:sessionId/photos/:photoId/confirm", async (c) =
     );
   }
 
-  // R2にオブジェクトが存在するか確認 (HEAD)
   const r2Head = await c.env.R2_ORIGINALS.head(photo.r2_key_original as string);
 
   if (!r2Head) {
@@ -243,16 +372,12 @@ sender.patch("/:handle/sessions/:sessionId/photos/:photoId/confirm", async (c) =
     );
   }
 
-  // サイズ照合
   if (r2Head.size !== (photo.file_size as number)) {
-    // サイズ不一致: R2オブジェクト削除
     await c.env.R2_ORIGINALS.delete(photo.r2_key_original as string);
     await c.env.R2_THUMBS.delete(photo.r2_key_thumb as string);
-
     return c.json({ error: { code: "INVALID_REQUEST", message: "File size mismatch" } }, 400);
   }
 
-  // クォータ加算 (アトミック)
   const quotaOk = await addStorageUsage(
     c.env.DB,
     photo.receiver_id as string,
@@ -260,31 +385,57 @@ sender.patch("/:handle/sessions/:sessionId/photos/:photoId/confirm", async (c) =
   );
 
   if (!quotaOk) {
-    // クォータ超過: R2オブジェクト削除
     await c.env.R2_ORIGINALS.delete(photo.r2_key_original as string);
     await c.env.R2_THUMBS.delete(photo.r2_key_thumb as string);
-
     return c.json({ error: { code: "QUOTA_EXCEEDED", message: "Storage quota exceeded" } }, 507);
   }
-
-  // サムネイルサイズ取得
-  const body = await c.req.json<{ thumb_size?: number }>();
-  const thumbSize = body.thumb_size ?? 0;
 
   const now = Math.floor(Date.now() / 1000);
   await c.env.DB.prepare(
     `UPDATE photos SET upload_status = 'completed', thumb_size = ?, updated_at = ? WHERE id = ?`,
   )
-    .bind(thumbSize, now, photoId)
+    .bind(thumb_size ?? 0, now, photoId)
     .run();
 
-  return c.json({ photo_id: photoId, upload_status: "completed" });
+  return c.json({ photo_id: photoId, upload_status: "completed" as const }, 200);
 });
 
-// ---------- GET /send/:handle/sessions/:sessionId ----------
-sender.get("/:handle/sessions/:sessionId", async (c) => {
-  const handle = c.req.param("handle");
-  const sessionId = c.req.param("sessionId");
+// ========== GET /send/:handle/sessions/:sessionId ==========
+
+const getSessionRoute = createRoute({
+  method: "get",
+  path: "/{handle}/sessions/{sessionId}",
+  tags: ["Sender"],
+  summary: "セッション内写真一覧",
+  request: { params: HandleParam.merge(SessionIdParam) },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            session_id: z.string().uuid(),
+            photos: z.array(
+              z.object({
+                photo_id: z.string().uuid(),
+                thumb_url: z.string().url().nullable(),
+                filename: z.string().nullable(),
+                status: z.string(),
+              }),
+            ),
+          }),
+        },
+      },
+      description: "セッション写真一覧",
+    },
+    404: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "Session not found",
+    },
+  },
+});
+
+sender.openapi(getSessionRoute, async (c) => {
+  const { handle, sessionId } = c.req.valid("param");
 
   const session = await c.env.DB.prepare(
     `SELECT s.id, s.expires_at
@@ -313,17 +464,17 @@ sender.get("/:handle/sessions/:sessionId", async (c) => {
 
   const photosWithUrls = await Promise.all(
     photos.results.map(async (p) => ({
-      photo_id: p.id,
+      photo_id: p.id as string,
       thumb_url:
         p.upload_status === "completed"
           ? await createThumbViewUrl(c.env, p.r2_key_thumb as string)
           : null,
-      filename: p.original_filename,
-      status: p.upload_status,
+      filename: p.original_filename as string | null,
+      status: p.upload_status as string,
     })),
   );
 
-  return c.json({ session_id: sessionId, photos: photosWithUrls });
+  return c.json({ session_id: sessionId, photos: photosWithUrls }, 200);
 });
 
 export default sender;
