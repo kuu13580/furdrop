@@ -50,7 +50,8 @@ pnpm --filter workers migrate:local
 # D1マイグレーション (本番)
 pnpm --filter workers migrate:prod
 
-# wrangler.toml生成 (テンプレート + dotenvx)
+# workers設定ファイル生成 (テンプレート + dotenvx)
+# wrangler.toml + .dev.vars を workers/.env から自動生成
 pnpm generate:wrangler
 ```
 

@@ -635,46 +635,56 @@ furdrop/
 
 ```
 workers/wrangler.template.toml  ← コミット対象（プレースホルダ）
+workers/.dev.template.vars      ← コミット対象（プレースホルダ）
 workers/wrangler.toml           ← gitignore（自動生成）
+workers/.dev.vars               ← gitignore（自動生成）
 workers/.env                    ← dotenvxで暗号化してコミット
 workers/.env.keys               ← gitignore（復号キー）
 ```
 
 ```bash
-# wrangler.toml を生成
+# wrangler.toml + .dev.vars を生成
 pnpm generate:wrangler
 
 # workers の dev/deploy は自動で generate:wrangler を実行する
 pnpm --filter workers dev
 ```
 
-テンプレートでは `{{VAR_NAME}}` をプレースホルダとして使用し、`workers/.env` の値で置換される。
+`pnpm generate:wrangler` は `workers/` 内の全 `*.template.*` ファイルを検索し、
+`{{VAR_NAME}}` プレースホルダを `workers/.env` の値で置換して対応するファイルを生成する。
+
 新しい変数を追加する場合:
 
 ```bash
 # 1. .env に暗号化して追加
 cd workers && pnpm exec dotenvx set KEY value
 
-# 2. テンプレートにプレースホルダを追加
-# database_id = "{{KEY}}"
+# 2. 対応するテンプレートにプレースホルダを追加
+# wrangler.template.toml: database_id = "{{KEY}}"
+# .dev.template.vars:     KEY={{KEY}}
 ```
 
 ### 秘密情報管理
 
+全てのシークレットは `workers/.env` にdotenvxで暗号化して一元管理する。
+ローカル開発用の `.dev.vars` と `wrangler.toml` は `pnpm generate:wrangler` で自動生成される。
+本番デプロイ時は `wrangler secret put` でCloudflare側にも設定が必要。
+
 | 環境 | 方式 | ファイル |
 |---|---|---|
-| Workers設定 (リソースID等) | dotenvx暗号化 | `workers/.env` (暗号化コミット) |
-| Workers実行時シークレット | `wrangler secret put` | Cloudflareで暗号化管理 |
-| ローカル開発シークレット | wrangler標準 | `.dev.vars` (gitignore対象) |
+| シークレット一元管理 | dotenvx暗号化 | `workers/.env` (暗号化コミット) |
+| ローカル開発 | テンプレートから自動生成 | `.dev.vars` (gitignore対象) |
+| 本番 | `wrangler secret put` | Cloudflareで暗号化管理 |
 | フロントエンド | Vite環境変数 | `.env.local` (gitignore対象) |
 
 **秘密情報一覧:**
 
 | 変数名 | 用途 | 管理方法 |
 |---|---|---|
-| `D1_DATABASE_ID` | D1データベース識別子 | dotenvx (`workers/.env`) |
-| `R2_ACCESS_KEY_ID` | R2 Presigned URL署名 | wrangler secret |
-| `R2_SECRET_ACCESS_KEY` | R2 Presigned URL署名 | wrangler secret |
+| `D1_DATABASE_ID` | D1データベース識別子 | dotenvx → wrangler.toml |
+| `R2_ACCESS_KEY_ID` | R2 Presigned URL署名 | dotenvx → .dev.vars / wrangler secret |
+| `R2_SECRET_ACCESS_KEY` | R2 Presigned URL署名 | dotenvx → .dev.vars / wrangler secret |
+| `R2_ENDPOINT` | R2 S3互換APIエンドポイント | dotenvx → .dev.vars / wrangler secret |
 | `FIREBASE_PROJECT_ID` | IDトークン検証 | wrangler.toml [vars]（非秘密） |
 | `VITE_FIREBASE_API_KEY` | Firebase SDK初期化 | .env.local（公開可、ドメイン制限で保護） |
 | `VITE_FIREBASE_AUTH_DOMAIN` | Firebase SDK初期化 | .env.local（公開可） |
