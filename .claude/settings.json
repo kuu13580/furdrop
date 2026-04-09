@@ -1,0 +1,18 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "if": "Bash(git commit:*)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pnpm check && pnpm typecheck",
+            "timeout": 60,
+            "statusMessage": "Running lint + typecheck..."
+          }
+        ]
+      }
+    ]
+  }
+}
