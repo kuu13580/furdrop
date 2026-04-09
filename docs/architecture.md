@@ -629,53 +629,52 @@ furdrop/
   docs/                       # 設計ドキュメント
 ```
 
-### wrangler.toml Bindings
+### wrangler.toml 管理
 
-```toml
-name = "furdrop-api"
-main = "src/index.ts"
-compatibility_date = "2026-01-01"
+`wrangler.toml` はテンプレートから自動生成する。リソースIDなどをpublic repoにコミットしないため。
 
-[[d1_databases]]
-binding = "DB"
-database_name = "furdrop"
-database_id = "..."
+```
+workers/wrangler.template.toml  ← コミット対象（プレースホルダ）
+workers/wrangler.toml           ← gitignore（自動生成）
+workers/.env                    ← dotenvxで暗号化してコミット
+workers/.env.keys               ← gitignore（復号キー）
+```
 
-[[r2_buckets]]
-binding = "R2_ORIGINALS"
-bucket_name = "furdrop-originals"
+```bash
+# wrangler.toml を生成
+pnpm generate:wrangler
 
-[[r2_buckets]]
-binding = "R2_THUMBS"
-bucket_name = "furdrop-thumbs"
+# workers の dev/deploy は自動で generate:wrangler を実行する
+pnpm --filter workers dev
+```
 
-[vars]
-FIREBASE_PROJECT_ID = "furdrop-xxxxx"
+テンプレートでは `{{VAR_NAME}}` をプレースホルダとして使用し、`workers/.env` の値で置換される。
+新しい変数を追加する場合:
 
-# wrangler secret put で設定:
-# R2_ACCESS_KEY_ID
-# R2_SECRET_ACCESS_KEY
+```bash
+# 1. .env に暗号化して追加
+cd workers && pnpm exec dotenvx set KEY value
 
-[[triggers]]
-crons = ["0 * * * *"]
+# 2. テンプレートにプレースホルダを追加
+# database_id = "{{KEY}}"
 ```
 
 ### 秘密情報管理
 
 | 環境 | 方式 | ファイル |
 |---|---|---|
-| ローカル開発 | wrangler標準 `.dev.vars` | `.dev.vars` (gitignore対象) |
-| 本番 | `wrangler secret put` | Cloudflareで暗号化管理 |
+| Workers設定 (リソースID等) | dotenvx暗号化 | `workers/.env` (暗号化コミット) |
+| Workers実行時シークレット | `wrangler secret put` | Cloudflareで暗号化管理 |
+| ローカル開発シークレット | wrangler標準 | `.dev.vars` (gitignore対象) |
 | フロントエンド | Vite環境変数 | `.env.local` (gitignore対象) |
 
 **秘密情報一覧:**
 
 | 変数名 | 用途 | 管理方法 |
 |---|---|---|
+| `D1_DATABASE_ID` | D1データベース識別子 | dotenvx (`workers/.env`) |
 | `R2_ACCESS_KEY_ID` | R2 Presigned URL署名 | wrangler secret |
 | `R2_SECRET_ACCESS_KEY` | R2 Presigned URL署名 | wrangler secret |
 | `FIREBASE_PROJECT_ID` | IDトークン検証 | wrangler.toml [vars]（非秘密） |
 | `VITE_FIREBASE_API_KEY` | Firebase SDK初期化 | .env.local（公開可、ドメイン制限で保護） |
 | `VITE_FIREBASE_AUTH_DOMAIN` | Firebase SDK初期化 | .env.local（公開可） |
-
-> `.dev.vars` はwranglerが自動で読み込むため追加設定不要。チーム開発で暗号化共有が必要になった場合にdotenvx導入を検討。

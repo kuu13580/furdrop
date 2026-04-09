@@ -49,6 +49,9 @@ pnpm --filter workers migrate:local
 
 # D1マイグレーション (本番)
 pnpm --filter workers migrate:prod
+
+# wrangler.toml生成 (テンプレート + dotenvx)
+pnpm generate:wrangler
 ```
 
 ## Gitワークフロー
