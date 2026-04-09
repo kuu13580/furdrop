@@ -8,15 +8,13 @@ binding = "DB"
 database_name = "furdrop"
 database_id = "{{D1_DATABASE_ID}}"
 
-# R2バケット
-# バケット作成後にコメント解除する
-# [[r2_buckets]]
-# binding = "R2_ORIGINALS"
-# bucket_name = "furdrop-originals"
+[[r2_buckets]]
+binding = "R2_ORIGINALS"
+bucket_name = "furdrop-originals"
 
-# [[r2_buckets]]
-# binding = "R2_THUMBS"
-# bucket_name = "furdrop-thumbs"
+[[r2_buckets]]
+binding = "R2_THUMBS"
+bucket_name = "furdrop-thumbs"
 
 [vars]
 FIREBASE_PROJECT_ID = ""
