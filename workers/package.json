@@ -1,0 +1,19 @@
+{
+  "name": "workers",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "migrate:local": "wrangler d1 migrations apply furdrop --local",
+    "migrate:prod": "wrangler d1 migrations apply furdrop --remote"
+  },
+  "dependencies": {
+    "hono": "^4.12.12"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260409.1",
+    "typescript": "^6.0.2",
+    "wrangler": "^4.81.1"
+  }
+}
