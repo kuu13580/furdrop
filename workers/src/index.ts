@@ -1,6 +1,8 @@
 import { swaggerUI } from "@hono/swagger-ui";
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { cors } from "hono/cors";
+import auth from "./routes/auth";
+import receiver from "./routes/receiver";
 import sender from "./routes/sender";
 import type { Env } from "./types";
 
@@ -13,6 +15,8 @@ app.get("/health", (c) => {
 });
 
 app.route("/send", sender);
+app.route("/auth", auth);
+app.route("/receiver", receiver);
 
 // API docs — 本番では404
 app.use("/openapi.json", async (c, next) => {

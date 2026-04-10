@@ -8,6 +8,10 @@ binding = "DB"
 database_name = "furdrop"
 database_id = "{{D1_DATABASE_ID}}"
 
+[[kv_namespaces]]
+binding = "PUBLIC_JWK_CACHE_KV"
+id = "{{KV_PUBLIC_JWK_CACHE_ID}}"
+
 [[r2_buckets]]
 binding = "R2_ORIGINALS"
 bucket_name = "furdrop-originals"
@@ -18,7 +22,8 @@ bucket_name = "furdrop-thumbs"
 
 [vars]
 ENVIRONMENT = "production"
-FIREBASE_PROJECT_ID = ""
+FIREBASE_PROJECT_ID = "furdrop"
+PUBLIC_JWK_CACHE_KEY = "firebase-public-jwk"
 R2_BUCKET_ORIGINALS = "furdrop-originals"
 R2_BUCKET_THUMBS = "furdrop-thumbs"
 

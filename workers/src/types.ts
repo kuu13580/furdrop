@@ -1,9 +1,19 @@
+/** 認証済みリクエストの Hono 型パラメータ */
+export type AuthEnv = {
+  Bindings: Env;
+  Variables: { uid: string; email: string; name?: string; picture?: string };
+};
+
 export interface Env {
   DB: D1Database;
 
   // R2バケット (Workers binding — HEAD等に使用)
   R2_ORIGINALS: R2Bucket;
   R2_THUMBS: R2Bucket;
+
+  // Firebase Auth 公開鍵キャッシュ
+  PUBLIC_JWK_CACHE_KV: KVNamespace;
+  PUBLIC_JWK_CACHE_KEY: string;
 
   // 環境変数
   ENVIRONMENT: "production" | "development";

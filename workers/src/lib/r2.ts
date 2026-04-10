@@ -37,13 +37,20 @@ export async function createUploadUrl(
   return getSignedUrl(client, command, { expiresIn: 900 });
 }
 
+const MAX_THUMB_SIZE = 512 * 1024; // 512KB
+
 /** サムネイルアップロード用 Presigned PUT URL */
-export async function createThumbUploadUrl(env: Env, key: string): Promise<string> {
+export async function createThumbUploadUrl(
+  env: Env,
+  key: string,
+  contentLength: number = MAX_THUMB_SIZE,
+): Promise<string> {
   const client = createS3Client(env);
   const command = new PutObjectCommand({
     Bucket: env.R2_BUCKET_THUMBS,
     Key: key,
     ContentType: "image/jpeg",
+    ContentLength: Math.min(contentLength, MAX_THUMB_SIZE),
   });
   return getSignedUrl(client, command, { expiresIn: 900 });
 }
