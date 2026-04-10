@@ -3,12 +3,7 @@ import { subtractStorageUsage } from "../lib/quota";
 import { createDownloadUrl, createThumbViewUrl } from "../lib/r2";
 import { ErrorSchema } from "../lib/schema";
 import { requireAuth } from "../middleware/auth";
-import type { Env } from "../types";
-
-type AuthEnv = {
-  Bindings: Env;
-  Variables: { uid: string; email: string; name?: string; picture?: string };
-};
+import type { AuthEnv } from "../types";
 
 const receiver = new OpenAPIHono<AuthEnv>();
 
@@ -199,12 +194,16 @@ receiver.openapi(deletePhotoRoute, async (c) => {
     return c.json({ error: { code: "NOT_FOUND", message: "Photo not found" } }, 404);
   }
 
-  // R2削除 + D1削除 + クォータ減算を並列実行
+  // DB操作を先行 (不整合時はクリーンアップジョブがR2孤立オブジェクトを回収)
+  await Promise.all([
+    c.env.DB.prepare("DELETE FROM photos WHERE id = ?").bind(photoId).run(),
+    subtractStorageUsage(c.env.DB, uid, (photo.file_size as number) + (photo.thumb_size as number)),
+  ]);
+
+  // R2削除は後続 (失敗してもDBは整合、孤立オブジェクトはCronで回収)
   await Promise.all([
     c.env.R2_ORIGINALS.delete(photo.r2_key_original as string),
     c.env.R2_THUMBS.delete(photo.r2_key_thumb as string),
-    c.env.DB.prepare("DELETE FROM photos WHERE id = ?").bind(photoId).run(),
-    subtractStorageUsage(c.env.DB, uid, (photo.file_size as number) + (photo.thumb_size as number)),
   ]);
 
   return c.body(null, 204);
@@ -257,7 +256,6 @@ receiver.openapi(batchDeleteRoute, async (c) => {
     return c.json({ deleted_count: 0 }, 200);
   }
 
-  // R2削除 + D1削除 + クォータ減算
   const totalBytes = photos.results.reduce(
     (sum, p) => sum + (p.file_size as number) + (p.thumb_size as number),
     0,
@@ -265,13 +263,18 @@ receiver.openapi(batchDeleteRoute, async (c) => {
   const ids = photos.results.map((p) => p.id as string);
   const delPlaceholders = ids.map(() => "?").join(",");
 
+  // DB操作を先行
   await Promise.all([
-    ...photos.results.map((p) => c.env.R2_ORIGINALS.delete(p.r2_key_original as string)),
-    ...photos.results.map((p) => c.env.R2_THUMBS.delete(p.r2_key_thumb as string)),
     c.env.DB.prepare(`DELETE FROM photos WHERE id IN (${delPlaceholders}) AND receiver_id = ?`)
       .bind(...ids, uid)
       .run(),
     subtractStorageUsage(c.env.DB, uid, totalBytes),
+  ]);
+
+  // R2削除は後続 (失敗してもDBは整合、孤立オブジェクトはCronで回収)
+  await Promise.all([
+    ...photos.results.map((p) => c.env.R2_ORIGINALS.delete(p.r2_key_original as string)),
+    ...photos.results.map((p) => c.env.R2_THUMBS.delete(p.r2_key_thumb as string)),
   ]);
 
   return c.json({ deleted_count: photos.results.length }, 200);
@@ -298,6 +301,10 @@ const quotaRoute = createRoute({
       },
       description: "クォータ情報",
     },
+    404: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "未登録ユーザー",
+    },
   },
 });
 
@@ -315,8 +322,12 @@ receiver.openapi(quotaRoute, async (c) => {
       .first(),
   ]);
 
-  const storageUsed = (user?.storage_used as number) ?? 0;
-  const storageQuota = (user?.storage_quota as number) ?? 10737418240;
+  if (!user) {
+    return c.json({ error: { code: "NOT_FOUND", message: "User not registered" } }, 404);
+  }
+
+  const storageUsed = user.storage_used as number;
+  const storageQuota = user.storage_quota as number;
   const photoCount = (countResult?.count as number) ?? 0;
 
   return c.json(

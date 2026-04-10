@@ -1,11 +1,6 @@
 import { createMiddleware } from "hono/factory";
 import { verifyFirebaseToken } from "../lib/firebase-auth";
-import type { Env } from "../types";
-
-type AuthEnv = {
-  Bindings: Env;
-  Variables: { uid: string; email: string; name?: string; picture?: string };
-};
+import type { AuthEnv } from "../types";
 
 /** Firebase IDトークン検証ミドルウェア */
 export const requireAuth = createMiddleware<AuthEnv>(async (c, next) => {

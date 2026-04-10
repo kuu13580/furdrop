@@ -19,8 +19,8 @@ paths:
 - Presigned PUTにはContent-Lengthを署名に含める
 
 ## 認証
-- Firebase IDトークンの検証はWeb Crypto API (SubtleCrypto) で行う
-- Googleの公開鍵はCloudflare Cache APIでキャッシュする
+- Firebase IDトークンの検証は `firebase-auth-cloudflare-workers` ライブラリで行う
+- Google公開鍵のキャッシュには Workers KV (`PUBLIC_JWK_CACHE_KV`) を使用する
 - 受信者エンドポイントでは必ず `receiver_id == 認証済みUID` を検証する
 
 ## エラーレスポンス

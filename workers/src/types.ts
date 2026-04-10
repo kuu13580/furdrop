@@ -1,3 +1,9 @@
+/** 認証済みリクエストの Hono 型パラメータ */
+export type AuthEnv = {
+  Bindings: Env;
+  Variables: { uid: string; email: string; name?: string; picture?: string };
+};
+
 export interface Env {
   DB: D1Database;
 

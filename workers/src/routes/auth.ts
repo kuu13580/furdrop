@@ -1,12 +1,7 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { ErrorSchema } from "../lib/schema";
 import { requireAuth } from "../middleware/auth";
-import type { Env } from "../types";
-
-type AuthEnv = {
-  Bindings: Env;
-  Variables: { uid: string; email: string; name?: string; picture?: string };
-};
+import type { AuthEnv } from "../types";
 
 const HANDLE_REGEX = /^[a-z0-9_]{3,32}$/;
 
@@ -82,27 +77,26 @@ auth.openapi(registerRoute, async (c) => {
     );
   }
 
-  // handle重複チェック
-  const handleTaken = await c.env.DB.prepare("SELECT id FROM users WHERE handle = ?")
-    .bind(handle)
-    .first();
-
-  if (handleTaken) {
-    return c.json(
-      { error: { code: "HANDLE_TAKEN", message: "This handle is already taken" } },
-      409,
-    );
-  }
-
   const now = Math.floor(Date.now() / 1000);
   const avatarUrl = c.get("picture") ?? null;
 
-  await c.env.DB.prepare(
-    `INSERT INTO users (id, handle, display_name, email, avatar_url, storage_used, storage_quota, is_active, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, 0, 10737418240, 1, ?, ?)`,
-  )
-    .bind(uid, handle, display_name, email, avatarUrl, now, now)
-    .run();
+  // INSERT first — UNIQUE制約違反でhandle重複を検出 (レースコンディション防止)
+  try {
+    await c.env.DB.prepare(
+      `INSERT INTO users (id, handle, display_name, email, avatar_url, storage_used, storage_quota, is_active, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, 0, 10737418240, 1, ?, ?)`,
+    )
+      .bind(uid, handle, display_name, email, avatarUrl, now, now)
+      .run();
+  } catch (e) {
+    if (String(e).includes("UNIQUE constraint failed: users.handle")) {
+      return c.json(
+        { error: { code: "HANDLE_TAKEN", message: "This handle is already taken" } },
+        409,
+      );
+    }
+    throw e;
+  }
 
   return c.json(
     {
