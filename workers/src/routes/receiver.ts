@@ -196,7 +196,9 @@ receiver.openapi(deletePhotoRoute, async (c) => {
 
   // DB操作を先行 (不整合時はクリーンアップジョブがR2孤立オブジェクトを回収)
   await Promise.all([
-    c.env.DB.prepare("DELETE FROM photos WHERE id = ?").bind(photoId).run(),
+    c.env.DB.prepare("DELETE FROM photos WHERE id = ? AND receiver_id = ?")
+      .bind(photoId, uid)
+      .run(),
     subtractStorageUsage(c.env.DB, uid, (photo.file_size as number) + (photo.thumb_size as number)),
   ]);
 

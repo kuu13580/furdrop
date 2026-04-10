@@ -303,13 +303,6 @@ const confirmPhotoRoute = createRoute({
   summary: "アップロード完了確認",
   request: {
     params: HandleParam.merge(SessionIdParam).merge(PhotoIdParam),
-    body: {
-      content: {
-        "application/json": {
-          schema: z.object({ thumb_size: z.number().int().optional() }),
-        },
-      },
-    },
   },
   responses: {
     200: {
@@ -340,7 +333,6 @@ const confirmPhotoRoute = createRoute({
 
 sender.openapi(confirmPhotoRoute, async (c) => {
   const { handle, sessionId, photoId } = c.req.valid("param");
-  const { thumb_size } = c.req.valid("json");
 
   const photo = await c.env.DB.prepare(
     `SELECT p.id, p.receiver_id, p.r2_key_original, p.r2_key_thumb, p.file_size, p.upload_status
@@ -363,7 +355,11 @@ sender.openapi(confirmPhotoRoute, async (c) => {
     );
   }
 
-  const r2Head = await c.env.R2_ORIGINALS.head(photo.r2_key_original as string);
+  // オリジナル・サムネイルの存在確認 + サイズ検証をサーバー側で実施
+  const [r2Head, thumbHead] = await Promise.all([
+    c.env.R2_ORIGINALS.head(photo.r2_key_original as string),
+    c.env.R2_THUMBS.head(photo.r2_key_thumb as string),
+  ]);
 
   if (!r2Head) {
     return c.json(
@@ -378,10 +374,13 @@ sender.openapi(confirmPhotoRoute, async (c) => {
     return c.json({ error: { code: "INVALID_REQUEST", message: "File size mismatch" } }, 400);
   }
 
+  const thumbSize = thumbHead?.size ?? 0;
+
+  // クォータ加算: オリジナル + サムネイル (削除時の減算と対称)
   const quotaOk = await addStorageUsage(
     c.env.DB,
     photo.receiver_id as string,
-    photo.file_size as number,
+    (photo.file_size as number) + thumbSize,
   );
 
   if (!quotaOk) {
@@ -394,7 +393,7 @@ sender.openapi(confirmPhotoRoute, async (c) => {
   await c.env.DB.prepare(
     `UPDATE photos SET upload_status = 'completed', thumb_size = ?, updated_at = ? WHERE id = ?`,
   )
-    .bind(thumb_size ?? 0, now, photoId)
+    .bind(thumbSize, now, photoId)
     .run();
 
   return c.json({ photo_id: photoId, upload_status: "completed" as const }, 200);
