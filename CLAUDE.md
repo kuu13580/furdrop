@@ -50,7 +50,8 @@ pnpm --filter workers migrate:local
 # D1マイグレーション (本番)
 pnpm --filter workers migrate:prod
 
-# wrangler.toml生成 (テンプレート + dotenvx)
+# workers設定ファイル生成 (テンプレート + dotenvx)
+# wrangler.toml + .dev.vars を workers/.env から自動生成
 pnpm generate:wrangler
 ```
 
@@ -69,6 +70,14 @@ pnpm generate:wrangler
 - ES modules (import/export) を使用する
 - `let` よりも `const` を優先する
 - エラーはステータスコード付きの構造化エラーをthrowする
+
+## タスク完了時の確認事項
+
+実装タスクの完了後、以下に更新が必要か確認すること:
+
+- `CLAUDE.md` — コマンド、構成、スタイルの変更
+- `docs/` — 設計ドキュメントとの乖離がないか
+- `.claude/rules/` — コーディングルール・規約の変更
 
 ## 設計ドキュメント
 

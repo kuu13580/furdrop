@@ -9,7 +9,12 @@
     "migrate:prod": "wrangler d1 migrations apply furdrop --remote"
   },
   "dependencies": {
-    "hono": "^4.12.12"
+    "@aws-sdk/client-s3": "^3.1028.0",
+    "@aws-sdk/s3-request-presigner": "^3.1028.0",
+    "@hono/swagger-ui": "^0.6.1",
+    "@hono/zod-openapi": "^1.2.4",
+    "hono": "^4.12.12",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260409.1",
