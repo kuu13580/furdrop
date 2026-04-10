@@ -20,11 +20,11 @@ export const requireAuth = createMiddleware<AuthEnv>(async (c, next) => {
   const token = authHeader.slice(7);
 
   try {
-    const payload = await verifyFirebaseToken(token, c.env.FIREBASE_PROJECT_ID);
-    c.set("uid", payload.sub);
-    c.set("email", payload.email ?? "");
-    c.set("name", payload.name);
-    c.set("picture", payload.picture);
+    const decoded = await verifyFirebaseToken(token, c.env);
+    c.set("uid", decoded.sub);
+    c.set("email", decoded.email ?? "");
+    c.set("name", decoded.name);
+    c.set("picture", decoded.picture);
   } catch {
     return c.json({ error: { code: "UNAUTHORIZED", message: "Invalid or expired token" } }, 401);
   }

@@ -69,6 +69,9 @@ importers:
       '@hono/zod-openapi':
         specifier: ^1.2.4
         version: 1.2.4(hono@4.12.12)(zod@4.3.6)
+      firebase-auth-cloudflare-workers:
+        specifier: ^2.0.6
+        version: 2.0.6
       hono:
         specifier: ^4.12.12
         version: 4.12.12
@@ -1267,6 +1270,9 @@ packages:
     peerDependenciesMeta:
       picomatch:
         optional: true
+
+  firebase-auth-cloudflare-workers@2.0.6:
+    resolution: {integrity: sha512-KYfI3eM3/gDxEIGgN6lVUDhDruKnnRDaCMlN8HR5kRg7SppFTmktlrjxXHoTEEbkEC7yH721gyZ+ZUm8Z+675A==}
 
   fsevents@2.3.3:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
@@ -3037,6 +3043,8 @@ snapshots:
   fdir@6.5.0(picomatch@4.0.4):
     optionalDependencies:
       picomatch: 4.0.4
+
+  firebase-auth-cloudflare-workers@2.0.6: {}
 
   fsevents@2.3.3:
     optional: true

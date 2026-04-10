@@ -5,6 +5,10 @@ export interface Env {
   R2_ORIGINALS: R2Bucket;
   R2_THUMBS: R2Bucket;
 
+  // Firebase Auth 公開鍵キャッシュ
+  PUBLIC_JWK_CACHE_KV: KVNamespace;
+  PUBLIC_JWK_CACHE_KEY: string;
+
   // 環境変数
   ENVIRONMENT: "production" | "development";
   FIREBASE_PROJECT_ID: string;
