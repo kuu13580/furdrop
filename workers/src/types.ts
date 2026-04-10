@@ -6,6 +6,7 @@ export interface Env {
   R2_THUMBS: R2Bucket;
 
   // 環境変数
+  ENVIRONMENT: "production" | "development";
   FIREBASE_PROJECT_ID: string;
 
   // R2 S3互換API (Presigned URL生成用)

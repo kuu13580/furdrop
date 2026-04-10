@@ -17,6 +17,7 @@ binding = "R2_THUMBS"
 bucket_name = "furdrop-thumbs"
 
 [vars]
+ENVIRONMENT = "production"
 FIREBASE_PROJECT_ID = ""
 R2_BUCKET_ORIGINALS = "furdrop-originals"
 R2_BUCKET_THUMBS = "furdrop-thumbs"

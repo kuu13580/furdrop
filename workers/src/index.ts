@@ -14,11 +14,19 @@ app.get("/health", (c) => {
 
 app.route("/send", sender);
 
+// API docs — 本番では404
+app.use("/openapi.json", async (c, next) => {
+  if (c.env.ENVIRONMENT === "production") return c.notFound();
+  await next();
+});
+app.use("/docs", async (c, next) => {
+  if (c.env.ENVIRONMENT === "production") return c.notFound();
+  await next();
+});
 app.doc("/openapi.json", {
   openapi: "3.0.0",
   info: { title: "FurDrop API", version: "0.1.0" },
 });
-
 app.get("/docs", swaggerUI({ url: "/openapi.json" }));
 
 export default app;
