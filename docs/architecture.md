@@ -92,7 +92,7 @@ CREATE TABLE photos (
 
     -- 送信者メタデータ
     sender_name       TEXT,                   -- 送信者名 / TwitterID
-    camera_model      TEXT,                   -- EXIF上書きカメラモデル
+    camera_model      TEXT,                   -- EXIFカメラモデル欄に埋め込んだ送信者情報
     watermark_text    TEXT,                   -- 適用したウォーターマーク (記録用)
     original_filename TEXT,                   -- 元ファイル名
 
@@ -258,7 +258,7 @@ Response: 200
     {
       "id": "uuid",
       "sender_name": "@hanako_photo",
-      "camera_model": "Canon EOS R5",
+      "camera_model": "@hanako_photo",
       "original_filename": "IMG_0042.JPG",
       "file_size": 9437184,
       "width": 6000,
@@ -369,8 +369,8 @@ Request:
       "file_size": 9437184,
       "width": 6000,
       "height": 4000,
-      "camera_model": "Canon EOS R5",
-      "watermark_text": "#imageShare"
+      "camera_model": "@hanako_photo",
+      "watermark_text": "#FurDrop"
     }
   ]
 }
