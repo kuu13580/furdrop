@@ -1,9 +1,4 @@
-function formatBytes(bytes: number): string {
-  if (bytes === 0) return "0 B";
-  const units = ["B", "KB", "MB", "GB", "TB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  return `${(bytes / 1024 ** i).toFixed(i > 0 ? 1 : 0)} ${units[i]}`;
-}
+import { formatBytes } from "../../lib/format";
 
 type Props = {
   used: number;
@@ -29,6 +24,11 @@ export default function StorageQuotaBar({ used, quota, className = "" }: Props) 
           style={{ width: `${Math.min(percent, 100)}%` }}
         />
       </div>
+      <p className="text-xs text-gray-400">
+        {percent >= 95
+          ? "容量がほぼ上限です。新しい写真を受け取れません。不要な写真を削除してください。"
+          : "上限を超えると新しい写真を受け取れなくなります。"}
+      </p>
     </div>
   );
 }
