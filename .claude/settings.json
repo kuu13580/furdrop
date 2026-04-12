@@ -13,6 +13,19 @@
           }
         ]
       }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pnpm fix",
+            "timeout": 30,
+            "statusMessage": "Running Biome fix..."
+          }
+        ]
+      }
     ]
   }
 }
