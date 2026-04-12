@@ -27,6 +27,7 @@ graph TD
 | CSS | Tailwind CSS | ユーティリティファースト、最小UIから段階的に改善 |
 | E2Eテスト | Playwright | 主要フローの動作検証 |
 | PWA | vite-plugin-pwa (Workbox) | Service Worker自動生成 |
+| プッシュ通知 | Firebase Cloud Messaging (FCM) | Firebase Auth と統合、PWA対応 |
 | インフラ管理 | wrangler.toml + CLI | この規模ではIaC(Terraform等)不要 |
 
 ---
@@ -47,6 +48,12 @@ CREATE TABLE users (
     storage_used      INTEGER NOT NULL DEFAULT 0,  -- 使用バイト数
     storage_quota     INTEGER NOT NULL DEFAULT 10737418240, -- デフォルト10GB
     is_active         INTEGER NOT NULL DEFAULT 1,  -- 0=受付停止, 1=受付中
+    -- 受信オプション設定 (R14: 送信者に提示するオプションを制御)
+    allow_exif_embed  INTEGER NOT NULL DEFAULT 0,  -- EXIF送信者情報埋め込み許可
+    allow_watermark   INTEGER NOT NULL DEFAULT 0,  -- 透かし許可 (不可逆のため慎重に)
+    -- プッシュ通知 (R09)
+    fcm_token         TEXT,                        -- FCMデバイストークン
+    push_enabled      INTEGER NOT NULL DEFAULT 1,  -- 通知ON/OFF
     created_at        INTEGER NOT NULL,            -- UNIX秒
     updated_at        INTEGER NOT NULL             -- UNIX秒
 );
@@ -108,6 +115,9 @@ CREATE TABLE photos (
         -- 'completed' : R2到達確認済み
         -- 'failed'    : タイムアウト
 
+    -- DL期限 (R13)
+    expires_at        INTEGER,                -- UNIX秒。NULLの場合はデフォルト(created_at + 30日)
+
     created_at        INTEGER NOT NULL,
     updated_at        INTEGER NOT NULL
 );
@@ -115,6 +125,7 @@ CREATE TABLE photos (
 CREATE INDEX idx_photos_receiver ON photos(receiver_id, created_at DESC);
 CREATE INDEX idx_photos_session ON photos(session_id);
 CREATE INDEX idx_photos_status ON photos(receiver_id, upload_status);
+CREATE INDEX idx_photos_expires ON photos(expires_at);
 ```
 
 ### 2.4 クォータ管理
@@ -205,6 +216,7 @@ Content-Type: application/json
 | 404 | NOT_FOUND | リソース不在 |
 | 409 | HANDLE_TAKEN | handle使用済み |
 | 413 | FILE_TOO_LARGE | ファイルサイズ超過 |
+| 415 | INVALID_FORMAT | 画像フォーマット不正（X10: マジックバイト検証失敗） |
 | 429 | RATE_LIMITED | レート制限 |
 | 507 | QUOTA_EXCEEDED | ストレージクォータ超過 |
 
@@ -331,16 +343,21 @@ Response: 200
     "handle": "taro_camera",
     "display_name": "太郎カメラ",
     "avatar_url": "https://...",
-    "is_accepting": true
+    "is_accepting": true,
+    "options": {
+      "allow_exif_embed": false,
+      "allow_watermark": false
+    }
   }
 }
 ```
 
-`is_accepting` が false、またはクォータ超過時はアップロードUI非表示。
+- `is_accepting` が false、またはクォータ超過時はアップロードUI非表示
+- `options`: 受信者が許可した送信者オプション（R14）。送信者UIはこれに基づいて表示を切替
 
 #### POST /send/:handle/sessions
 
-アップロードセッション開始。
+アップロードセッション開始。`photo_count` は最大100枚。
 
 ```
 Request:
@@ -577,6 +594,7 @@ crons = ["0 * * * *"]
 1. `upload_status = 'pending'` かつ `created_at < now - 1hour` → `'failed'` に更新
 2. `expires_at < now` の `upload_sessions` → `'expired'` に更新
 3. `'failed'` 写真のR2オブジェクトが存在すれば削除（ゴミ回収）
+4. **DL期限切れ写真の自動削除 (X11/R13)**: `expires_at < now`（またはデフォルト `created_at + 30日 < now`）の `completed` 写真 → R2オブジェクト削除 + D1レコード削除 + `storage_used` 減算
 
 ---
 
