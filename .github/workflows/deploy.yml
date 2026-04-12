@@ -20,8 +20,8 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: wrangler.toml 生成
-        run: pnpm generate:wrangler
+      - name: 設定ファイル生成
+        run: pnpm generate
         env:
           DOTENV_PRIVATE_KEY: ${{ secrets.DOTENV_PRIVATE_KEY }}
 
@@ -51,6 +51,11 @@ jobs:
           cache: "pnpm"
 
       - run: pnpm install --frozen-lockfile
+
+      - name: 設定ファイル生成
+        run: pnpm generate
+        env:
+          DOTENV_PRIVATE_KEY: ${{ secrets.DOTENV_PRIVATE_KEY }}
 
       - name: ビルド
         run: pnpm --filter frontend build

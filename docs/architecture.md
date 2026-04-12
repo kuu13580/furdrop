@@ -629,53 +629,55 @@ furdrop/
   docs/                       # 設計ドキュメント
 ```
 
-### wrangler.toml 管理
+### 設定ファイル生成
 
-`wrangler.toml` はテンプレートから自動生成する。リソースIDなどをpublic repoにコミットしないため。
+`wrangler.toml` やフロントエンドの `.env.local` はテンプレートから自動生成する。リソースIDなどをpublic repoにコミットしないため。
 
 ```
-workers/wrangler.template.toml  ← コミット対象（プレースホルダ）
-workers/.dev.template.vars      ← コミット対象（プレースホルダ）
-workers/wrangler.toml           ← gitignore（自動生成）
-workers/.dev.vars               ← gitignore（自動生成）
-workers/.env                    ← dotenvxで暗号化してコミット
-workers/.env.keys               ← gitignore（復号キー）
+.env                             ← dotenvxで暗号化してコミット（全環境変数を一元管理）
+.env.keys                        ← gitignore（復号キー）
+workers/wrangler.template.toml   ← コミット対象（プレースホルダ）
+workers/.dev.template.vars       ← コミット対象（プレースホルダ）
+frontend/.env.template.local     ← コミット対象（プレースホルダ）
+workers/wrangler.toml            ← gitignore（自動生成）
+workers/.dev.vars                ← gitignore（自動生成）
+frontend/.env.local              ← gitignore（自動生成）
 ```
 
 ```bash
-# wrangler.toml + .dev.vars を生成
-pnpm generate:wrangler
+# 設定ファイルを生成 (workers + frontend)
+pnpm generate
 
-# workers の dev/deploy は自動で generate:wrangler を実行する
+# workers の dev/deploy は自動で generate を実行する
 pnpm --filter workers dev
 ```
 
-`pnpm generate:wrangler` は `workers/` 内の全 `*.template.*` ファイルを検索し、
-`{{VAR_NAME}}` プレースホルダを `workers/.env` の値で置換して対応するファイルを生成する。
+`pnpm generate` は `workers/` と `frontend/` 内の全 `*.template.*` ファイルを検索し、
+`{{VAR_NAME}}` プレースホルダをルート `.env` の値で置換して対応するファイルを生成する。
 
 新しい変数を追加する場合:
 
 ```bash
-# 1. .env に暗号化して追加
-cd workers && pnpm exec dotenvx set KEY value
+# 1. ルートの .env に暗号化して追加
+pnpm exec dotenvx set KEY value
 
 # 2. 対応するテンプレートにプレースホルダを追加
 # wrangler.template.toml: database_id = "{{KEY}}"
-# .dev.template.vars:     KEY={{KEY}}
+# .env.template.local:    VITE_KEY={{VITE_KEY}}
 ```
 
 ### 秘密情報管理
 
-全てのシークレットは `workers/.env` にdotenvxで暗号化して一元管理する。
-ローカル開発用の `.dev.vars` と `wrangler.toml` は `pnpm generate:wrangler` で自動生成される。
+全ての設定値はルートの `.env` にdotenvxで暗号化して一元管理する。
+ローカル開発用のファイルは `pnpm generate` で自動生成される。
 本番デプロイ時は `wrangler secret put` でCloudflare側にも設定が必要。
 
 | 環境 | 方式 | ファイル |
 |---|---|---|
-| シークレット一元管理 | dotenvx暗号化 | `workers/.env` (暗号化コミット) |
-| ローカル開発 | テンプレートから自動生成 | `.dev.vars` (gitignore対象) |
-| 本番 | `wrangler secret put` | Cloudflareで暗号化管理 |
-| フロントエンド | Vite環境変数 | `.env.local` (gitignore対象) |
+| 設定一元管理 | dotenvx暗号化 | `.env` (暗号化コミット) |
+| ローカル開発 (Workers) | テンプレートから自動生成 | `.dev.vars`, `wrangler.toml` (gitignore対象) |
+| ローカル開発 (Frontend) | テンプレートから自動生成 | `.env.local` (gitignore対象) |
+| 本番 (Workers) | `wrangler secret put` | Cloudflareで暗号化管理 |
 
 **秘密情報一覧:**
 

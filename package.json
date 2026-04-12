@@ -8,7 +8,7 @@
     "check": "biome check .",
     "fix": "biome check --write .",
     "typecheck": "pnpm -r typecheck",
-    "generate:wrangler": "dotenvx run -f workers/.env -- node scripts/generate-wrangler.mjs"
+    "generate": "dotenvx run -- node scripts/generate-config.mjs"
   },
   "pnpm": {
     "minReleaseAge": "7d"

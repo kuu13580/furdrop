@@ -2,8 +2,8 @@
   "name": "workers",
   "private": true,
   "scripts": {
-    "dev": "pnpm -w generate:wrangler && wrangler dev",
-    "deploy": "pnpm -w generate:wrangler && wrangler deploy",
+    "dev": "pnpm -w generate && wrangler dev",
+    "deploy": "pnpm -w generate && wrangler deploy",
     "typecheck": "tsc --noEmit",
     "migrate:local": "wrangler d1 migrations apply furdrop --local",
     "migrate:prod": "wrangler d1 migrations apply furdrop --remote"
