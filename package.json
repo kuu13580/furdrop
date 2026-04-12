@@ -8,6 +8,7 @@
     "check": "biome check .",
     "fix": "biome check --write .",
     "typecheck": "pnpm -r typecheck",
+    "prepare": "git config core.hooksPath scripts/hooks",
     "generate": "dotenvx run -- node scripts/generate-config.mjs"
   },
   "pnpm": {
