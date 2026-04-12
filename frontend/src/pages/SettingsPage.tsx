@@ -94,7 +94,7 @@ function RegisterForm() {
               setHandleError(null);
             }}
             error={handleError ?? undefined}
-            hint="公開URLに使われます: furdrop.dev/send/あなたのハンドル"
+            hint={`公開URLに使われます: ${window.location.host}/send/あなたのハンドル`}
             placeholder="taro_camera"
             autoComplete="username"
             maxLength={32}

@@ -95,6 +95,81 @@ receiver.openapi(listPhotosRoute, async (c) => {
   return c.json({ photos: photosWithUrls, next_cursor: nextCursor }, 200);
 });
 
+// ========== GET /receiver/photos/:photoId ==========
+
+const getPhotoRoute = createRoute({
+  method: "get",
+  path: "/photos/{photoId}",
+  tags: ["Receiver"],
+  summary: "写真詳細取得",
+  request: {
+    params: z.object({
+      photoId: z
+        .string()
+        .uuid({ version: "v4" })
+        .openapi({ param: { name: "photoId", in: "path" } }),
+    }),
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            photo: z.object({
+              id: z.string(),
+              sender_name: z.string().nullable(),
+              camera_model: z.string().nullable(),
+              original_filename: z.string().nullable(),
+              file_size: z.number(),
+              width: z.number().nullable(),
+              height: z.number().nullable(),
+              thumb_url: z.string().nullable(),
+              created_at: z.number(),
+            }),
+          }),
+        },
+      },
+      description: "写真詳細",
+    },
+    404: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "Photo not found",
+    },
+  },
+});
+
+receiver.openapi(getPhotoRoute, async (c) => {
+  const uid = c.get("uid");
+  const { photoId } = c.req.valid("param");
+
+  const photo = await c.env.DB.prepare(
+    "SELECT id, sender_name, camera_model, original_filename, file_size, width, height, r2_key_thumb, created_at FROM photos WHERE id = ? AND receiver_id = ? AND upload_status = 'completed'",
+  )
+    .bind(photoId, uid)
+    .first();
+
+  if (!photo) {
+    return c.json({ error: { code: "NOT_FOUND", message: "Photo not found" } }, 404);
+  }
+
+  return c.json(
+    {
+      photo: {
+        id: photo.id as string,
+        sender_name: photo.sender_name as string | null,
+        camera_model: photo.camera_model as string | null,
+        original_filename: photo.original_filename as string | null,
+        file_size: photo.file_size as number,
+        width: photo.width as number | null,
+        height: photo.height as number | null,
+        thumb_url: await createThumbViewUrl(c.env, photo.r2_key_thumb as string),
+        created_at: photo.created_at as number,
+      },
+    },
+    200,
+  );
+});
+
 // ========== GET /receiver/photos/:photoId/download ==========
 
 const downloadRoute = createRoute({
