@@ -168,6 +168,21 @@ export const receiverApi = {
     }>(`/receiver/photos${qs ? `?${qs}` : ""}`, {}, true);
   },
 
+  getPhoto: (photoId: string) =>
+    request<{
+      photo: {
+        id: string;
+        sender_name: string | null;
+        camera_model: string | null;
+        original_filename: string | null;
+        file_size: number;
+        width: number | null;
+        height: number | null;
+        thumb_url: string | null;
+        created_at: number;
+      };
+    }>(`/receiver/photos/${photoId}`, {}, true),
+
   downloadPhoto: (photoId: string) =>
     request<{
       download_url: string;

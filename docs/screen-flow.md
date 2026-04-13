@@ -12,7 +12,7 @@
 | S06 | ダッシュボード | `/dashboard` | 必要 | 公開URL・ストレージ状況・直近写真 |
 | S07 | フォトギャラリー | `/gallery` | 必要 | サムネイルグリッド + 選択・フィルタ |
 | S08 | フォト詳細 | `/gallery/:photoId` | 必要 | 拡大表示 + メタデータ + DL・削除 |
-| S10 | 設定 | `/settings` | 必要 | プロフィール・ストレージ管理 |
+| S10 | 設定 | `/settings` | 必要 | プロフィール・ストレージ管理・受信オプション・通知設定 |
 
 ---
 
@@ -88,9 +88,13 @@ flowchart TD
 |  | 名前/TwitterID:         ||
 |  | [@_________]            ||
 |  |                         ||
-|  | カメラモデル:            ||
+|  | ※以下は受信者が許可した ||
+|  |  オプションのみ表示(R14)||
+|  |                         ||
+|  | EXIF埋め込み:            ||
 |  | [___________]           ||
-|  | *EXIFに書き込まれます    ||
+|  | *カメラモデル欄に書込    ||
+|  | *元のカメラ情報は上書き  ||
 |  |                         ||
 |  | 透かし:                  ||
 |  | テキスト [__________]   ||
@@ -110,7 +114,7 @@ UploaderPage
   +-- PhotoPreviewGrid      // サムネイルプレビュー (個別削除可)
   +-- SenderInfoForm        // 折りたたみ式
   |     +-- SenderNameField
-  |     +-- CameraModelField
+  |     +-- ExifEmbedField        // EXIF送信者情報埋め込み
   |     +-- WatermarkSettings
   |           +-- WatermarkTextInput
   |           +-- WatermarkPositionGrid  // 9分割
@@ -301,7 +305,6 @@ DashboardPage
 |  +-------------------------+|
 |                             |
 |  送信者: @hanako_photo      |
-|  カメラ: Canon EOS R5       |
 |  ファイル: IMG_0042.JPG     |
 |  サイズ: 9.0 MB             |
 |  解像度: 6000 x 4000       |
@@ -325,7 +328,7 @@ DashboardPage
 ```mermaid
 flowchart TD
     A[ファイル選択<br/>JPEG / PNG / HEIC] --> B{フォーマット判定}
-    B -->|JPEG| D[EXIF読み込み + カメラモデル上書き<br/>piexifjs]
+    B -->|JPEG| D[EXIF読み込み + 送信者情報埋め込み<br/>piexifjs]
     B -->|PNG| C1[Canvas → JPEG変換]
     B -->|HEIC| C2[heic2any → JPEG変換]
     C1 --> D
@@ -360,14 +363,17 @@ async function generateThumbnail(file) {
 - OffscreenCanvas対応ブラウザはWeb Worker内で処理（UIブロック回避）
 - Safari非対応時はメインスレッドのCanvas要素でフォールバック
 
-### 5.3 EXIF カメラモデル上書き
+### 5.3 EXIF 送信者情報埋め込み
+
+送信者が入力したテキストをEXIFのカメラモデルフィールド（`IFD0.Model`）に書き込む。
+元のカメラモデル情報は上書きされる。送信者がこの方式で情報を残すかは任意選択。
 
 ライブラリ: `piexifjs`
 
 ```javascript
 import piexif from 'piexifjs';
 
-async function overwriteExifCameraModel(file, cameraModel) {
+async function embedSenderInfoInExif(file, senderText) {
   const dataUrl = await fileToDataUrl(file);
   let exifObj;
   try {
@@ -375,8 +381,8 @@ async function overwriteExifCameraModel(file, cameraModel) {
   } catch {
     exifObj = { '0th': {}, 'Exif': {}, 'GPS': {} };
   }
-  if (cameraModel) {
-    exifObj['0th'][piexif.ImageIFD.Model] = cameraModel;
+  if (senderText) {
+    exifObj['0th'][piexif.ImageIFD.Model] = senderText;
   }
   const exifBytes = piexif.dump(exifObj);
   const newDataUrl = piexif.insert(exifBytes, dataUrl);

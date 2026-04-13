@@ -5,6 +5,7 @@ import { ErrorSchema, HandleParam, PhotoIdParam, SessionIdParam } from "../lib/s
 import type { Env } from "../types";
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+const MAX_PHOTOS_PER_SESSION = 100;
 
 const sender = new OpenAPIHono<{ Bindings: Env }>();
 
@@ -82,7 +83,7 @@ const createSessionRoute = createRoute({
         "application/json": {
           schema: z.object({
             sender_name: z.string().optional(),
-            photo_count: z.number().int().min(1),
+            photo_count: z.number().int().min(1).max(MAX_PHOTOS_PER_SESSION),
           }),
         },
       },
@@ -175,7 +176,7 @@ const createPhotosRoute = createRoute({
     body: {
       content: {
         "application/json": {
-          schema: z.object({ photos: z.array(PhotoInput).min(1) }),
+          schema: z.object({ photos: z.array(PhotoInput).min(1).max(MAX_PHOTOS_PER_SESSION) }),
         },
       },
     },
@@ -198,6 +199,10 @@ const createPhotosRoute = createRoute({
       },
       description: "Presigned URL発行成功",
     },
+    400: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "枚数上限超過",
+    },
     403: {
       content: { "application/json": { schema: ErrorSchema } },
       description: "セッション無効",
@@ -218,7 +223,7 @@ sender.openapi(createPhotosRoute, async (c) => {
   const { photos } = c.req.valid("json");
 
   const session = await c.env.DB.prepare(
-    `SELECT s.id, s.receiver_id, s.status, s.expires_at, u.handle, u.storage_used, u.storage_quota
+    `SELECT s.id, s.receiver_id, s.status, s.expires_at, s.photo_count, u.handle, u.storage_used, u.storage_quota
      FROM upload_sessions s
      JOIN users u ON u.id = s.receiver_id
      WHERE s.id = ? AND u.handle = ?`,
@@ -233,6 +238,20 @@ sender.openapi(createPhotosRoute, async (c) => {
   const now = Math.floor(Date.now() / 1000);
   if (session.status !== "active" || (session.expires_at as number) < now) {
     return c.json({ error: { code: "FORBIDDEN", message: "Session expired or inactive" } }, 403);
+  }
+
+  // セッション累積枚数チェック (X03: 1セッション最大100枚)
+  const currentCount = session.photo_count as number;
+  if (currentCount + photos.length > MAX_PHOTOS_PER_SESSION) {
+    return c.json(
+      {
+        error: {
+          code: "INVALID_REQUEST",
+          message: `Session photo limit exceeded (current: ${currentCount}, requested: ${photos.length}, max: ${MAX_PHOTOS_PER_SESSION})`,
+        },
+      },
+      400,
+    );
   }
 
   // 楽観的クォータチェック

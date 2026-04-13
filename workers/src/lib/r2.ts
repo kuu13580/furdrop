@@ -55,8 +55,11 @@ export async function createThumbUploadUrl(
   return getSignedUrl(client, command, { expiresIn: 900 });
 }
 
-/** サムネイル表示用 Presigned GET URL */
+/** サムネイル表示用 URL（開発時はプロキシ、本番はPresigned GET） */
 export async function createThumbViewUrl(env: Env, key: string): Promise<string> {
+  if (env.ENVIRONMENT !== "production") {
+    return `/dev/images/thumbs/${key}`;
+  }
   const client = createS3Client(env);
   const command = new GetObjectCommand({
     Bucket: env.R2_BUCKET_THUMBS,
@@ -65,8 +68,11 @@ export async function createThumbViewUrl(env: Env, key: string): Promise<string>
   return getSignedUrl(client, command, { expiresIn: 3600 });
 }
 
-/** オリジナルDL用 Presigned GET URL */
+/** オリジナルDL用 URL（開発時はプロキシ、本番はPresigned GET） */
 export async function createDownloadUrl(env: Env, key: string): Promise<string> {
+  if (env.ENVIRONMENT !== "production") {
+    return `/dev/images/originals/${key}`;
+  }
   const client = createS3Client(env);
   const command = new GetObjectCommand({
     Bucket: env.R2_BUCKET_ORIGINALS,

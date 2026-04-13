@@ -9,7 +9,8 @@
     "fix": "biome check --write .",
     "typecheck": "pnpm -r typecheck",
     "prepare": "git config core.hooksPath scripts/hooks",
-    "generate": "dotenvx run -- node scripts/generate-config.mjs"
+    "generate": "dotenvx run -- node scripts/generate-config.mjs",
+    "seed": "node scripts/seed.mjs"
   },
   "pnpm": {
     "minReleaseAge": "7d"
