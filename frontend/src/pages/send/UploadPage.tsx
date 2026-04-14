@@ -39,6 +39,7 @@ export default function UploadPage() {
   const [error, setError] = useState<string | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [noCreditConsent, setNoCreditConsent] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // URLクリーンアップ: コンポーネントunmount時（=確定遷移 or Landingへ戻り）
@@ -96,8 +97,11 @@ export default function UploadPage() {
     if (e.dataTransfer.files) addFiles(e.dataTransfer.files);
   };
 
+  const hasSenderName = form.senderName.trim().length > 0;
+  const canSubmit = files.length > 0 && (hasSenderName || noCreditConsent);
+
   const handleSubmit = () => {
-    if (files.length === 0) return;
+    if (!canSubmit) return;
     navigate(`/send/${handle}/uploading`);
   };
 
@@ -223,11 +227,25 @@ export default function UploadPage() {
         </Card>
       )}
 
+      {files.length > 0 && !hasSenderName && (
+        <label className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm">
+          <input
+            type="checkbox"
+            checked={noCreditConsent}
+            onChange={(e) => setNoCreditConsent(e.target.checked)}
+            className="mt-0.5 shrink-0"
+          />
+          <span className="text-amber-800">
+            送信者名を記載しない場合、写真のクレジット表記なしでの編集・共有が行われる可能性があることに同意します
+          </span>
+        </label>
+      )}
+
       <Button
         variant="primary"
         size="lg"
         className="w-full"
-        disabled={files.length === 0}
+        disabled={!canSubmit}
         onClick={handleSubmit}
       >
         送信する{files.length > 0 ? ` (${files.length}枚)` : ""}

@@ -26,4 +26,24 @@ dev.get("/images/originals/:key{.+}", async (c) => {
   return c.body(object.body);
 });
 
+// --- PUT: ローカルR2への書き込み ---
+
+dev.put("/images/upload/originals/:key{.+}", async (c) => {
+  const key = c.req.param("key");
+  const body = await c.req.arrayBuffer();
+  await c.env.R2_ORIGINALS.put(key, body, {
+    httpMetadata: { contentType: "image/jpeg" },
+  });
+  return c.body(null, 200);
+});
+
+dev.put("/images/upload/thumbs/:key{.+}", async (c) => {
+  const key = c.req.param("key");
+  const body = await c.req.arrayBuffer();
+  await c.env.R2_THUMBS.put(key, body, {
+    httpMetadata: { contentType: "image/jpeg" },
+  });
+  return c.body(null, 200);
+});
+
 export default dev;

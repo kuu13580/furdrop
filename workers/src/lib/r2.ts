@@ -21,12 +21,15 @@ export function buildR2Key(handle: string, photoId: string, type: "original" | "
   return `${handle}/${yearMonth}/${suffix}`;
 }
 
-/** オリジナル画像アップロード用 Presigned PUT URL */
+/** オリジナル画像アップロード用 Presigned PUT URL（開発時はプロキシ） */
 export async function createUploadUrl(
   env: Env,
   key: string,
   contentLength: number,
 ): Promise<string> {
+  if (env.ENVIRONMENT !== "production") {
+    return `/dev/images/upload/originals/${key}`;
+  }
   const client = createS3Client(env);
   const command = new PutObjectCommand({
     Bucket: env.R2_BUCKET_ORIGINALS,
@@ -39,12 +42,15 @@ export async function createUploadUrl(
 
 const MAX_THUMB_SIZE = 512 * 1024; // 512KB
 
-/** サムネイルアップロード用 Presigned PUT URL */
+/** サムネイルアップロード用 Presigned PUT URL（開発時はプロキシ） */
 export async function createThumbUploadUrl(
   env: Env,
   key: string,
   contentLength: number = MAX_THUMB_SIZE,
 ): Promise<string> {
+  if (env.ENVIRONMENT !== "production") {
+    return `/dev/images/upload/thumbs/${key}`;
+  }
   const client = createS3Client(env);
   const command = new PutObjectCommand({
     Bucket: env.R2_BUCKET_THUMBS,
