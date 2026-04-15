@@ -94,6 +94,9 @@ export default function WatermarkDialog({
     canvas.height = h;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+    // 出力JPEGと同じく透過部分を白埋め
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, w, h);
     ctx.drawImage(bmp, 0, 0, w, h);
     drawWatermark(ctx, w, h, text, options);
   }, [previewReady, options, text]);
@@ -202,8 +205,28 @@ export default function WatermarkDialog({
             >
               黒
             </button>
+            <button
+              type="button"
+              onClick={() => onChange({ ...options, color: "auto" })}
+              className={`h-7 rounded border-2 bg-gradient-to-r from-black from-50% to-white to-50% px-3 text-xs font-medium ${
+                options.color === "auto" ? "border-blue-500" : "border-gray-300"
+              }`}
+              title="描画領域の明るさから白/黒を自動選択"
+            >
+              <span className="text-white">自</span>
+              <span className="text-black">動</span>
+            </button>
           </div>
         </div>
+
+        <label className="flex items-center gap-2 text-xs font-medium text-gray-600">
+          <input
+            type="checkbox"
+            checked={options.stroke}
+            onChange={(e) => onChange({ ...options, stroke: e.target.checked })}
+          />
+          <span>縁取り（反対色のアウトラインで視認性UP）</span>
+        </label>
       </div>
     </Dialog>
   );
