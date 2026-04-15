@@ -19,7 +19,21 @@ const POSITIONS: WatermarkPosition[] = [
   "bottom-right",
 ];
 
+/** 透かし位置 → ズーム時の transform-origin (% x, % y) */
+const POSITION_ORIGIN: Record<WatermarkPosition, { x: number; y: number }> = {
+  "top-left": { x: 0, y: 0 },
+  "top-center": { x: 50, y: 0 },
+  "top-right": { x: 100, y: 0 },
+  "middle-left": { x: 0, y: 50 },
+  "middle-center": { x: 50, y: 50 },
+  "middle-right": { x: 100, y: 50 },
+  "bottom-left": { x: 0, y: 100 },
+  "bottom-center": { x: 50, y: 100 },
+  "bottom-right": { x: 100, y: 100 },
+};
+
 const PREVIEW_MAX = 800;
+const ZOOM_SCALE = 2.5;
 
 type Props = {
   open: boolean;
@@ -44,9 +58,14 @@ export default function WatermarkDialog({
   const bitmapRef = useRef<ImageBitmap | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [previewReady, setPreviewReady] = useState(false);
+  /** 透かし位置を中心にズームするトグル */
+  const [zoomed, setZoomed] = useState(false);
 
   // ダイアログopen時に1枚目をビットマップ化してキャッシュ
   useEffect(() => {
+    if (!open) {
+      setZoomed(false);
+    }
     if (!open || !previewFile) {
       setPreviewReady(false);
       return;
@@ -115,9 +134,32 @@ export default function WatermarkDialog({
       }
     >
       <div className="space-y-4">
-        <div className="flex aspect-video items-center justify-center overflow-hidden rounded-md bg-gray-100">
+        <div className="relative flex aspect-video items-center justify-center overflow-hidden rounded-md bg-gray-100">
           {previewFile && !previewError ? (
-            <canvas ref={canvasRef} className="max-h-full max-w-full" />
+            <>
+              <canvas
+                ref={canvasRef}
+                className="max-h-full max-w-full select-none"
+                style={{
+                  transform: zoomed ? `scale(${ZOOM_SCALE})` : undefined,
+                  transformOrigin: zoomed
+                    ? `${POSITION_ORIGIN[options.position].x}% ${POSITION_ORIGIN[options.position].y}%`
+                    : undefined,
+                  transition: "transform 150ms ease-out",
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setZoomed((v) => !v)}
+                aria-label={zoomed ? "ズーム解除" : "透かし箇所をズーム"}
+                aria-pressed={zoomed}
+                className={`absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full shadow transition-colors ${
+                  zoomed ? "bg-blue-600 text-white" : "bg-white/90 text-gray-700 hover:bg-white"
+                }`}
+              >
+                <ZoomIcon zoomed={zoomed} />
+              </button>
+            </>
           ) : (
             <p className="px-4 text-center text-xs text-gray-500">
               {previewError ?? "プレビュー用の画像がありません"}
@@ -229,5 +271,28 @@ export default function WatermarkDialog({
         </label>
       </div>
     </Dialog>
+  );
+}
+
+function ZoomIcon({ zoomed }: { zoomed: boolean }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      role="img"
+      aria-label={zoomed ? "ズーム解除" : "ズーム"}
+    >
+      <circle cx="11" cy="11" r="7" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+      <line x1="8" y1="11" x2="14" y2="11" />
+      {!zoomed && <line x1="11" y1="8" x2="11" y2="14" />}
+    </svg>
   );
 }
