@@ -114,16 +114,26 @@ export default function PhotoDetailPage() {
         </div>
       </div>
 
-      {/* オリジナル表示（ロード中はサムネイル） */}
+      {/* オリジナル表示（縦横比固定でガタつき防止。ロード中はサムネイル） */}
       <div className="flex justify-center">
         {photo.view_url || photo.thumb_url ? (
-          <div className="relative">
-            {photo.thumb_url && !viewLoaded && (
+          <div
+            className="relative mx-auto overflow-hidden rounded-lg bg-gray-100"
+            style={{
+              height: "70vh",
+              aspectRatio:
+                photo.width && photo.height ? `${photo.width} / ${photo.height}` : "4 / 3",
+              maxWidth: "100%",
+            }}
+          >
+            {photo.thumb_url && (
               <img
                 src={photo.thumb_url}
                 alt=""
                 aria-hidden="true"
-                className="max-h-[70vh] rounded-lg object-contain blur-sm"
+                className={`absolute inset-0 h-full w-full object-cover blur-md transition-opacity duration-300 ${
+                  viewLoaded ? "opacity-0" : "opacity-100"
+                }`}
               />
             )}
             {photo.view_url && (
@@ -131,8 +141,8 @@ export default function PhotoDetailPage() {
                 src={photo.view_url}
                 alt={photo.sender_name ?? "写真"}
                 onLoad={() => setViewLoaded(true)}
-                className={`max-h-[70vh] rounded-lg object-contain ${
-                  viewLoaded ? "" : "absolute inset-0 opacity-0"
+                className={`absolute inset-0 h-full w-full object-contain transition-opacity duration-300 ${
+                  viewLoaded ? "opacity-100" : "opacity-0"
                 }`}
               />
             )}
