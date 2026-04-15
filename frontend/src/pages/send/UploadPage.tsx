@@ -116,7 +116,7 @@ export default function UploadPage() {
 
   const handleSubmit = () => {
     if (!canSubmit) return;
-    navigate(`/send/${handle}/uploading`);
+    navigate(`/send/${handle}/uploading`, { replace: true });
   };
 
   // 送信者名が消えたら EXIF/透かしの有効フラグも落とす

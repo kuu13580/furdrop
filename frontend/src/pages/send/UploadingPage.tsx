@@ -71,7 +71,7 @@ export default function UploadingPage() {
         // 選択状態をクリアしつつ、UIでの表示用ObjectURLを解放
         for (const f of files) if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
         setFiles([]);
-        navigate(`/send/${handle}/done`, { state: { sessionId } });
+        navigate(`/send/${handle}/done`, { state: { sessionId }, replace: true });
       },
     });
   }, []);
