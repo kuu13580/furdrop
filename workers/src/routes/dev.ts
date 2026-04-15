@@ -26,6 +26,15 @@ dev.get("/images/originals/:key{.+}", async (c) => {
   return c.body(object.body);
 });
 
+dev.get("/images/view/:key{.+}", async (c) => {
+  const key = c.req.param("key");
+  const object = await c.env.R2_ORIGINALS.get(key);
+  if (!object) return c.notFound();
+  c.header("Content-Type", "image/jpeg");
+  c.header("Cache-Control", "no-cache");
+  return c.body(object.body);
+});
+
 // --- PUT: ローカルR2への書き込み ---
 
 dev.put("/images/upload/originals/:key{.+}", async (c) => {

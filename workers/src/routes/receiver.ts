@@ -1,6 +1,6 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { subtractStorageUsage } from "../lib/quota";
-import { createDownloadUrl, createThumbViewUrl } from "../lib/r2";
+import { createDownloadUrl, createThumbViewUrl, createViewUrl } from "../lib/r2";
 import { ErrorSchema } from "../lib/schema";
 import { requireAuth } from "../middleware/auth";
 import type { AuthEnv } from "../types";
@@ -124,6 +124,7 @@ const getPhotoRoute = createRoute({
               width: z.number().nullable(),
               height: z.number().nullable(),
               thumb_url: z.string().nullable(),
+              view_url: z.string().nullable(),
               created_at: z.number(),
             }),
           }),
@@ -143,7 +144,7 @@ receiver.openapi(getPhotoRoute, async (c) => {
   const { photoId } = c.req.valid("param");
 
   const photo = await c.env.DB.prepare(
-    "SELECT id, sender_name, camera_model, original_filename, file_size, width, height, r2_key_thumb, created_at FROM photos WHERE id = ? AND receiver_id = ? AND upload_status = 'completed'",
+    "SELECT id, sender_name, camera_model, original_filename, file_size, width, height, r2_key_original, r2_key_thumb, created_at FROM photos WHERE id = ? AND receiver_id = ? AND upload_status = 'completed'",
   )
     .bind(photoId, uid)
     .first();
@@ -151,6 +152,11 @@ receiver.openapi(getPhotoRoute, async (c) => {
   if (!photo) {
     return c.json({ error: { code: "NOT_FOUND", message: "Photo not found" } }, 404);
   }
+
+  const [thumbUrl, viewUrl] = await Promise.all([
+    createThumbViewUrl(c.env, photo.r2_key_thumb as string),
+    createViewUrl(c.env, photo.r2_key_original as string),
+  ]);
 
   return c.json(
     {
@@ -162,7 +168,8 @@ receiver.openapi(getPhotoRoute, async (c) => {
         file_size: photo.file_size as number,
         width: photo.width as number | null,
         height: photo.height as number | null,
-        thumb_url: await createThumbViewUrl(c.env, photo.r2_key_thumb as string),
+        thumb_url: thumbUrl,
+        view_url: viewUrl,
         created_at: photo.created_at as number,
       },
     },

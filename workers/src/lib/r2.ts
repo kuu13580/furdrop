@@ -86,3 +86,16 @@ export async function createDownloadUrl(env: Env, key: string): Promise<string> 
   });
   return getSignedUrl(client, command, { expiresIn: 3600 });
 }
+
+/** オリジナル inline 表示用 URL（Content-Dispositionなし） */
+export async function createViewUrl(env: Env, key: string): Promise<string> {
+  if (env.ENVIRONMENT !== "production") {
+    return `/dev/images/view/${key}`;
+  }
+  const client = createS3Client(env);
+  const command = new GetObjectCommand({
+    Bucket: env.R2_BUCKET_ORIGINALS,
+    Key: key,
+  });
+  return getSignedUrl(client, command, { expiresIn: 3600 });
+}

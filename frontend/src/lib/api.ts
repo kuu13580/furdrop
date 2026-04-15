@@ -179,6 +179,7 @@ export const receiverApi = {
         width: number | null;
         height: number | null;
         thumb_url: string | null;
+        view_url: string | null;
         created_at: number;
       };
     }>(`/receiver/photos/${photoId}`, {}, true),

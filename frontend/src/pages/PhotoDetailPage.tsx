@@ -21,16 +21,16 @@ export default function PhotoDetailPage() {
   const { photoId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const [photo, setPhoto] = useState<Photo | null>(
-    (location.state as { photo?: Photo })?.photo ?? null,
-  );
-  const [loading, setLoading] = useState(!photo);
+  const initialPhoto = (location.state as { photo?: Photo })?.photo ?? null;
+  const [photo, setPhoto] = useState<Photo | null>(initialPhoto);
+  const [loading, setLoading] = useState(!initialPhoto);
+  const [viewLoaded, setViewLoaded] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  // Route state がない場合（直接URL）はAPIから取得
+  // view_url を取得する（route state 由来のデータには含まれない）
   useEffect(() => {
-    if (photo || !photoId) return;
+    if (!photoId || photo?.view_url) return;
     let cancelled = false;
     receiverApi
       .getPhoto(photoId)
@@ -44,7 +44,7 @@ export default function PhotoDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [photo, photoId]);
+  }, [photoId, photo?.view_url]);
 
   const handleDownload = useCallback(async () => {
     if (!photoId) return;
@@ -114,14 +114,29 @@ export default function PhotoDetailPage() {
         </div>
       </div>
 
-      {/* サムネイル拡大 */}
+      {/* オリジナル表示（ロード中はサムネイル） */}
       <div className="flex justify-center">
-        {photo.thumb_url ? (
-          <img
-            src={photo.thumb_url}
-            alt={photo.sender_name ?? "写真"}
-            className="max-h-[60vh] rounded-lg object-contain"
-          />
+        {photo.view_url || photo.thumb_url ? (
+          <div className="relative">
+            {photo.thumb_url && !viewLoaded && (
+              <img
+                src={photo.thumb_url}
+                alt=""
+                aria-hidden="true"
+                className="max-h-[70vh] rounded-lg object-contain blur-sm"
+              />
+            )}
+            {photo.view_url && (
+              <img
+                src={photo.view_url}
+                alt={photo.sender_name ?? "写真"}
+                onLoad={() => setViewLoaded(true)}
+                className={`max-h-[70vh] rounded-lg object-contain ${
+                  viewLoaded ? "" : "absolute inset-0 opacity-0"
+                }`}
+              />
+            )}
+          </div>
         ) : (
           <div className="flex h-64 w-full items-center justify-center rounded-lg bg-gray-100 text-gray-300">
             画像を読み込めません
