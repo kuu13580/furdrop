@@ -60,7 +60,16 @@ jobs:
       - name: ビルド
         run: pnpm --filter frontend build
 
+      # wrangler pages deploy はCI環境のgitから自動でcommit_messageを抽出するが、
+      # squash merge後の本文 (複数サブコミットを含む長文) を渡すとCloudflare Pages APIに
+      # `Invalid commit message` (8000111) で拒否されることがある。subject行のみを明示渡しする。
       - name: Pages デプロイ
-        run: pnpm --filter workers exec wrangler pages deploy ../frontend/dist --project-name=furdrop
+        run: |
+          COMMIT_MSG=$(git log -1 --pretty=%s | head -c 500)
+          pnpm --filter workers exec wrangler pages deploy ../frontend/dist \
+            --project-name=furdrop \
+            --branch=main \
+            --commit-hash="${{ github.sha }}" \
+            --commit-message="$COMMIT_MSG"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
