@@ -5,8 +5,9 @@ import { defineConfig } from "vite";
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
+    port: 4000,
     proxy: {
-      "/dev/images": "http://localhost:8787",
+      "/dev/images": "http://localhost:9000",
     },
   },
 });

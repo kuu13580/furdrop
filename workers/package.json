@@ -2,7 +2,7 @@
   "name": "workers",
   "private": true,
   "scripts": {
-    "dev": "pnpm -w generate && wrangler dev",
+    "dev": "pnpm -w generate && wrangler dev --port 9000",
     "deploy": "pnpm -w generate && wrangler deploy",
     "typecheck": "tsc --noEmit",
     "migrate:local": "wrangler d1 migrations apply furdrop --local",
