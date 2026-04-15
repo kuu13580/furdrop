@@ -10,6 +10,7 @@
     "typecheck": "pnpm -r typecheck",
     "prepare": "git config core.hooksPath scripts/hooks",
     "generate": "dotenvx run -- node scripts/generate-config.mjs",
+    "generate:prod": "dotenvx run -f .env.prod -- node scripts/generate-config.mjs",
     "seed": "node scripts/seed.mjs",
     "dev": "concurrently -n front,api -c cyan,magenta \"pnpm --filter frontend dev\" \"pnpm --filter workers dev\""
   },

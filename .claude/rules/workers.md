@@ -30,5 +30,6 @@ paths:
 ## 環境変数
 - Bindingsの型定義は `src/types.ts` に記述する
 - 非秘密の変数は `wrangler.toml [vars]` に記述
-- 秘密情報はルートの `.env` にdotenvxで暗号化管理。`pnpm generate` で `.dev.vars` と `wrangler.toml` を自動生成
-- 本番環境には `wrangler secret put` でも設定が必要
+- 秘密情報はルートの `.env` (開発用) / `.env.prod` (本番用) にdotenvxで暗号化管理
+- `pnpm generate` (開発) / `pnpm generate:prod` (CIの本番デプロイ) で `.dev.vars` と `wrangler.toml` を自動生成
+- 新しい変数を追加する際は `.env` と `.env.prod` 両方に `dotenvx set` する
