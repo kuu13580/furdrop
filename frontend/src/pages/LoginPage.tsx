@@ -1,12 +1,13 @@
 import { signInWithPopup, TwitterAuthProvider } from "firebase/auth";
 import { useAtomValue } from "jotai";
 import { useCallback, useState } from "react";
-import { Navigate } from "react-router";
+import { Navigate, useNavigate } from "react-router";
 import { auth } from "../lib/firebase";
 import { authAtom } from "../stores/auth";
 
 export default function LoginPage() {
   const authState = useAtomValue(authAtom);
+  const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -15,14 +16,16 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await signInWithPopup(auth, new TwitterAuthProvider());
+      // 認証成功 → ダッシュボードへ (未登録の場合は AuthGuard が /settings に誘導)
+      navigate("/dashboard", { replace: true });
     } catch (e) {
       setError(e instanceof Error ? e.message : "ログインに失敗しました");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [navigate]);
 
-  // 認証済み: 登録済み→ダッシュボード、未登録→設定（スラッグ設定）
+  // すでに認証済み状態で /login に来た場合 (リロード・直接アクセス)
   if (authState.status === "authenticated") {
     return <Navigate to={authState.registered ? "/dashboard" : "/settings"} replace />;
   }
