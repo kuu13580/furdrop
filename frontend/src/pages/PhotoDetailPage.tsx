@@ -163,12 +163,6 @@ export default function PhotoDetailPage() {
               <dd className="font-medium">{photo.sender_name}</dd>
             </div>
           )}
-          {photo.original_filename && (
-            <div className="flex justify-between">
-              <dt className="text-gray-500">ファイル名</dt>
-              <dd className="font-medium">{photo.original_filename}</dd>
-            </div>
-          )}
           <div className="flex justify-between">
             <dt className="text-gray-500">サイズ</dt>
             <dd className="font-medium">{formatBytes(photo.file_size)}</dd>

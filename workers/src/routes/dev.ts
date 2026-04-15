@@ -22,7 +22,8 @@ dev.get("/images/originals/:key{.+}", async (c) => {
   const object = await c.env.R2_ORIGINALS.get(key);
   if (!object) return c.notFound();
   c.header("Content-Type", "image/jpeg");
-  c.header("Content-Disposition", `attachment; filename="${key.split("/").pop()}"`);
+  // filename指定せず attachment のみ → フロントの <a download> 属性で命名される
+  c.header("Content-Disposition", "attachment");
   return c.body(object.body);
 });
 

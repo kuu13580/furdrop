@@ -32,7 +32,6 @@ const listPhotosRoute = createRoute({
                 id: z.string(),
                 sender_name: z.string().nullable(),
                 camera_model: z.string().nullable(),
-                original_filename: z.string().nullable(),
                 file_size: z.number(),
                 width: z.number().nullable(),
                 height: z.number().nullable(),
@@ -54,7 +53,7 @@ receiver.openapi(listPhotosRoute, async (c) => {
   const { limit, cursor } = c.req.valid("query");
 
   let query =
-    "SELECT id, sender_name, camera_model, original_filename, file_size, width, height, r2_key_thumb, created_at FROM photos WHERE receiver_id = ? AND upload_status = 'completed'";
+    "SELECT id, sender_name, camera_model, file_size, width, height, r2_key_thumb, created_at FROM photos WHERE receiver_id = ? AND upload_status = 'completed'";
   const params: (string | number)[] = [uid];
 
   if (cursor) {
@@ -80,7 +79,6 @@ receiver.openapi(listPhotosRoute, async (c) => {
       id: p.id as string,
       sender_name: p.sender_name as string | null,
       camera_model: p.camera_model as string | null,
-      original_filename: p.original_filename as string | null,
       file_size: p.file_size as number,
       width: p.width as number | null,
       height: p.height as number | null,
@@ -119,7 +117,6 @@ const getPhotoRoute = createRoute({
               id: z.string(),
               sender_name: z.string().nullable(),
               camera_model: z.string().nullable(),
-              original_filename: z.string().nullable(),
               file_size: z.number(),
               width: z.number().nullable(),
               height: z.number().nullable(),
@@ -144,7 +141,7 @@ receiver.openapi(getPhotoRoute, async (c) => {
   const { photoId } = c.req.valid("param");
 
   const photo = await c.env.DB.prepare(
-    "SELECT id, sender_name, camera_model, original_filename, file_size, width, height, r2_key_original, r2_key_thumb, created_at FROM photos WHERE id = ? AND receiver_id = ? AND upload_status = 'completed'",
+    "SELECT id, sender_name, camera_model, file_size, width, height, r2_key_original, r2_key_thumb, created_at FROM photos WHERE id = ? AND receiver_id = ? AND upload_status = 'completed'",
   )
     .bind(photoId, uid)
     .first();
@@ -164,7 +161,6 @@ receiver.openapi(getPhotoRoute, async (c) => {
         id: photo.id as string,
         sender_name: photo.sender_name as string | null,
         camera_model: photo.camera_model as string | null,
-        original_filename: photo.original_filename as string | null,
         file_size: photo.file_size as number,
         width: photo.width as number | null,
         height: photo.height as number | null,
@@ -216,8 +212,18 @@ receiver.openapi(downloadRoute, async (c) => {
   const uid = c.get("uid");
   const { photoId } = c.req.valid("param");
 
+  // session_index: 同一セッション内でこの写真が何枚目か (1-based)
   const photo = await c.env.DB.prepare(
-    "SELECT r2_key_original, original_filename, file_size FROM photos WHERE id = ? AND receiver_id = ? AND upload_status = 'completed'",
+    `SELECT p.r2_key_original, p.file_size, p.created_at,
+       (SELECT COUNT(*) FROM photos p2
+          WHERE p2.session_id IS NOT NULL
+            AND p2.session_id = p.session_id
+            AND p2.upload_status = 'completed'
+            AND (p2.created_at < p.created_at
+              OR (p2.created_at = p.created_at AND p2.id <= p.id))
+       ) as session_index
+     FROM photos p
+     WHERE p.id = ? AND p.receiver_id = ? AND p.upload_status = 'completed'`,
   )
     .bind(photoId, uid)
     .first();
@@ -227,16 +233,30 @@ receiver.openapi(downloadRoute, async (c) => {
   }
 
   const downloadUrl = await createDownloadUrl(c.env, photo.r2_key_original as string);
+  const filename = buildDownloadFilename(
+    photo.created_at as number,
+    (photo.session_index as number) || 1,
+  );
 
   return c.json(
     {
       download_url: downloadUrl,
-      filename: photo.original_filename as string | null,
+      filename,
       file_size: photo.file_size as number,
     },
     200,
   );
 });
+
+/** 受信日時_連番.jpg 形式のファイル名を生成 (JST基準) */
+function buildDownloadFilename(createdAt: number, sessionIndex: number): string {
+  const jst = new Date((createdAt + 9 * 3600) * 1000);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const date = `${jst.getUTCFullYear()}${pad(jst.getUTCMonth() + 1)}${pad(jst.getUTCDate())}`;
+  const time = `${pad(jst.getUTCHours())}${pad(jst.getUTCMinutes())}${pad(jst.getUTCSeconds())}`;
+  const idx = String(sessionIndex).padStart(2, "0");
+  return `${date}-${time}_${idx}.jpg`;
+}
 
 // ========== DELETE /receiver/photos/:photoId ==========
 
