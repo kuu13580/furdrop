@@ -652,8 +652,9 @@ furdrop/
 `wrangler.toml` やフロントエンドの `.env.local` はテンプレートから自動生成する。リソースIDなどをpublic repoにコミットしないため。
 
 ```
-.env                             ← dotenvxで暗号化してコミット（全環境変数を一元管理）
-.env.keys                        ← gitignore（復号キー）
+.env                             ← 開発用 (dotenvxで暗号化、コミット対象)
+.env.prod                        ← 本番用 (dotenvxで暗号化、コミット対象。CIデプロイでのみ使用)
+.env.keys                        ← gitignore (DOTENV_PRIVATE_KEY / DOTENV_PRIVATE_KEY_PROD)
 workers/wrangler.template.toml   ← コミット対象（プレースホルダ）
 workers/.dev.template.vars       ← コミット対象（プレースホルダ）
 frontend/.env.template.local     ← コミット対象（プレースホルダ）
@@ -663,21 +664,25 @@ frontend/.env.local              ← gitignore（自動生成）
 ```
 
 ```bash
-# 設定ファイルを生成 (workers + frontend)
+# 設定ファイルを生成 (開発用 .env を使用、workers + frontend)
 pnpm generate
 
-# workers の dev/deploy は自動で generate を実行する
+# 設定ファイルを生成 (本番用 .env.prod を使用。CIでのみ使用)
+pnpm generate:prod
+
+# workers の dev は自動で generate を実行する
 pnpm --filter workers dev
 ```
 
-`pnpm generate` は `workers/` と `frontend/` 内の全 `*.template.*` ファイルを検索し、
-`{{VAR_NAME}}` プレースホルダをルート `.env` の値で置換して対応するファイルを生成する。
+`pnpm generate` / `generate:prod` は `workers/` と `frontend/` 内の全 `*.template.*` ファイルを検索し、
+`{{VAR_NAME}}` プレースホルダをそれぞれ `.env` / `.env.prod` の値で置換して対応するファイルを生成する。
 
 新しい変数を追加する場合:
 
 ```bash
-# 1. ルートの .env に暗号化して追加
+# 1. ルートの .env と .env.prod それぞれに暗号化して追加
 pnpm exec dotenvx set KEY value
+pnpm exec dotenvx set KEY value -f .env.prod
 
 # 2. 対応するテンプレートにプレースホルダを追加
 # wrangler.template.toml: database_id = "{{KEY}}"
@@ -686,16 +691,20 @@ pnpm exec dotenvx set KEY value
 
 ### 秘密情報管理
 
-全ての設定値はルートの `.env` にdotenvxで暗号化して一元管理する。
-ローカル開発用のファイルは `pnpm generate` で自動生成される。
-本番デプロイ時は `wrangler secret put` でCloudflare側にも設定が必要。
+開発用の設定は `.env`、本番用の設定は `.env.prod` に dotenvx で暗号化して管理する。
+どちらも個別の鍵ペアを持ち、復号キーは `.env.keys` (gitignore対象) に記録される。
+ローカル開発用のファイルは `pnpm generate` で自動生成され、CIではデプロイ前に `pnpm generate:prod` が実行される。
+R2クレデンシャル (`R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_ENDPOINT`) は `wrangler.toml` に含まれず `.dev.vars` 経由で渡されるが、`wrangler deploy` は `.dev.vars` を読まないため、本番には別途 `wrangler secret put` で設定が必要。
 
 | 環境 | 方式 | ファイル |
 |---|---|---|
-| 設定一元管理 | dotenvx暗号化 | `.env` (暗号化コミット) |
+| 開発 (値の管理) | dotenvx暗号化 | `.env` (暗号化コミット) |
+| 本番 (値の管理) | dotenvx暗号化 | `.env.prod` (暗号化コミット) |
+| 復号キー | dotenvx | `.env.keys` (gitignore、CIは `DOTENV_PRIVATE_KEY_PROD` secret) |
 | ローカル開発 (Workers) | テンプレートから自動生成 | `.dev.vars`, `wrangler.toml` (gitignore対象) |
 | ローカル開発 (Frontend) | テンプレートから自動生成 | `.env.local` (gitignore対象) |
-| 本番 (Workers) | `wrangler secret put` | Cloudflareで暗号化管理 |
+| 本番 (Workers secrets) | `wrangler secret put` (初回のみ) | R2\_ACCESS\_KEY\_ID, R2\_SECRET\_ACCESS\_KEY, R2\_ENDPOINT |
+| 本番デプロイ | CIで生成 | `wrangler.toml`, `frontend/.env.local` |
 
 **秘密情報一覧:**
 

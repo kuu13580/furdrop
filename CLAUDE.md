@@ -50,10 +50,20 @@ pnpm --filter workers migrate:local
 # D1マイグレーション (本番)
 pnpm --filter workers migrate:prod
 
-# 設定ファイル生成 (テンプレート + dotenvx)
+# 設定ファイル生成 (テンプレート + dotenvx、開発用 .env を使用)
 # workers: wrangler.toml + .dev.vars, frontend: .env.local を自動生成
 pnpm generate
+
+# 設定ファイル生成 (本番用 .env.prod を使用。CIでのみ使用)
+pnpm generate:prod
 ```
+
+### 環境ファイル
+
+- `.env`: 開発用 (暗号化、コミット対象)。復号キーは `.env.keys` の `DOTENV_PRIVATE_KEY` (gitignore)
+- `.env.prod`: 本番用 (暗号化、コミット対象)。復号キーは `.env.keys` の `DOTENV_PRIVATE_KEY_PROD` (gitignore)
+  - CIでは GitHub Secret `DOTENV_PRIVATE_KEY_PROD` から注入
+- 値を編集する場合: `pnpm exec dotenvx set KEY value -f .env.prod` (本番) / `pnpm exec dotenvx set KEY value` (開発=`.env`)
 
 ## Gitワークフロー
 

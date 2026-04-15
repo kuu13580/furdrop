@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "dev": "pnpm -w generate && wrangler dev --port 9000",
-    "deploy": "pnpm -w generate && wrangler deploy",
+    "deploy": "pnpm -w generate:prod && wrangler deploy",
     "typecheck": "tsc --noEmit",
     "migrate:local": "wrangler d1 migrations apply furdrop --local",
     "migrate:prod": "wrangler d1 migrations apply furdrop --remote"
