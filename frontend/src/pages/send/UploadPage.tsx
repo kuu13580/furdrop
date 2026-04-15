@@ -1,14 +1,12 @@
 import { useAtom } from "jotai";
 import { type ChangeEvent, type DragEvent, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
+import WatermarkDialog from "../../components/send/WatermarkDialog";
 import Alert from "../../components/ui/Alert";
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
-import {
-  MAX_FILE_SIZE,
-  type WatermarkOptions,
-  type WatermarkPosition,
-} from "../../lib/image-processing";
+import { senderApi } from "../../lib/api";
+import { formatCredit, MAX_FILE_SIZE } from "../../lib/image-processing";
 import { type SelectedFile, selectedFilesAtom, uploadFormAtom } from "../../stores/sender";
 
 const ACCEPT = "image/jpeg,image/png,image/heic,image/heif,.heic,.heif";
@@ -31,24 +29,40 @@ function isHeicFile(file: File): boolean {
   return /\.hei[cf]$/i.test(file.name);
 }
 
+/** プレビュー用に使える（HEICではない）最初のファイルを返す */
+function findPreviewFile(files: SelectedFile[]): File | null {
+  for (const f of files) {
+    if (!isHeicFile(f.file)) return f.file;
+  }
+  return null;
+}
+
 export default function UploadPage() {
   const { handle } = useParams<{ handle: string }>();
   const navigate = useNavigate();
   const [files, setFiles] = useAtom(selectedFilesAtom);
   const [form, setForm] = useAtom(uploadFormAtom);
   const [error, setError] = useState<string | null>(null);
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [noCreditConsent, setNoCreditConsent] = useState(false);
+  const [watermarkDialogOpen, setWatermarkDialogOpen] = useState(false);
+  const [displayName, setDisplayName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // URLクリーンアップ: コンポーネントunmount時（=確定遷移 or Landingへ戻り）
-  // UploadingPageでは引き続きfilesを参照するので、ここでは revoke しない
+  // ヘッダー表示用に受信者のdisplay_nameを取得
   useEffect(() => {
+    if (!handle) return;
+    let cancelled = false;
+    senderApi
+      .getReceiver(handle)
+      .then((res) => {
+        if (!cancelled) setDisplayName(res.receiver.display_name);
+      })
+      .catch(() => {});
     return () => {
-      // 送信完了など別フローから戻ってきて再選択する場合はUploadingPageがrevokeする
+      cancelled = true;
     };
-  }, []);
+  }, [handle]);
 
   const addFiles = (incoming: FileList | File[]) => {
     const arr = Array.from(incoming);
@@ -105,13 +119,22 @@ export default function UploadPage() {
     navigate(`/send/${handle}/uploading`);
   };
 
+  // 送信者名が消えたら EXIF/透かしの有効フラグも落とす
+  useEffect(() => {
+    if (!hasSenderName && (form.exifEnabled || form.watermarkEnabled)) {
+      setForm({ ...form, exifEnabled: false, watermarkEnabled: false });
+    }
+  }, [hasSenderName, form, setForm]);
+
+  const previewFile = findPreviewFile(files);
+
   return (
     <div className="mx-auto max-w-lg space-y-6 px-4 py-6">
       <div className="flex items-center justify-between">
         <Link to={`/send/${handle}`} className="text-sm text-blue-600 hover:underline">
           &lt; 戻る
         </Link>
-        <h1 className="text-base font-semibold">{handle}さんへ</h1>
+        <h1 className="text-base font-semibold">{displayName ?? handle}さんへ送信</h1>
         <div className="w-12" />
       </div>
 
@@ -175,55 +198,79 @@ export default function UploadPage() {
 
       {files.length > 0 && (
         <Card>
-          <button
-            type="button"
-            className="flex w-full items-center justify-between text-left text-sm font-medium text-gray-700"
-            onClick={() => setShowAdvanced((v) => !v)}
-          >
-            <span>詳細設定</span>
-            <span className="text-gray-400">{showAdvanced ? "▲" : "▼"}</span>
-          </button>
-
-          {showAdvanced && (
-            <div className="mt-4 space-y-4">
-              <div>
-                <label htmlFor="senderName" className="block text-sm font-medium text-gray-700">
-                  送信者名 / TwitterID
-                </label>
-                <input
-                  id="senderName"
-                  type="text"
-                  value={form.senderName}
-                  onChange={(e) => setForm({ ...form, senderName: e.target.value })}
-                  placeholder="@your_name"
-                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-                <p className="mt-1 text-xs text-gray-500">受信者に表示されます（任意）</p>
-              </div>
-
-              <div>
-                <label htmlFor="exifText" className="block text-sm font-medium text-gray-700">
-                  EXIF送信者情報埋め込み
-                </label>
-                <input
-                  id="exifText"
-                  type="text"
-                  value={form.exifText}
-                  onChange={(e) => setForm({ ...form, exifText: e.target.value })}
-                  placeholder="(空欄でEXIF変更なし)"
-                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  EXIFカメラモデル欄に書き込みます。元のカメラ情報は上書きされます
-                </p>
-              </div>
-
-              <WatermarkSettings
-                options={form.watermark}
-                onChange={(w) => setForm({ ...form, watermark: w })}
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="senderName" className="block text-sm font-medium text-gray-700">
+                送信者名 / TwitterID
+              </label>
+              <input
+                id="senderName"
+                type="text"
+                value={form.senderName}
+                onChange={(e) => setForm({ ...form, senderName: e.target.value })}
+                placeholder="@your_name"
+                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
+              <p className="mt-1 text-xs text-gray-500">
+                受信者に表示されます。EXIF・透かしには
+                <code className="mx-0.5 rounded bg-gray-100 px-1 py-0.5 text-[0.95em]">
+                  撮影：{form.senderName.trim() || "〜"}
+                </code>
+                の形式で埋め込まれます
+              </p>
             </div>
-          )}
+
+            <div className="space-y-3 border-t pt-3">
+              <label
+                className={`flex items-start gap-2 text-sm ${hasSenderName ? "" : "opacity-50"}`}
+              >
+                <input
+                  type="checkbox"
+                  checked={form.exifEnabled}
+                  disabled={!hasSenderName}
+                  onChange={(e) => setForm({ ...form, exifEnabled: e.target.checked })}
+                  className="mt-0.5 shrink-0"
+                />
+                <span>
+                  <span className="font-medium text-gray-700">EXIFカメラモデル欄に埋め込む</span>
+                  <span className="mt-0.5 block text-xs text-gray-500">
+                    メタデータに「撮影：〜」を書き込みます（元のカメラ情報は上書き）
+                  </span>
+                </span>
+              </label>
+
+              <div>
+                <label
+                  className={`flex items-start gap-2 text-sm ${hasSenderName ? "" : "opacity-50"}`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={form.watermarkEnabled}
+                    disabled={!hasSenderName}
+                    onChange={(e) => setForm({ ...form, watermarkEnabled: e.target.checked })}
+                    className="mt-0.5 shrink-0"
+                  />
+                  <span>
+                    <span className="font-medium text-gray-700">透かしを入れる</span>
+                    <span className="mt-0.5 block text-xs text-gray-500">
+                      画像に「撮影：〜」を描き込みます（不可逆）
+                    </span>
+                  </span>
+                </label>
+                {form.watermarkEnabled && hasSenderName && (
+                  <div className="mt-2 pl-6">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => setWatermarkDialogOpen(true)}
+                    >
+                      透かしを編集
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </Card>
       )}
 
@@ -250,6 +297,15 @@ export default function UploadPage() {
       >
         送信する{files.length > 0 ? ` (${files.length}枚)` : ""}
       </Button>
+
+      <WatermarkDialog
+        open={watermarkDialogOpen}
+        onClose={() => setWatermarkDialogOpen(false)}
+        options={form.watermark}
+        onChange={(w) => setForm({ ...form, watermark: w })}
+        text={formatCredit(form.senderName)}
+        previewFile={previewFile}
+      />
     </div>
   );
 }
@@ -277,125 +333,6 @@ function PreviewTile({ file, onRemove }: { file: SelectedFile; onRemove: () => v
       >
         ×
       </button>
-    </div>
-  );
-}
-
-const POSITIONS: WatermarkPosition[] = [
-  "top-left",
-  "top-center",
-  "top-right",
-  "middle-left",
-  "middle-center",
-  "middle-right",
-  "bottom-left",
-  "bottom-center",
-  "bottom-right",
-];
-
-function WatermarkSettings({
-  options,
-  onChange,
-}: {
-  options: WatermarkOptions;
-  onChange: (next: WatermarkOptions) => void;
-}) {
-  return (
-    <div className="space-y-3">
-      <div>
-        <label htmlFor="watermarkText" className="block text-sm font-medium text-gray-700">
-          透かし（ウォーターマーク）
-        </label>
-        <input
-          id="watermarkText"
-          type="text"
-          value={options.text}
-          onChange={(e) => onChange({ ...options, text: e.target.value })}
-          placeholder="(空欄で透かしなし)"
-          className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-        />
-      </div>
-
-      {options.text && (
-        <>
-          <div>
-            <p className="mb-1 block text-xs font-medium text-gray-600">位置</p>
-            <div className="grid w-24 grid-cols-3 gap-1">
-              {POSITIONS.map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => onChange({ ...options, position: p })}
-                  aria-label={p}
-                  className={`h-6 w-6 rounded-sm border ${
-                    options.position === p
-                      ? "border-blue-500 bg-blue-500"
-                      : "border-gray-300 bg-white hover:bg-gray-100"
-                  }`}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label htmlFor="wmSize" className="block text-xs font-medium text-gray-600">
-              サイズ ({(options.fontSizeRatio * 100).toFixed(1)}%)
-            </label>
-            <input
-              id="wmSize"
-              type="range"
-              min="0.01"
-              max="0.05"
-              step="0.005"
-              value={options.fontSizeRatio}
-              onChange={(e) =>
-                onChange({ ...options, fontSizeRatio: Number.parseFloat(e.target.value) })
-              }
-              className="w-full"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="wmOpacity" className="block text-xs font-medium text-gray-600">
-              透明度 ({Math.round(options.opacity * 100)}%)
-            </label>
-            <input
-              id="wmOpacity"
-              type="range"
-              min="0.1"
-              max="1"
-              step="0.05"
-              value={options.opacity}
-              onChange={(e) => onChange({ ...options, opacity: Number.parseFloat(e.target.value) })}
-              className="w-full"
-            />
-          </div>
-
-          <div>
-            <p className="mb-1 block text-xs font-medium text-gray-600">色</p>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => onChange({ ...options, color: "#ffffff" })}
-                className={`h-7 w-12 rounded border-2 bg-white ${
-                  options.color === "#ffffff" ? "border-blue-500" : "border-gray-300"
-                }`}
-              >
-                白
-              </button>
-              <button
-                type="button"
-                onClick={() => onChange({ ...options, color: "#000000" })}
-                className={`h-7 w-12 rounded border-2 bg-black text-white ${
-                  options.color === "#000000" ? "border-blue-500" : "border-gray-700"
-                }`}
-              >
-                黒
-              </button>
-            </div>
-          </div>
-        </>
-      )}
     </div>
   );
 }

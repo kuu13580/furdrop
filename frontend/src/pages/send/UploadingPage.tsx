@@ -7,7 +7,9 @@ import { ApiError, senderApi } from "../../lib/api";
 import {
   applyWatermark,
   embedSenderInfoInExif,
+  formatCredit,
   generateThumbnail,
+  getImageDimensions,
   normalizeToJpeg,
 } from "../../lib/image-processing";
 import { type SelectedFile, selectedFilesAtom, uploadFormAtom } from "../../stores/sender";
@@ -48,7 +50,6 @@ export default function UploadingPage() {
     if (overall === "done" || overall === "failed" || overall === "idle") return;
     const handler = (e: BeforeUnloadEvent) => {
       e.preventDefault();
-      e.returnValue = "";
     };
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
@@ -214,6 +215,9 @@ async function runPipeline({
 
   // --- 画像加工フェーズ ---
   onOverall("processing");
+  const credit = formatCredit(form.senderName);
+  const exifText = form.exifEnabled && credit ? credit : "";
+  const watermarkText = form.watermarkEnabled && credit ? credit : "";
   const processedResults = await Promise.allSettled(
     files.map(async (f): Promise<ProcessedFile> => {
       try {
@@ -221,15 +225,34 @@ async function runPipeline({
         const jpeg = await normalizeToJpeg(f.file);
 
         updatePhase(f.id, "processing");
-        const withExif = form.exifText ? await embedSenderInfoInExif(jpeg, form.exifText) : jpeg;
+        // 透かしあり: Canvas再エンコード (既存EXIFは剥がれる)
+        // 透かしなし: 元のJPEGをそのまま使う (既存EXIFを温存)
+        let afterWatermark: Blob;
+        let width: number;
+        let height: number;
+        if (watermarkText) {
+          const r = await applyWatermark(jpeg, watermarkText, form.watermark);
+          afterWatermark = r.blob;
+          width = r.width;
+          height = r.height;
+        } else {
+          afterWatermark = jpeg;
+          const dim = await getImageDimensions(jpeg);
+          width = dim.width;
+          height = dim.height;
+        }
 
-        const { blob: watermarked, width, height } = await applyWatermark(withExif, form.watermark);
-        const thumb = await generateThumbnail(watermarked);
+        // EXIF埋め込みは最後（Canvas再エンコードで剥がれるため）
+        const finalBlob = exifText
+          ? await embedSenderInfoInExif(afterWatermark, exifText)
+          : afterWatermark;
+
+        const thumb = await generateThumbnail(finalBlob);
 
         return {
           id: f.id,
           originalName: f.file.name,
-          processedBlob: watermarked,
+          processedBlob: finalBlob,
           thumbBlob: thumb,
           width,
           height,
@@ -275,8 +298,8 @@ async function runPipeline({
         file_size: p.processedBlob.size,
         width: p.width,
         height: p.height,
-        camera_model: form.exifText || undefined,
-        watermark_text: form.watermark.text || undefined,
+        camera_model: exifText || undefined,
+        watermark_text: watermarkText || undefined,
       })),
     });
     uploads = res.uploads;

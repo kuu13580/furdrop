@@ -9,7 +9,10 @@ export type SelectedFile = {
 
 export type UploadFormState = {
   senderName: string;
-  exifText: string;
+  /** EXIFカメラモデル欄に senderName を埋め込む */
+  exifEnabled: boolean;
+  /** 透かしを入れる。テキストは senderName を使う */
+  watermarkEnabled: boolean;
   watermark: WatermarkOptions;
 };
 
@@ -17,6 +20,7 @@ export const selectedFilesAtom = atom<SelectedFile[]>([]);
 
 export const uploadFormAtom = atom<UploadFormState>({
   senderName: "",
-  exifText: "",
+  exifEnabled: false,
+  watermarkEnabled: false,
   watermark: { ...DEFAULT_WATERMARK },
 });

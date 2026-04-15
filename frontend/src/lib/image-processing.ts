@@ -21,7 +21,6 @@ export type WatermarkPosition =
   | "bottom-right";
 
 export type WatermarkOptions = {
-  text: string;
   position: WatermarkPosition;
   /** 画像長辺に対するフォントサイズ比 (0.01 〜 0.05) */
   fontSizeRatio: number;
@@ -31,7 +30,6 @@ export type WatermarkOptions = {
 };
 
 export const DEFAULT_WATERMARK: WatermarkOptions = {
-  text: "",
   position: "bottom-right",
   fontSizeRatio: 0.02,
   opacity: 0.5,
@@ -39,6 +37,15 @@ export const DEFAULT_WATERMARK: WatermarkOptions = {
 };
 
 type AnyCanvas = OffscreenCanvas | HTMLCanvasElement;
+
+/**
+ * EXIF/透かしに埋め込む「撮影：〜」形式のクレジット文字列を生成する。
+ * senderName が空の場合は空文字を返す。
+ */
+export function formatCredit(senderName: string): string {
+  const trimmed = senderName.trim();
+  return trimmed ? `撮影：${trimmed}` : "";
+}
 
 /** 入力がHEIC系か判定 (MIME / 拡張子) */
 function isHeic(file: File): boolean {
@@ -94,6 +101,7 @@ export async function embedSenderInfoInExif(jpegBlob: Blob, senderText: string):
  */
 export async function applyWatermark(
   jpegBlob: Blob,
+  text: string,
   options: WatermarkOptions,
 ): Promise<{ blob: Blob; width: number; height: number }> {
   const bitmap = await createImageBitmap(jpegBlob, { imageOrientation: "from-image" });
@@ -103,9 +111,19 @@ export async function applyWatermark(
     const canvas = createCanvas(width, height);
     const ctx = getContext2d(canvas);
     ctx.drawImage(bitmap, 0, 0);
-    if (options.text) drawWatermark(ctx, width, height, options);
+    if (text) drawWatermark(ctx, width, height, text, options);
     const blob = await canvasToBlob(canvas, "image/jpeg", 0.92);
     return { blob, width, height };
+  } finally {
+    bitmap.close();
+  }
+}
+
+/** JPEGの寸法を取得（再エンコードしないのでEXIFは維持される） */
+export async function getImageDimensions(blob: Blob): Promise<{ width: number; height: number }> {
+  const bitmap = await createImageBitmap(blob, { imageOrientation: "from-image" });
+  try {
+    return { width: bitmap.width, height: bitmap.height };
   } finally {
     bitmap.close();
   }
@@ -128,15 +146,16 @@ export async function generateThumbnail(jpegBlob: Blob): Promise<Blob> {
   }
 }
 
-// ========== internal helpers ==========
-
-function drawWatermark(
+/** Canvas に直接透かしを描画する。プレビュー用に export */
+export function drawWatermark(
   ctx: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D,
   w: number,
   h: number,
+  text: string,
   options: WatermarkOptions,
 ) {
-  const { text, position, fontSizeRatio, opacity, color } = options;
+  if (!text) return;
+  const { position, fontSizeRatio, opacity, color } = options;
   const fontSize = Math.max(12, Math.round(Math.max(w, h) * fontSizeRatio));
   const pad = Math.round(fontSize * 0.6);
 
@@ -187,6 +206,8 @@ function drawWatermark(
   ctx.fillText(text, x, y);
   ctx.restore();
 }
+
+// ========== internal helpers ==========
 
 function supportsOffscreen(): boolean {
   return typeof OffscreenCanvas !== "undefined";
