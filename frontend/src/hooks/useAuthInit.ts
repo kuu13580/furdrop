@@ -14,6 +14,9 @@ export function useAuthInit() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
+        // getMe 中は loading 状態にして AuthGuard の「読み込み中」を出し、
+        // 古い unauthenticated 状態のまま /login に誤リダイレクトされるのを防ぐ
+        setAuth({ status: "loading" });
         try {
           const { user: profile } = await authApi.getMe();
           setUser(profile);

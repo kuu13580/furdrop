@@ -22,8 +22,38 @@ dev.get("/images/originals/:key{.+}", async (c) => {
   const object = await c.env.R2_ORIGINALS.get(key);
   if (!object) return c.notFound();
   c.header("Content-Type", "image/jpeg");
-  c.header("Content-Disposition", `attachment; filename="${key.split("/").pop()}"`);
+  // filename指定せず attachment のみ → フロントの <a download> 属性で命名される
+  c.header("Content-Disposition", "attachment");
   return c.body(object.body);
+});
+
+dev.get("/images/view/:key{.+}", async (c) => {
+  const key = c.req.param("key");
+  const object = await c.env.R2_ORIGINALS.get(key);
+  if (!object) return c.notFound();
+  c.header("Content-Type", "image/jpeg");
+  c.header("Cache-Control", "no-cache");
+  return c.body(object.body);
+});
+
+// --- PUT: ローカルR2への書き込み ---
+
+dev.put("/images/upload/originals/:key{.+}", async (c) => {
+  const key = c.req.param("key");
+  const body = await c.req.arrayBuffer();
+  await c.env.R2_ORIGINALS.put(key, body, {
+    httpMetadata: { contentType: "image/jpeg" },
+  });
+  return c.body(null, 200);
+});
+
+dev.put("/images/upload/thumbs/:key{.+}", async (c) => {
+  const key = c.req.param("key");
+  const body = await c.req.arrayBuffer();
+  await c.env.R2_THUMBS.put(key, body, {
+    httpMetadata: { contentType: "image/jpeg" },
+  });
+  return c.body(null, 200);
 });
 
 export default dev;

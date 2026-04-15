@@ -223,7 +223,7 @@ sender.openapi(createPhotosRoute, async (c) => {
   const { photos } = c.req.valid("json");
 
   const session = await c.env.DB.prepare(
-    `SELECT s.id, s.receiver_id, s.status, s.expires_at, s.photo_count, u.handle, u.storage_used, u.storage_quota
+    `SELECT s.id, s.receiver_id, s.sender_name, s.status, s.expires_at, s.photo_count, u.handle, u.storage_used, u.storage_quota
      FROM upload_sessions s
      JOIN users u ON u.id = s.receiver_id
      WHERE s.id = ? AND u.handle = ?`,
@@ -283,7 +283,7 @@ sender.openapi(createPhotosRoute, async (c) => {
           sessionId,
           r2KeyOriginal,
           r2KeyThumb,
-          null,
+          (session.sender_name as string | null) ?? null,
           photo.camera_model ?? null,
           photo.watermark_text ?? null,
           photo.filename,

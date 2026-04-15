@@ -10,14 +10,22 @@
     "typecheck": "pnpm -r typecheck",
     "prepare": "git config core.hooksPath scripts/hooks",
     "generate": "dotenvx run -- node scripts/generate-config.mjs",
-    "seed": "node scripts/seed.mjs"
+    "seed": "node scripts/seed.mjs",
+    "dev": "concurrently -n front,api -c cyan,magenta \"pnpm --filter frontend dev\" \"pnpm --filter workers dev\""
   },
   "pnpm": {
-    "minReleaseAge": "7d"
+    "onlyBuiltDependencies": [
+      "@firebase/util",
+      "esbuild",
+      "protobufjs",
+      "sharp",
+      "workerd"
+    ]
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.11",
-    "@dotenvx/dotenvx": "^1.61.0"
+    "@dotenvx/dotenvx": "^1.61.0",
+    "concurrently": "^9.2.1"
   },
   "packageManager": "pnpm@10.33.0"
 }

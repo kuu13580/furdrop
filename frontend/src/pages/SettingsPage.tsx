@@ -8,6 +8,7 @@ import FormField from "../components/ui/FormField";
 import StorageQuotaBar from "../components/ui/StorageQuotaBar";
 import { ApiError, authApi } from "../lib/api";
 import { authAtom } from "../stores/auth";
+import { suggestedHandleAtom } from "../stores/signup";
 import { userAtom } from "../stores/user";
 
 const HANDLE_REGEX = /^[a-z0-9_]{3,32}$/;
@@ -15,9 +16,10 @@ const HANDLE_REGEX = /^[a-z0-9_]{3,32}$/;
 function RegisterForm() {
   const [authState, setAuth] = useAtom(authAtom);
   const [, setUser] = useAtom(userAtom);
+  const [suggestedHandle, setSuggestedHandle] = useAtom(suggestedHandleAtom);
   const navigate = useNavigate();
 
-  const [handle, setHandle] = useState("");
+  const [handle, setHandle] = useState(suggestedHandle ?? "");
   const [displayName, setDisplayName] = useState(
     authState.status === "authenticated" ? (authState.user.displayName ?? "") : "",
   );
@@ -60,6 +62,7 @@ function RegisterForm() {
         if (authState.status === "authenticated") {
           setAuth({ ...authState, registered: true });
         }
+        setSuggestedHandle(null);
         navigate("/dashboard", { replace: true });
       } catch (err) {
         if (err instanceof ApiError && err.code === "HANDLE_TAKEN") {
@@ -73,7 +76,16 @@ function RegisterForm() {
         setLoading(false);
       }
     },
-    [handle, displayName, validateHandle, authState, setAuth, setUser, navigate],
+    [
+      handle,
+      displayName,
+      validateHandle,
+      authState,
+      setAuth,
+      setUser,
+      setSuggestedHandle,
+      navigate,
+    ],
   );
 
   return (

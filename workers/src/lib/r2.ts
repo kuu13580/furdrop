@@ -21,12 +21,15 @@ export function buildR2Key(handle: string, photoId: string, type: "original" | "
   return `${handle}/${yearMonth}/${suffix}`;
 }
 
-/** オリジナル画像アップロード用 Presigned PUT URL */
+/** オリジナル画像アップロード用 Presigned PUT URL（開発時はプロキシ） */
 export async function createUploadUrl(
   env: Env,
   key: string,
   contentLength: number,
 ): Promise<string> {
+  if (env.ENVIRONMENT !== "production") {
+    return `/dev/images/upload/originals/${key}`;
+  }
   const client = createS3Client(env);
   const command = new PutObjectCommand({
     Bucket: env.R2_BUCKET_ORIGINALS,
@@ -39,12 +42,15 @@ export async function createUploadUrl(
 
 const MAX_THUMB_SIZE = 512 * 1024; // 512KB
 
-/** サムネイルアップロード用 Presigned PUT URL */
+/** サムネイルアップロード用 Presigned PUT URL（開発時はプロキシ） */
 export async function createThumbUploadUrl(
   env: Env,
   key: string,
   contentLength: number = MAX_THUMB_SIZE,
 ): Promise<string> {
+  if (env.ENVIRONMENT !== "production") {
+    return `/dev/images/upload/thumbs/${key}`;
+  }
   const client = createS3Client(env);
   const command = new PutObjectCommand({
     Bucket: env.R2_BUCKET_THUMBS,
@@ -72,6 +78,19 @@ export async function createThumbViewUrl(env: Env, key: string): Promise<string>
 export async function createDownloadUrl(env: Env, key: string): Promise<string> {
   if (env.ENVIRONMENT !== "production") {
     return `/dev/images/originals/${key}`;
+  }
+  const client = createS3Client(env);
+  const command = new GetObjectCommand({
+    Bucket: env.R2_BUCKET_ORIGINALS,
+    Key: key,
+  });
+  return getSignedUrl(client, command, { expiresIn: 3600 });
+}
+
+/** オリジナル inline 表示用 URL（Content-Dispositionなし） */
+export async function createViewUrl(env: Env, key: string): Promise<string> {
+  if (env.ENVIRONMENT !== "production") {
+    return `/dev/images/view/${key}`;
   }
   const client = createS3Client(env);
   const command = new GetObjectCommand({

@@ -21,16 +21,16 @@ export default function PhotoDetailPage() {
   const { photoId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const [photo, setPhoto] = useState<Photo | null>(
-    (location.state as { photo?: Photo })?.photo ?? null,
-  );
-  const [loading, setLoading] = useState(!photo);
+  const initialPhoto = (location.state as { photo?: Photo })?.photo ?? null;
+  const [photo, setPhoto] = useState<Photo | null>(initialPhoto);
+  const [loading, setLoading] = useState(!initialPhoto);
+  const [viewLoaded, setViewLoaded] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  // Route state がない場合（直接URL）はAPIから取得
+  // view_url を取得する（route state 由来のデータには含まれない）
   useEffect(() => {
-    if (photo || !photoId) return;
+    if (!photoId || photo?.view_url) return;
     let cancelled = false;
     receiverApi
       .getPhoto(photoId)
@@ -44,7 +44,7 @@ export default function PhotoDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [photo, photoId]);
+  }, [photoId, photo?.view_url]);
 
   const handleDownload = useCallback(async () => {
     if (!photoId) return;
@@ -114,14 +114,39 @@ export default function PhotoDetailPage() {
         </div>
       </div>
 
-      {/* サムネイル拡大 */}
+      {/* オリジナル表示（縦横比固定でガタつき防止。ロード中はサムネイル） */}
       <div className="flex justify-center">
-        {photo.thumb_url ? (
-          <img
-            src={photo.thumb_url}
-            alt={photo.sender_name ?? "写真"}
-            className="max-h-[60vh] rounded-lg object-contain"
-          />
+        {photo.view_url || photo.thumb_url ? (
+          <div
+            className="relative mx-auto overflow-hidden rounded-lg bg-gray-100"
+            style={{
+              height: "70vh",
+              aspectRatio:
+                photo.width && photo.height ? `${photo.width} / ${photo.height}` : "4 / 3",
+              maxWidth: "100%",
+            }}
+          >
+            {photo.thumb_url && (
+              <img
+                src={photo.thumb_url}
+                alt=""
+                aria-hidden="true"
+                className={`absolute inset-0 h-full w-full object-cover blur-md transition-opacity duration-300 ${
+                  viewLoaded ? "opacity-0" : "opacity-100"
+                }`}
+              />
+            )}
+            {photo.view_url && (
+              <img
+                src={photo.view_url}
+                alt={photo.sender_name ?? "写真"}
+                onLoad={() => setViewLoaded(true)}
+                className={`absolute inset-0 h-full w-full object-contain transition-opacity duration-300 ${
+                  viewLoaded ? "opacity-100" : "opacity-0"
+                }`}
+              />
+            )}
+          </div>
         ) : (
           <div className="flex h-64 w-full items-center justify-center rounded-lg bg-gray-100 text-gray-300">
             画像を読み込めません
@@ -136,12 +161,6 @@ export default function PhotoDetailPage() {
             <div className="flex justify-between">
               <dt className="text-gray-500">送信者</dt>
               <dd className="font-medium">{photo.sender_name}</dd>
-            </div>
-          )}
-          {photo.original_filename && (
-            <div className="flex justify-between">
-              <dt className="text-gray-500">ファイル名</dt>
-              <dd className="font-medium">{photo.original_filename}</dd>
             </div>
           )}
           <div className="flex justify-between">
