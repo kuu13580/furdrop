@@ -20,10 +20,10 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: 設定ファイル生成
-        run: pnpm generate
+      - name: 設定ファイル生成 (本番)
+        run: pnpm generate:prod
         env:
-          DOTENV_PRIVATE_KEY: ${{ secrets.DOTENV_PRIVATE_KEY }}
+          DOTENV_PRIVATE_KEY_PROD: ${{ secrets.DOTENV_PRIVATE_KEY_PROD }}
 
       # D1マイグレーション（デプロイ前に実行）
       # wrangler d1 migrations applyはCIで自動実行される（確認プロンプトなし）
@@ -52,10 +52,10 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: 設定ファイル生成
-        run: pnpm generate
+      - name: 設定ファイル生成 (本番)
+        run: pnpm generate:prod
         env:
-          DOTENV_PRIVATE_KEY: ${{ secrets.DOTENV_PRIVATE_KEY }}
+          DOTENV_PRIVATE_KEY_PROD: ${{ secrets.DOTENV_PRIVATE_KEY_PROD }}
 
       - name: ビルド
         run: pnpm --filter frontend build
