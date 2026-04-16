@@ -30,6 +30,6 @@ R2_BUCKET_THUMBS = "furdrop-thumbs"
 # R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_ENDPOINT は
 # wrangler secret put または .dev.vars で設定
 
-# Cronトリガー（クリーンアップジョブ）
-# [[triggers]]
-# crons = ["0 * * * *"]
+# Cronトリガー（クリーンアップジョブ: 毎時0分）
+[[triggers]]
+crons = ["0 * * * *"]

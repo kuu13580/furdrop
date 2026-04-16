@@ -1,6 +1,7 @@
 import { swaggerUI } from "@hono/swagger-ui";
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { cors } from "hono/cors";
+import { runCleanup } from "./cron/cleanup";
 import auth from "./routes/auth";
 import dev from "./routes/dev";
 import receiver from "./routes/receiver";
@@ -41,4 +42,9 @@ app.doc("/openapi.json", {
 });
 app.get("/docs", swaggerUI({ url: "/openapi.json" }));
 
-export default app;
+export default {
+  fetch: app.fetch,
+  async scheduled(_event: ScheduledEvent, env: Env, _ctx: ExecutionContext) {
+    await runCleanup(env);
+  },
+};
