@@ -9,7 +9,7 @@ import StorageQuotaBar from "../components/ui/StorageQuotaBar";
 import { ApiError, authApi } from "../lib/api";
 import { authAtom } from "../stores/auth";
 import { suggestedHandleAtom } from "../stores/signup";
-import { userAtom } from "../stores/user";
+import { type UserProfile, userAtom } from "../stores/user";
 
 const HANDLE_REGEX = /^[a-z0-9_]{3,32}$/;
 
@@ -26,6 +26,8 @@ function RegisterForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [handleError, setHandleError] = useState<string | null>(null);
+  const [allowExifEmbed, setAllowExifEmbed] = useState(true);
+  const [allowWatermark, setAllowWatermark] = useState(true);
 
   const validateHandle = useCallback((value: string) => {
     if (!value) return "ハンドルを入力してください";
@@ -55,6 +57,8 @@ function RegisterForm() {
         await authApi.register({
           handle,
           display_name: displayName.trim(),
+          allow_exif_embed: allowExifEmbed,
+          allow_watermark: allowWatermark,
         });
         // registerのレスポンスはUserProfileの全フィールドを含まないのでgetMeで取得
         const { user: profile } = await authApi.getMe();
@@ -79,6 +83,8 @@ function RegisterForm() {
     [
       handle,
       displayName,
+      allowExifEmbed,
+      allowWatermark,
       validateHandle,
       authState,
       setAuth,
@@ -119,6 +125,40 @@ function RegisterForm() {
             placeholder="太郎カメラ"
             maxLength={50}
           />
+          <div className="space-y-3 border-t pt-3">
+            <p className="text-sm font-medium text-gray-700">受信オプション</p>
+            <p className="text-xs text-gray-500">
+              送信者に提示するオプションを設定します。あとから設定ページで変更できます。
+            </p>
+            <label className="flex items-start gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={allowExifEmbed}
+                onChange={(e) => setAllowExifEmbed(e.target.checked)}
+                className="mt-0.5 shrink-0"
+              />
+              <span>
+                <span className="font-medium text-gray-700">EXIF埋め込みを許可</span>
+                <span className="mt-0.5 block text-xs text-gray-500">
+                  送信者がカメラモデル欄に名前を書き込めます（メタデータのみ、除去可能）
+                </span>
+              </span>
+            </label>
+            <label className="flex items-start gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={allowWatermark}
+                onChange={(e) => setAllowWatermark(e.target.checked)}
+                className="mt-0.5 shrink-0"
+              />
+              <span>
+                <span className="font-medium text-gray-700">透かしを許可</span>
+                <span className="mt-0.5 block text-xs text-gray-500">
+                  送信者が画像にクレジットテキストを描き込めます（不可逆）
+                </span>
+              </span>
+            </label>
+          </div>
           <Button type="submit" loading={loading} className="w-full" size="lg">
             登録する
           </Button>
@@ -128,8 +168,80 @@ function RegisterForm() {
   );
 }
 
+function ReceiveOptionsCard({
+  user,
+  setUser,
+}: {
+  user: UserProfile;
+  setUser: (u: UserProfile) => void;
+}) {
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const toggle = useCallback(
+    async (field: "allow_exif_embed" | "allow_watermark", value: boolean) => {
+      setSaving(true);
+      setError(null);
+      try {
+        await authApi.updateOptions({ [field]: value });
+        setUser({ ...user, [field]: value });
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "更新に失敗しました");
+      } finally {
+        setSaving(false);
+      }
+    },
+    [user, setUser],
+  );
+
+  return (
+    <Card title="受信オプション">
+      <p className="mb-4 text-xs text-gray-500">
+        送信者に提示するオプションを設定します。許可したオプションのみ送信者の画面に表示されます。
+      </p>
+      {error && (
+        <Alert variant="error" className="mb-4">
+          {error}
+        </Alert>
+      )}
+      <div className="space-y-4">
+        <label className="flex items-start gap-3">
+          <input
+            type="checkbox"
+            checked={user.allow_exif_embed}
+            disabled={saving}
+            onChange={(e) => toggle("allow_exif_embed", e.target.checked)}
+            className="mt-0.5 shrink-0"
+          />
+          <span>
+            <span className="text-sm font-medium text-gray-700">EXIF埋め込みを許可</span>
+            <span className="mt-0.5 block text-xs text-gray-500">
+              送信者がカメラモデル欄に名前を書き込めます（メタデータのみ、除去可能）
+            </span>
+          </span>
+        </label>
+        <label className="flex items-start gap-3">
+          <input
+            type="checkbox"
+            checked={user.allow_watermark}
+            disabled={saving}
+            onChange={(e) => toggle("allow_watermark", e.target.checked)}
+            className="mt-0.5 shrink-0"
+          />
+          <span>
+            <span className="text-sm font-medium text-gray-700">透かしを許可</span>
+            <span className="mt-0.5 block text-xs text-gray-500">
+              送信者が画像にクレジットテキストを描き込めます（不可逆）
+            </span>
+          </span>
+        </label>
+      </div>
+    </Card>
+  );
+}
+
 function ProfileSettings() {
-  const user = useAtomValue(userAtom);
+  const [user, setUser] = useAtom(userAtom);
 
   if (!user) return null;
 
@@ -148,6 +260,7 @@ function ProfileSettings() {
           </div>
         </dl>
       </Card>
+      <ReceiveOptionsCard user={user} setUser={setUser} />
       <Card title="ストレージ">
         <StorageQuotaBar used={user.storage_used} quota={user.storage_quota} />
       </Card>

@@ -55,6 +55,10 @@ export const senderApi = {
         display_name: string;
         avatar_url: string | null;
         is_accepting: boolean;
+        options: {
+          allow_exif_embed: boolean;
+          allow_watermark: boolean;
+        };
       };
     }>(`/send/${handle}`),
 
@@ -116,7 +120,12 @@ export const senderApi = {
 // ========== 認証 API ==========
 
 export const authApi = {
-  register: (body: { handle: string; display_name: string }) =>
+  register: (body: {
+    handle: string;
+    display_name: string;
+    allow_exif_embed?: boolean;
+    allow_watermark?: boolean;
+  }) =>
     request<{
       user: {
         id: string;
@@ -125,6 +134,8 @@ export const authApi = {
         storage_used: number;
         storage_quota: number;
         receive_url: string;
+        allow_exif_embed: boolean;
+        allow_watermark: boolean;
       };
     }>("/auth/register", { method: "POST", body: JSON.stringify(body) }, true),
 
@@ -140,8 +151,24 @@ export const authApi = {
         storage_quota: number;
         is_active: number;
         receive_url: string;
+        allow_exif_embed: boolean;
+        allow_watermark: boolean;
       };
     }>("/auth/me", {}, true),
+
+  updateOptions: (body: { allow_exif_embed?: boolean; allow_watermark?: boolean }) =>
+    request<{
+      user: {
+        id: string;
+        handle: string;
+        display_name: string;
+        storage_used: number;
+        storage_quota: number;
+        receive_url: string;
+        allow_exif_embed: boolean;
+        allow_watermark: boolean;
+      };
+    }>("/auth/options", { method: "PATCH", body: JSON.stringify(body) }, true),
 };
 
 // ========== 受信者 API ==========

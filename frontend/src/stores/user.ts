@@ -10,6 +10,8 @@ export type UserProfile = {
   storage_used: number;
   storage_quota: number;
   receive_url: string;
+  allow_exif_embed: boolean;
+  allow_watermark: boolean;
 };
 
 export const userAtom = atom<UserProfile | null>(null);
