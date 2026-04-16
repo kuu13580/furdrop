@@ -60,19 +60,9 @@ function isHeic(file: File): boolean {
   return /\.hei[cf]$/i.test(file.name);
 }
 
-/** JPEG以外はJPEGに変換する。JPEGはそのまま返す */
-export async function normalizeToJpeg(file: File): Promise<Blob> {
-  if (file.type === "image/jpeg") return file;
-
-  if (isHeic(file)) {
-    // iOS等向け。重いのでdynamic import
-    const { default: heic2any } = await import("heic2any");
-    const result = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.92 });
-    return Array.isArray(result) ? result[0] : result;
-  }
-
-  // PNG等をCanvasでJPEGに変換
-  const bitmap = await createImageBitmap(file);
+/** Blob を Canvas 経由で JPEG に変換する共通処理 */
+async function blobToJpegViaCanvas(blob: Blob): Promise<Blob> {
+  const bitmap = await createImageBitmap(blob, { imageOrientation: "from-image" });
   try {
     const canvas = createCanvas(bitmap.width, bitmap.height);
     const ctx = getContext2d(canvas);
@@ -84,6 +74,26 @@ export async function normalizeToJpeg(file: File): Promise<Blob> {
   } finally {
     bitmap.close();
   }
+}
+
+/** JPEG以外はJPEGに変換する。JPEGはそのまま返す */
+export async function normalizeToJpeg(file: File): Promise<Blob> {
+  if (file.type === "image/jpeg") return file;
+
+  if (isHeic(file)) {
+    // モダンブラウザ (Safari 17+, Chrome 120+) は HEIC をネイティブデコード可能。
+    // まず createImageBitmap を試し、失敗時のみ heic2any にフォールバック。
+    try {
+      return await blobToJpegViaCanvas(file);
+    } catch {
+      const { default: heic2any } = await import("heic2any");
+      const result = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.92 });
+      return Array.isArray(result) ? result[0] : result;
+    }
+  }
+
+  // PNG等をCanvasでJPEGに変換
+  return blobToJpegViaCanvas(file);
 }
 
 /** 送信者が入力したテキストをEXIFのカメラモデル欄 (IFD0.Model) に書き込む */
@@ -98,7 +108,10 @@ export async function embedSenderInfoInExif(jpegBlob: Blob, senderText: string):
     exifObj = { "0th": {}, Exif: {}, GPS: {} };
   }
   exifObj["0th"] ??= {};
-  exifObj["0th"][piexif.ImageIFD.Model] = senderText;
+  // piexifjs の dump() は内部で btoa() を使うため、非Latin1文字がそのまま渡ると
+  // InvalidCharacterError になる。UTF-8バイト列を1バイトずつ Latin1 文字に変換
+  // することで btoa() を通過させる。大半のEXIFビューアはUTF-8として正しく表示する。
+  exifObj["0th"][piexif.ImageIFD.Model] = utf8ToBinaryString(senderText);
   const exifBytes = piexif.dump(exifObj);
   const newDataUrl = piexif.insert(exifBytes, dataUrl);
   return dataUrlToBlob(newDataUrl);
@@ -314,6 +327,12 @@ async function canvasToBlob(canvas: AnyCanvas, type: string, quality: number): P
       quality,
     );
   });
+}
+
+/** UTF-8文字列をバイナリ文字列に変換 (piexifjs の btoa() 対策) */
+function utf8ToBinaryString(str: string): string {
+  const bytes = new TextEncoder().encode(str);
+  return Array.from(bytes, (b) => String.fromCharCode(b)).join("");
 }
 
 function blobToDataUrl(blob: Blob): Promise<string> {
