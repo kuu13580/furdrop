@@ -47,16 +47,23 @@ export default function UploadPage() {
   const [noCreditConsent, setNoCreditConsent] = useState(false);
   const [watermarkDialogOpen, setWatermarkDialogOpen] = useState(false);
   const [displayName, setDisplayName] = useState<string | null>(null);
+  const [receiverOptions, setReceiverOptions] = useState<{
+    allow_exif_embed: boolean;
+    allow_watermark: boolean;
+  } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // ヘッダー表示用に受信者のdisplay_nameを取得
+  // 受信者の情報（display_name + オプション設定）を取得
   useEffect(() => {
     if (!handle) return;
     let cancelled = false;
     senderApi
       .getReceiver(handle)
       .then((res) => {
-        if (!cancelled) setDisplayName(res.receiver.display_name);
+        if (!cancelled) {
+          setDisplayName(res.receiver.display_name);
+          setReceiverOptions(res.receiver.options);
+        }
       })
       .catch(() => {});
     return () => {
@@ -119,12 +126,15 @@ export default function UploadPage() {
     navigate(`/send/${handle}/uploading`, { replace: true });
   };
 
-  // 送信者名が消えたら EXIF/透かしの有効フラグも落とす
+  // 送信者名が消えたら、または受信者が許可していないオプションの有効フラグを落とす
   useEffect(() => {
-    if (!hasSenderName && (form.exifEnabled || form.watermarkEnabled)) {
-      setForm({ ...form, exifEnabled: false, watermarkEnabled: false });
+    if (form.exifEnabled && (!hasSenderName || !receiverOptions?.allow_exif_embed)) {
+      setForm((prev) => ({ ...prev, exifEnabled: false }));
     }
-  }, [hasSenderName, form, setForm]);
+    if (form.watermarkEnabled && (!hasSenderName || !receiverOptions?.allow_watermark)) {
+      setForm((prev) => ({ ...prev, watermarkEnabled: false }));
+    }
+  }, [form.exifEnabled, form.watermarkEnabled, hasSenderName, receiverOptions, setForm]);
 
   const previewFile = findPreviewFile(files);
 
@@ -220,56 +230,64 @@ export default function UploadPage() {
               </p>
             </div>
 
-            <div className="space-y-3 border-t pt-3">
-              <label
-                className={`flex items-start gap-2 text-sm ${hasSenderName ? "" : "opacity-50"}`}
-              >
-                <input
-                  type="checkbox"
-                  checked={form.exifEnabled}
-                  disabled={!hasSenderName}
-                  onChange={(e) => setForm({ ...form, exifEnabled: e.target.checked })}
-                  className="mt-0.5 shrink-0"
-                />
-                <span>
-                  <span className="font-medium text-gray-700">EXIFカメラモデル欄に埋め込む</span>
-                  <span className="mt-0.5 block text-xs text-gray-500">
-                    メタデータに「撮影：〜」を書き込みます（元のカメラ情報は上書き）
-                  </span>
-                </span>
-              </label>
-
-              <div>
-                <label
-                  className={`flex items-start gap-2 text-sm ${hasSenderName ? "" : "opacity-50"}`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={form.watermarkEnabled}
-                    disabled={!hasSenderName}
-                    onChange={(e) => setForm({ ...form, watermarkEnabled: e.target.checked })}
-                    className="mt-0.5 shrink-0"
-                  />
-                  <span>
-                    <span className="font-medium text-gray-700">透かしを入れる</span>
-                    <span className="mt-0.5 block text-xs text-gray-500">
-                      画像に「撮影：〜」を描き込みます（不可逆）
+            {(receiverOptions?.allow_exif_embed || receiverOptions?.allow_watermark) && (
+              <div className="space-y-3 border-t pt-3">
+                {receiverOptions.allow_exif_embed && (
+                  <label
+                    className={`flex items-start gap-2 text-sm ${hasSenderName ? "" : "opacity-50"}`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={form.exifEnabled}
+                      disabled={!hasSenderName}
+                      onChange={(e) => setForm({ ...form, exifEnabled: e.target.checked })}
+                      className="mt-0.5 shrink-0"
+                    />
+                    <span>
+                      <span className="font-medium text-gray-700">
+                        EXIFカメラモデル欄に埋め込む
+                      </span>
+                      <span className="mt-0.5 block text-xs text-gray-500">
+                        メタデータに「撮影：〜」を書き込みます（元のカメラ情報は上書き）
+                      </span>
                     </span>
-                  </span>
-                </label>
-                {form.watermarkEnabled && hasSenderName && (
-                  <div className="mt-2 pl-6">
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => setWatermarkDialogOpen(true)}
+                  </label>
+                )}
+
+                {receiverOptions.allow_watermark && (
+                  <div>
+                    <label
+                      className={`flex items-start gap-2 text-sm ${hasSenderName ? "" : "opacity-50"}`}
                     >
-                      透かしを編集
-                    </Button>
+                      <input
+                        type="checkbox"
+                        checked={form.watermarkEnabled}
+                        disabled={!hasSenderName}
+                        onChange={(e) => setForm({ ...form, watermarkEnabled: e.target.checked })}
+                        className="mt-0.5 shrink-0"
+                      />
+                      <span>
+                        <span className="font-medium text-gray-700">透かしを入れる</span>
+                        <span className="mt-0.5 block text-xs text-gray-500">
+                          画像に「撮影：〜」を描き込みます（不可逆）
+                        </span>
+                      </span>
+                    </label>
+                    {form.watermarkEnabled && hasSenderName && (
+                      <div className="mt-2 pl-6">
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => setWatermarkDialogOpen(true)}
+                        >
+                          透かしを編集
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
-            </div>
+            )}
           </div>
         </Card>
       )}

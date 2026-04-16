@@ -9,6 +9,10 @@ type Receiver = {
   display_name: string;
   avatar_url: string | null;
   is_accepting: boolean;
+  options: {
+    allow_exif_embed: boolean;
+    allow_watermark: boolean;
+  };
 };
 
 export default function LandingPage() {

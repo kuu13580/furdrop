@@ -27,6 +27,10 @@ const getReceiverRoute = createRoute({
               display_name: z.string(),
               avatar_url: z.string().nullable(),
               is_accepting: z.boolean(),
+              options: z.object({
+                allow_exif_embed: z.boolean(),
+                allow_watermark: z.boolean(),
+              }),
             }),
           }),
         },
@@ -44,7 +48,7 @@ sender.openapi(getReceiverRoute, async (c) => {
   const { handle } = c.req.valid("param");
 
   const user = await c.env.DB.prepare(
-    "SELECT handle, display_name, avatar_url, is_active, storage_used, storage_quota FROM users WHERE handle = ?",
+    "SELECT handle, display_name, avatar_url, is_active, storage_used, storage_quota, allow_exif_embed, allow_watermark FROM users WHERE handle = ?",
   )
     .bind(handle)
     .first();
@@ -63,6 +67,10 @@ sender.openapi(getReceiverRoute, async (c) => {
         display_name: user.display_name as string,
         avatar_url: user.avatar_url as string | null,
         is_accepting: isAccepting,
+        options: {
+          allow_exif_embed: user.allow_exif_embed === 1,
+          allow_watermark: user.allow_watermark === 1,
+        },
       },
     },
     200,
