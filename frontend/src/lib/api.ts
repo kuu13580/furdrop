@@ -120,7 +120,12 @@ export const senderApi = {
 // ========== 認証 API ==========
 
 export const authApi = {
-  register: (body: { handle: string; display_name: string }) =>
+  register: (body: {
+    handle: string;
+    display_name: string;
+    allow_exif_embed?: boolean;
+    allow_watermark?: boolean;
+  }) =>
     request<{
       user: {
         id: string;

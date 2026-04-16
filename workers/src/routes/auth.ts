@@ -34,6 +34,8 @@ const registerRoute = createRoute({
           schema: z.object({
             handle: z.string().regex(HANDLE_REGEX),
             display_name: z.string().min(1).max(50),
+            allow_exif_embed: z.boolean().optional(),
+            allow_watermark: z.boolean().optional(),
           }),
         },
       },
@@ -54,7 +56,7 @@ const registerRoute = createRoute({
 auth.openapi(registerRoute, async (c) => {
   const uid = c.get("uid");
   const email = c.get("email");
-  const { handle, display_name } = c.req.valid("json");
+  const { handle, display_name, allow_exif_embed, allow_watermark } = c.req.valid("json");
 
   // UID重複チェック (べき等性: 既存ユーザーをそのまま返す)
   const existing = await c.env.DB.prepare(
@@ -83,14 +85,26 @@ auth.openapi(registerRoute, async (c) => {
 
   const now = Math.floor(Date.now() / 1000);
   const avatarUrl = c.get("picture") ?? null;
+  const allowExif = allow_exif_embed ?? true;
+  const allowWatermark = allow_watermark ?? true;
 
   // INSERT first — UNIQUE制約違反でhandle重複を検出 (レースコンディション防止)
   try {
     await c.env.DB.prepare(
-      `INSERT INTO users (id, handle, display_name, email, avatar_url, storage_used, storage_quota, is_active, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, 0, 10737418240, 1, ?, ?)`,
+      `INSERT INTO users (id, handle, display_name, email, avatar_url, storage_used, storage_quota, is_active, allow_exif_embed, allow_watermark, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, 0, 10737418240, 1, ?, ?, ?, ?)`,
     )
-      .bind(uid, handle, display_name, email, avatarUrl, now, now)
+      .bind(
+        uid,
+        handle,
+        display_name,
+        email,
+        avatarUrl,
+        allowExif ? 1 : 0,
+        allowWatermark ? 1 : 0,
+        now,
+        now,
+      )
       .run();
   } catch (e) {
     if (String(e).includes("UNIQUE constraint failed: users.handle")) {
@@ -111,8 +125,8 @@ auth.openapi(registerRoute, async (c) => {
         storage_used: 0,
         storage_quota: 10737418240,
         receive_url: `/send/${handle}`,
-        allow_exif_embed: false,
-        allow_watermark: false,
+        allow_exif_embed: allowExif,
+        allow_watermark: allowWatermark,
       },
     },
     201,
