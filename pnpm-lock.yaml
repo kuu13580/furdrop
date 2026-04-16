@@ -26,9 +26,9 @@ importers:
       firebase:
         specifier: ^12.12.0
         version: 12.12.0
-      heic2any:
-        specifier: ^0.0.4
-        version: 0.0.4
+      heic-to:
+        specifier: ^1.4.2
+        version: 1.4.2
       jotai:
         specifier: ^2.19.1
         version: 2.19.1(@types/react@19.2.14)(react@19.2.5)
@@ -1630,8 +1630,8 @@ packages:
     resolution: {integrity: sha512-EykJT/Q1KjTWctppgIAgfSO0tKVuZUjhgMr17kqTumMl6Afv3EISleU7qZUzoXDFTAHTDC4NOoG/ZxU3EvlMPQ==}
     engines: {node: '>=8'}
 
-  heic2any@0.0.4:
-    resolution: {integrity: sha512-3lLnZiDELfabVH87htnRolZ2iehX9zwpRyGNz22GKXIu0fznlblf0/ftppXKNqS26dqFSeqfIBhAmAj/uSp0cA==}
+  heic-to@1.4.2:
+    resolution: {integrity: sha512-y69thwxfNcEm2Vk8lbOD/cMabnvMJyOREfJYiCHcXCDqlfcPyJoBhyRc8+iDe1B95LRfpbTOpzxzY1xbRkdwBA==}
 
   hono@4.12.12:
     resolution: {integrity: sha512-p1JfQMKaceuCbpJKAPKVqyqviZdS0eUxH9v82oWo1kb9xjQ5wA6iP3FNVAPDFlz5/p7d45lO+BpSk1tuSZMF4Q==}
@@ -3992,7 +3992,7 @@ snapshots:
 
   has-flag@4.0.0: {}
 
-  heic2any@0.0.4: {}
+  heic-to@1.4.2: {}
 
   hono@4.12.12: {}
 

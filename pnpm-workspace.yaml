@@ -7,3 +7,5 @@ onlyBuiltDependencies:
   - workerd
   - sharp
 minimumReleaseAge: 7d
+minimumReleaseAgeExclude:
+  - fsevents

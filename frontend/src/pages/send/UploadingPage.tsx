@@ -39,8 +39,9 @@ export default function UploadingPage() {
   const startedRef = useRef(false);
 
   // 遷移直前のページで files が空ならUploadページへ戻す
+  // パイプライン完了後の setFiles([]) による空状態では戻さない
   useEffect(() => {
-    if (files.length === 0) {
+    if (files.length === 0 && !startedRef.current) {
       navigate(`/send/${handle}/upload`, { replace: true });
     }
   }, [files.length, handle, navigate]);
