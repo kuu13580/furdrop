@@ -694,7 +694,7 @@ pnpm exec dotenvx set KEY value -f .env.prod
 開発用の設定は `.env`、本番用の設定は `.env.prod` に dotenvx で暗号化して管理する。
 どちらも個別の鍵ペアを持ち、復号キーは `.env.keys` (gitignore対象) に記録される。
 ローカル開発用のファイルは `pnpm generate` で自動生成され、CIではデプロイ前に `pnpm generate:prod` が実行される。
-本番環境でWorkers側に追加の `wrangler secret put` は不要 (生成された `wrangler.toml` と `.dev.vars` で足りる)。
+R2クレデンシャル (`R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_ENDPOINT`) は `wrangler.toml` に含まれず `.dev.vars` 経由で渡されるが、`wrangler deploy` は `.dev.vars` を読まないため、本番には別途 `wrangler secret put` で設定が必要。
 
 | 環境 | 方式 | ファイル |
 |---|---|---|
@@ -703,7 +703,8 @@ pnpm exec dotenvx set KEY value -f .env.prod
 | 復号キー | dotenvx | `.env.keys` (gitignore、CIは `DOTENV_PRIVATE_KEY_PROD` secret) |
 | ローカル開発 (Workers) | テンプレートから自動生成 | `.dev.vars`, `wrangler.toml` (gitignore対象) |
 | ローカル開発 (Frontend) | テンプレートから自動生成 | `.env.local` (gitignore対象) |
-| 本番デプロイ | CIで生成 | `wrangler.toml`, `.dev.vars`, `frontend/.env.local` |
+| 本番 (Workers secrets) | `wrangler secret put` (初回のみ) | R2\_ACCESS\_KEY\_ID, R2\_SECRET\_ACCESS\_KEY, R2\_ENDPOINT |
+| 本番デプロイ | CIで生成 | `wrangler.toml`, `frontend/.env.local` |
 
 **秘密情報一覧:**
 
