@@ -351,6 +351,10 @@ const confirmPhotoRoute = createRoute({
       content: { "application/json": { schema: ErrorSchema } },
       description: "Photo not found",
     },
+    415: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "画像フォーマット不正",
+    },
     507: {
       content: { "application/json": { schema: ErrorSchema } },
       description: "クォータ超過",
@@ -399,6 +403,26 @@ sender.openapi(confirmPhotoRoute, async (c) => {
     await c.env.R2_ORIGINALS.delete(photo.r2_key_original as string);
     await c.env.R2_THUMBS.delete(photo.r2_key_thumb as string);
     return c.json({ error: { code: "INVALID_REQUEST", message: "File size mismatch" } }, 400);
+  }
+
+  // X10: マジックバイト検証 (JPEG: FF D8 FF)
+  const r2Obj = await c.env.R2_ORIGINALS.get(photo.r2_key_original as string, {
+    range: { offset: 0, length: 3 },
+  });
+  if (!r2Obj) {
+    return c.json(
+      { error: { code: "NOT_FOUND", message: "Original file not found in storage" } },
+      404,
+    );
+  }
+  const header = new Uint8Array(await r2Obj.arrayBuffer());
+  if (header[0] !== 0xff || header[1] !== 0xd8 || header[2] !== 0xff) {
+    await c.env.R2_ORIGINALS.delete(photo.r2_key_original as string);
+    await c.env.R2_THUMBS.delete(photo.r2_key_thumb as string);
+    return c.json(
+      { error: { code: "INVALID_FORMAT", message: "File is not a valid JPEG image" } },
+      415,
+    );
   }
 
   const thumbSize = thumbHead?.size ?? 0;
