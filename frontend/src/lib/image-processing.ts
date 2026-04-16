@@ -60,19 +60,9 @@ function isHeic(file: File): boolean {
   return /\.hei[cf]$/i.test(file.name);
 }
 
-/** JPEG以外はJPEGに変換する。JPEGはそのまま返す */
-export async function normalizeToJpeg(file: File): Promise<Blob> {
-  if (file.type === "image/jpeg") return file;
-
-  if (isHeic(file)) {
-    // iOS等向け。重いのでdynamic import
-    const { default: heic2any } = await import("heic2any");
-    const result = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.92 });
-    return Array.isArray(result) ? result[0] : result;
-  }
-
-  // PNG等をCanvasでJPEGに変換
-  const bitmap = await createImageBitmap(file);
+/** Blob を Canvas 経由で JPEG に変換する共通処理 */
+async function blobToJpegViaCanvas(blob: Blob): Promise<Blob> {
+  const bitmap = await createImageBitmap(blob, { imageOrientation: "from-image" });
   try {
     const canvas = createCanvas(bitmap.width, bitmap.height);
     const ctx = getContext2d(canvas);
@@ -84,6 +74,25 @@ export async function normalizeToJpeg(file: File): Promise<Blob> {
   } finally {
     bitmap.close();
   }
+}
+
+/** JPEG以外はJPEGに変換する。JPEGはそのまま返す */
+export async function normalizeToJpeg(file: File): Promise<Blob> {
+  if (file.type === "image/jpeg") return file;
+
+  if (isHeic(file)) {
+    // モダンブラウザ (Safari 17+, Chrome 120+) は HEIC をネイティブデコード可能。
+    // まず createImageBitmap を試し、失敗時のみ heic-to にフォールバック。
+    try {
+      return await blobToJpegViaCanvas(file);
+    } catch {
+      const { heicTo } = await import("heic-to");
+      return await heicTo({ blob: file, type: "image/jpeg", quality: 0.92 });
+    }
+  }
+
+  // PNG等をCanvasでJPEGに変換
+  return blobToJpegViaCanvas(file);
 }
 
 /** 送信者が入力したテキストをEXIFのカメラモデル欄 (IFD0.Model) に書き込む */
