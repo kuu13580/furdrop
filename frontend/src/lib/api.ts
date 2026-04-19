@@ -75,6 +75,7 @@ export const senderApi = {
       photos: {
         filename: string;
         file_size: number;
+        thumb_size: number;
         width: number;
         height: number;
         camera_model?: string;

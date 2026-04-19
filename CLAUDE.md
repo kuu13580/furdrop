@@ -60,6 +60,10 @@ pnpm generate:prod
 # 本番Workersシークレット投入 (.env.prod から R2クレデンシャル等を一括アップロード)
 # CIのdeployワークフローで自動実行されるため通常手動実行は不要
 pnpm secrets:prod
+
+# R2バケットCORS設定適用 (workers/r2-cors.json の内容を両バケットに適用)
+# CIのdeployワークフローで自動実行される
+pnpm cors:prod
 ```
 
 ### 環境ファイル
