@@ -1,6 +1,7 @@
 import { BrowserRouter, Route, Routes } from "react-router";
 import AuthGuard from "./components/AuthGuard";
 import AppLayout from "./components/layout/AppLayout";
+import SenderLayout from "./components/layout/SenderLayout";
 import { useAuthInit } from "./hooks/useAuthInit";
 import DashboardPage from "./pages/DashboardPage";
 import GalleryPage from "./pages/GalleryPage";
@@ -20,10 +21,12 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         {/* 送信者フロー（認証不要） */}
-        <Route path="/send/:handle" element={<LandingPage />} />
-        <Route path="/send/:handle/upload" element={<UploadPage />} />
-        <Route path="/send/:handle/uploading" element={<UploadingPage />} />
-        <Route path="/send/:handle/done" element={<DonePage />} />
+        <Route element={<SenderLayout />}>
+          <Route path="/send/:handle" element={<LandingPage />} />
+          <Route path="/send/:handle/upload" element={<UploadPage />} />
+          <Route path="/send/:handle/uploading" element={<UploadingPage />} />
+          <Route path="/send/:handle/done" element={<DonePage />} />
+        </Route>
 
         {/* ログイン */}
         <Route path="/login" element={<LoginPage />} />

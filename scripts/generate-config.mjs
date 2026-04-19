@@ -22,7 +22,7 @@ for (const dir of targetDirs) {
 
     const result = template.replace(/\{\{(\w+)\}\}/g, (_match, key) => {
       const value = process.env[key];
-      if (!value) {
+      if (value === undefined) {
         console.error(
           `Error: environment variable ${key} is not set (in ${dirName}/${templateFile})`,
         );
