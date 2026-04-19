@@ -297,6 +297,7 @@ async function runPipeline({
       photos: processed.map((p) => ({
         filename: p.originalName,
         file_size: p.processedBlob.size,
+        thumb_size: p.thumbBlob.size,
         width: p.width,
         height: p.height,
         camera_model: exifText || undefined,

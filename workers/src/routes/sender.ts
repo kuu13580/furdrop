@@ -165,9 +165,12 @@ sender.openapi(createSessionRoute, async (c) => {
 
 // ========== POST /send/:handle/sessions/:sessionId/photos ==========
 
+const MAX_THUMB_SIZE = 512 * 1024; // 512KB (r2.ts と同期)
+
 const PhotoInput = z.object({
   filename: z.string(),
   file_size: z.number().int().min(1).max(MAX_FILE_SIZE),
+  thumb_size: z.number().int().min(1).max(MAX_THUMB_SIZE),
   width: z.number().int().optional(),
   height: z.number().int().optional(),
   camera_model: z.string().optional(),
@@ -305,7 +308,7 @@ sender.openapi(createPhotosRoute, async (c) => {
 
       const [uploadUrl, thumbUploadUrl] = await Promise.all([
         createUploadUrl(c.env, r2KeyOriginal, photo.file_size),
-        createThumbUploadUrl(c.env, r2KeyThumb),
+        createThumbUploadUrl(c.env, r2KeyThumb, photo.thumb_size),
       ]);
 
       return { photo_id: photoId, upload_url: uploadUrl, thumb_upload_url: thumbUploadUrl };
