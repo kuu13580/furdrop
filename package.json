@@ -12,6 +12,7 @@
     "generate": "dotenvx run -- node scripts/generate-config.mjs",
     "generate:prod": "dotenvx run -f .env.prod -- node scripts/generate-config.mjs",
     "secrets:prod": "dotenvx run -f .env.prod -- node scripts/deploy-secrets.mjs",
+    "cors:prod": "node scripts/apply-r2-cors.mjs",
     "seed": "node scripts/seed.mjs",
     "dev": "concurrently -n front,api -c cyan,magenta \"pnpm --filter frontend dev\" \"pnpm --filter workers dev\""
   },
