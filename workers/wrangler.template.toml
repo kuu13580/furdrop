@@ -31,5 +31,11 @@ R2_BUCKET_THUMBS = "furdrop-thumbs"
 # wrangler secret put または .dev.vars で設定
 
 # Cronトリガー（クリーンアップジョブ: 毎時0分）
-[[triggers]]
+[triggers]
 crons = ["0 * * * *"]
+
+# Workers Logs (Cloudflare Dashboard で閲覧)
+[observability]
+[observability.logs]
+enabled = true
+invocation_logs = true
