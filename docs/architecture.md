@@ -717,3 +717,4 @@ R2クレデンシャル (`R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_ENDPOIN
 | `FIREBASE_PROJECT_ID` | IDトークン検証 | wrangler.toml [vars]（非秘密） |
 | `VITE_FIREBASE_API_KEY` | Firebase SDK初期化 | .env.local（公開可、ドメイン制限で保護） |
 | `VITE_FIREBASE_AUTH_DOMAIN` | Firebase SDK初期化 | .env.local（公開可） |
+| `VITE_FEEDBACK_URL` | フッターのフィードバック導線 (GoogleフォームURL、空で非表示) | .env.local（公開可） |
