@@ -30,6 +30,12 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
+      - name: Workers シークレット投入 (R2クレデンシャル)
+        run: pnpm secrets:prod
+        env:
+          DOTENV_PRIVATE_KEY_PROD: ${{ secrets.DOTENV_PRIVATE_KEY_PROD }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
       - name: Workers デプロイ
         run: pnpm --filter workers exec wrangler deploy
         env:
