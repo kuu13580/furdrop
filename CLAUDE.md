@@ -56,6 +56,10 @@ pnpm generate
 
 # 設定ファイル生成 (本番用 .env.prod を使用。CIでのみ使用)
 pnpm generate:prod
+
+# 本番Workersシークレット投入 (.env.prod から R2クレデンシャル等を一括アップロード)
+# CIのdeployワークフローで自動実行されるため通常手動実行は不要
+pnpm secrets:prod
 ```
 
 ### 環境ファイル
