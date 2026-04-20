@@ -50,17 +50,21 @@ export default function DonePage() {
   const failed = photos?.filter((p) => p.status !== "completed") ?? [];
 
   return (
-    <div className="flex flex-1 items-center justify-center">
-      <div className="w-full max-w-md space-y-6 px-4 py-6 text-center">
+    <div className="flex flex-1 items-center justify-center px-4">
+      <div className="w-full max-w-md space-y-6 py-6 text-center">
         {photos ? (
           <>
             <div
-              className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-3xl text-green-600"
+              className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-status-success-tint text-[28px] text-status-success"
               aria-hidden="true"
             >
               ✓
             </div>
-            <h1 className="text-xl font-bold">{completed.length}枚の写真を送信しました！</h1>
+            <h1 className="text-[28px] font-bold leading-[1.2] tracking-[-0.015em] text-ink">
+              {completed.length}枚の写真を
+              <br className="sm:hidden" />
+              送信しました！
+            </h1>
 
             {failed.length > 0 && (
               <Alert variant="error">{failed.length}枚のアップロードに失敗しました</Alert>
@@ -71,13 +75,13 @@ export default function DonePage() {
                 {completed.map((p) => (
                   <div
                     key={p.photo_id}
-                    className="aspect-square overflow-hidden rounded-md bg-gray-100"
+                    className="flex aspect-square items-center justify-center overflow-hidden rounded-2xl bg-surface-canvas"
                   >
                     {p.thumb_url ? (
                       <img
                         src={p.thumb_url}
                         alt={p.filename ?? ""}
-                        className="h-full w-full object-cover"
+                        className="max-h-full max-w-full rounded-xl object-contain"
                       />
                     ) : null}
                   </div>
@@ -87,7 +91,7 @@ export default function DonePage() {
           </>
         ) : error ? (
           <>
-            <h1 className="text-xl font-bold">送信完了</h1>
+            <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink">送信完了</h1>
             <Alert variant="error">{error}</Alert>
           </>
         ) : (
@@ -96,7 +100,7 @@ export default function DonePage() {
 
         <Link
           to={`/send/${handle}/upload`}
-          className="block rounded-lg bg-blue-600 px-4 py-3 font-medium text-white hover:bg-blue-700"
+          className="block rounded-xl bg-brand px-4 py-3 text-[16px] font-medium text-white transition-all hover:bg-brand-deep active:scale-[0.98]"
         >
           別の写真を送る
         </Link>

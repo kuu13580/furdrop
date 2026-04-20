@@ -140,11 +140,16 @@ export default function UploadPage() {
 
   return (
     <div className="mx-auto max-w-lg space-y-6 px-4 py-6">
-      <div className="flex items-center justify-between">
-        <Link to={`/send/${handle}`} className="text-sm text-blue-600 hover:underline">
+      <div className="flex items-center justify-between gap-2">
+        <Link
+          to={`/send/${handle}`}
+          className="rounded-lg px-2 py-1 text-[14px] text-ink-soft transition-colors hover:bg-surface-sand hover:text-ink"
+        >
           &lt; 戻る
         </Link>
-        <h1 className="text-base font-semibold">{displayName ?? handle}さんへ送信</h1>
+        <h1 className="truncate text-[16px] font-semibold text-ink">
+          {displayName ?? handle}さんへ送信
+        </h1>
         <div className="w-12" />
       </div>
 
@@ -156,16 +161,18 @@ export default function UploadPage() {
         }}
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
-        className={`block cursor-pointer rounded-lg border-2 border-dashed p-8 text-center transition-colors ${
-          dragOver ? "border-blue-500 bg-blue-50" : "border-gray-300 bg-gray-50 hover:bg-gray-100"
+        className={`block cursor-pointer rounded-[20px] border-2 border-dashed p-10 text-center transition-colors ${
+          dragOver
+            ? "border-brand bg-brand-tint"
+            : "border-surface-sand-deep bg-surface-canvas hover:bg-surface-sand"
         }`}
       >
-        <p className="text-sm font-medium text-gray-700">
+        <p className="text-[14px] font-medium text-ink">
           ここにドラッグ&ドロップ
           <br />
           またはタップして選択
         </p>
-        <p className="mt-2 text-xs text-gray-500">JPEG / PNG / HEIC、最大20MB/枚</p>
+        <p className="mt-2 text-[12px] text-ink-soft">JPEG / PNG / HEIC、最大20MB/枚</p>
         <input
           id="file-input"
           ref={fileInputRef}
@@ -185,11 +192,11 @@ export default function UploadPage() {
 
       {files.length > 0 && (
         <div>
-          <div className="mb-2 flex items-center justify-between text-sm">
-            <span className="font-medium">{files.length}枚選択中</span>
+          <div className="mb-2 flex items-center justify-between text-[14px]">
+            <span className="font-medium text-ink">{files.length}枚選択中</span>
             <button
               type="button"
-              className="text-gray-500 hover:text-gray-700"
+              className="rounded-lg px-2 py-1 text-ink-soft transition-colors hover:bg-surface-sand hover:text-ink"
               onClick={() => {
                 for (const f of files) if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
                 setFiles([]);
@@ -209,8 +216,8 @@ export default function UploadPage() {
       {files.length > 0 && (
         <Card>
           <div className="space-y-4">
-            <div>
-              <label htmlFor="senderName" className="block text-sm font-medium text-gray-700">
+            <div className="space-y-1.5">
+              <label htmlFor="senderName" className="block text-[14px] font-medium text-ink">
                 送信者名 / TwitterID
               </label>
               <input
@@ -219,11 +226,11 @@ export default function UploadPage() {
                 value={form.senderName}
                 onChange={(e) => setForm({ ...form, senderName: e.target.value })}
                 placeholder="@your_name"
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="block w-full rounded-xl border border-surface-sand-deep bg-surface px-4 py-3 text-[14px] text-ink placeholder:text-ink-muted transition-all focus:border-brand focus:outline-none focus:ring-3 focus:ring-brand/15"
               />
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="text-[13px] text-ink-soft">
                 受信者に表示されます。EXIF・透かしには
-                <code className="mx-0.5 rounded bg-gray-100 px-1 py-0.5 text-[0.95em]">
+                <code className="mx-0.5 rounded bg-surface-sand px-1.5 py-0.5 font-mono text-[0.95em] text-ink">
                   撮影：{form.senderName.trim() || "〜"}
                 </code>
                 の形式で埋め込まれます
@@ -231,23 +238,21 @@ export default function UploadPage() {
             </div>
 
             {(receiverOptions?.allow_exif_embed || receiverOptions?.allow_watermark) && (
-              <div className="space-y-3 border-t pt-3">
+              <div className="space-y-3 border-t border-surface-sand-deep pt-4">
                 {receiverOptions.allow_exif_embed && (
                   <label
-                    className={`flex items-start gap-2 text-sm ${hasSenderName ? "" : "opacity-50"}`}
+                    className={`flex items-start gap-2.5 text-[14px] ${hasSenderName ? "" : "opacity-50"}`}
                   >
                     <input
                       type="checkbox"
                       checked={form.exifEnabled}
                       disabled={!hasSenderName}
                       onChange={(e) => setForm({ ...form, exifEnabled: e.target.checked })}
-                      className="mt-0.5 shrink-0"
+                      className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
                     />
                     <span>
-                      <span className="font-medium text-gray-700">
-                        EXIFカメラモデル欄に埋め込む
-                      </span>
-                      <span className="mt-0.5 block text-xs text-gray-500">
+                      <span className="font-medium text-ink">EXIFカメラモデル欄に埋め込む</span>
+                      <span className="mt-0.5 block text-[13px] text-ink-soft">
                         メタデータに「撮影：〜」を書き込みます（元のカメラ情報は上書き）
                       </span>
                     </span>
@@ -257,18 +262,18 @@ export default function UploadPage() {
                 {receiverOptions.allow_watermark && (
                   <div>
                     <label
-                      className={`flex items-start gap-2 text-sm ${hasSenderName ? "" : "opacity-50"}`}
+                      className={`flex items-start gap-2.5 text-[14px] ${hasSenderName ? "" : "opacity-50"}`}
                     >
                       <input
                         type="checkbox"
                         checked={form.watermarkEnabled}
                         disabled={!hasSenderName}
                         onChange={(e) => setForm({ ...form, watermarkEnabled: e.target.checked })}
-                        className="mt-0.5 shrink-0"
+                        className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
                       />
                       <span>
-                        <span className="font-medium text-gray-700">透かしを入れる</span>
-                        <span className="mt-0.5 block text-xs text-gray-500">
+                        <span className="font-medium text-ink">透かしを入れる</span>
+                        <span className="mt-0.5 block text-[13px] text-ink-soft">
                           画像に「撮影：〜」を描き込みます（不可逆）
                         </span>
                       </span>
@@ -293,14 +298,14 @@ export default function UploadPage() {
       )}
 
       {files.length > 0 && !hasSenderName && (
-        <label className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm">
+        <label className="flex items-start gap-2.5 rounded-2xl border border-status-warn/30 bg-status-warn/10 p-4 text-[13px]">
           <input
             type="checkbox"
             checked={noCreditConsent}
             onChange={(e) => setNoCreditConsent(e.target.checked)}
-            className="mt-0.5 shrink-0"
+            className="mt-0.5 h-4 w-4 shrink-0 accent-status-warn"
           />
-          <span className="text-amber-800">
+          <span className="text-ink">
             送信者名を記載しない場合、写真のクレジット表記なしでの編集・共有が行われる可能性があることに同意します
           </span>
         </label>
@@ -331,14 +336,18 @@ export default function UploadPage() {
 function PreviewTile({ file, onRemove }: { file: SelectedFile; onRemove: () => void }) {
   const heic = !file.previewUrl;
   return (
-    <div className="relative aspect-square overflow-hidden rounded-md bg-gray-100">
+    <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded-2xl bg-surface-canvas">
       {heic ? (
-        <div className="flex h-full w-full flex-col items-center justify-center text-center text-xs text-gray-500">
+        <div className="flex flex-col items-center justify-center px-2 text-center text-[12px] text-ink-soft">
           <span className="font-mono font-semibold">HEIC</span>
-          <span className="mt-1 max-w-full truncate px-1">{file.file.name}</span>
+          <span className="mt-1 max-w-full truncate">{file.file.name}</span>
         </div>
       ) : (
-        <img src={file.previewUrl} alt={file.file.name} className="h-full w-full object-cover" />
+        <img
+          src={file.previewUrl}
+          alt={file.file.name}
+          className="max-h-full max-w-full rounded-xl object-contain"
+        />
       )}
       <button
         type="button"
@@ -346,7 +355,7 @@ function PreviewTile({ file, onRemove }: { file: SelectedFile; onRemove: () => v
           e.stopPropagation();
           onRemove();
         }}
-        className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-xs text-white hover:bg-black/80"
+        className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-ink/55 text-[13px] text-white backdrop-blur-sm transition-colors hover:bg-ink/75"
         aria-label={`${file.file.name} を削除`}
       >
         ×

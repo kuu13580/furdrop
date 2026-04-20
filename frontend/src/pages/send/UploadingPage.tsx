@@ -84,29 +84,37 @@ export default function UploadingPage() {
   return (
     <div className="mx-auto max-w-lg space-y-6 px-4 py-6">
       <div className="text-center">
-        <h1 className="text-lg font-semibold">送信中...</h1>
-        <p className="mt-1 text-xs text-gray-500">ページを閉じないでください</p>
+        <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink">送信中...</h1>
+        <p className="mt-1 text-[13px] text-ink-soft">ページを閉じないでください</p>
       </div>
 
-      <div>
-        <div className="mb-1 flex justify-between text-sm">
-          <span>{overallLabel(overall)}</span>
-          <span>
+      <div className="space-y-2">
+        <div className="flex justify-between text-[14px]">
+          <span className="font-medium text-ink">{overallLabel(overall)}</span>
+          <span className="font-mono text-ink-soft">
             {completed}/{total} ({percent}%)
           </span>
         </div>
-        <div className="h-2 overflow-hidden rounded-full bg-gray-200">
-          <div className="h-full bg-blue-500 transition-all" style={{ width: `${percent}%` }} />
+        <div className="h-2 overflow-hidden rounded-full bg-surface-sand">
+          <div
+            className="h-full rounded-full bg-brand transition-[width] duration-300 ease-out"
+            style={{ width: `${percent}%` }}
+          />
         </div>
       </div>
 
       {globalError && <Alert variant="error">{globalError}</Alert>}
 
-      <ul className="divide-y rounded-lg border bg-white">
+      <ul className="divide-y divide-surface-sand-deep overflow-hidden rounded-2xl bg-surface shadow-card">
         {progress.map((p) => (
-          <li key={p.selected.id} className="flex items-center justify-between px-3 py-2 text-sm">
-            <span className="truncate pr-3">{p.selected.file.name}</span>
-            <span className={`shrink-0 ${phaseColor(p.phase)}`}>{phaseLabel(p.phase)}</span>
+          <li
+            key={p.selected.id}
+            className="flex items-center justify-between px-4 py-2.5 text-[14px]"
+          >
+            <span className="truncate pr-3 text-ink">{p.selected.file.name}</span>
+            <span className={`shrink-0 font-medium ${phaseColor(p.phase)}`}>
+              {phaseLabel(p.phase)}
+            </span>
           </li>
         ))}
       </ul>
@@ -164,13 +172,13 @@ function phaseLabel(p: Phase): string {
 function phaseColor(p: Phase): string {
   switch (p) {
     case "completed":
-      return "text-green-600";
+      return "text-status-success";
     case "failed":
-      return "text-red-600";
+      return "text-status-danger";
     case "pending":
-      return "text-gray-400";
+      return "text-ink-muted";
     default:
-      return "text-blue-600";
+      return "text-brand";
   }
 }
 
