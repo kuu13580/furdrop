@@ -12,7 +12,7 @@ type Props = {
 export default function LoadingSpinner({ size = "md", className = "" }: Props) {
   return (
     <svg
-      className={`animate-spin text-gray-400 ${sizes[size]} ${className}`}
+      className={`animate-spin text-ink-muted ${sizes[size]} ${className}`}
       viewBox="0 0 24 24"
       fill="none"
       role="img"
