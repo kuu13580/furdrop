@@ -1,16 +1,20 @@
 import type { ButtonHTMLAttributes } from "react";
 
 const variants = {
-  primary: "bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-300",
-  secondary: "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:bg-gray-100",
-  danger: "bg-red-600 text-white hover:bg-red-700 disabled:bg-red-300",
-  ghost: "text-gray-600 hover:bg-gray-100 disabled:text-gray-300",
+  primary:
+    "bg-brand text-white hover:bg-brand-deep active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100",
+  secondary:
+    "border border-surface-sand-deep bg-surface-sand text-ink hover:bg-surface-sand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100",
+  danger:
+    "bg-status-danger text-white hover:brightness-95 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100",
+  ghost:
+    "text-ink-soft hover:bg-surface-sand hover:text-ink disabled:cursor-not-allowed disabled:opacity-40",
 } as const;
 
 const sizes = {
-  sm: "px-3 py-1.5 text-sm",
-  md: "px-4 py-2.5 text-sm",
-  lg: "px-4 py-3 text-base",
+  sm: "px-3 py-1.5 text-[13px]",
+  md: "px-4 py-2.5 text-[14px]",
+  lg: "px-5 py-3 text-[16px]",
 } as const;
 
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -33,7 +37,7 @@ export default function Button({
     <button
       type={type}
       disabled={disabled || loading}
-      className={`inline-flex items-center justify-center rounded-lg font-medium transition-colors ${variants[variant]} ${sizes[size]} ${className}`}
+      className={`inline-flex items-center justify-center rounded-xl font-medium transition-all ${variants[variant]} ${sizes[size]} ${className}`}
       {...props}
     >
       {loading && (
