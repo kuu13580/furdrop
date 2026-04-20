@@ -21,7 +21,6 @@
       "@firebase/util",
       "esbuild",
       "protobufjs",
-      "sharp",
       "workerd"
     ]
   },

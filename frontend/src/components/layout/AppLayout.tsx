@@ -1,5 +1,6 @@
 import { signOut } from "firebase/auth";
 import { Link, NavLink, Outlet } from "react-router";
+import logoUrl from "../../assets/logos/logo.png";
 import { auth } from "../../lib/firebase";
 import AppFooter from "./AppFooter";
 
@@ -8,8 +9,8 @@ export default function AppLayout() {
     <div className="min-h-screen bg-gray-50 pb-12">
       <header className="border-b bg-white">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-          <Link to="/dashboard" className="text-lg font-bold">
-            FurDrop
+          <Link to="/dashboard" className="flex items-center">
+            <img src={logoUrl} alt="FurDrop" className="h-9" />
           </Link>
           <nav className="flex items-center gap-4">
             <NavLink
