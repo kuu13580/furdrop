@@ -155,9 +155,9 @@ sender.openapi(createSessionRoute, async (c) => {
 
   await c.env.DB.prepare(
     `INSERT INTO upload_sessions (id, receiver_id, sender_name, photo_count, status, expires_at, created_at, updated_at)
-     VALUES (?, ?, ?, ?, 'active', ?, ?, ?)`,
+     VALUES (?, ?, ?, 0, 'active', ?, ?, ?)`,
   )
-    .bind(sessionId, user.id, body.sender_name ?? null, body.photo_count, expiresAt, now, now)
+    .bind(sessionId, user.id, body.sender_name ?? null, expiresAt, now, now)
     .run();
 
   return c.json({ session_id: sessionId, expires_at: expiresAt }, 201);
