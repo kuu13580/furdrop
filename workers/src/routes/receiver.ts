@@ -93,6 +93,60 @@ receiver.openapi(listPhotosRoute, async (c) => {
   return c.json({ photos: photosWithUrls, next_cursor: nextCursor }, 200);
 });
 
+// ========== GET /receiver/photo-ids ==========
+
+const listPhotoIdsRoute = createRoute({
+  method: "get",
+  path: "/photo-ids",
+  tags: ["Receiver"],
+  summary: "フィルタ条件に合致する写真IDの一覧 (ギャラリーのグループ選択用)",
+  request: {
+    query: z.object({
+      /** sender_name の完全一致。空文字列は匿名 (NULL) を意味する */
+      sender: z.string(),
+    }),
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            photo_ids: z.array(z.string()),
+          }),
+        },
+      },
+      description: "写真ID一覧",
+    },
+  },
+});
+
+receiver.openapi(listPhotoIdsRoute, async (c) => {
+  const uid = c.get("uid");
+  const { sender } = c.req.valid("query");
+
+  let query = "SELECT id FROM photos WHERE receiver_id = ? AND upload_status = 'completed'";
+  const params: (string | number)[] = [uid];
+
+  if (sender === "") {
+    query += " AND sender_name IS NULL";
+  } else {
+    query += " AND sender_name = ?";
+    params.push(sender);
+  }
+  query += " ORDER BY created_at DESC, id DESC";
+
+  const result = await c.env.DB.prepare(query)
+    .bind(...params)
+    .all();
+
+  return c.json(
+    {
+      photo_ids: result.results.map((r) => r.id as string),
+    },
+    200,
+  );
+});
+
 // ========== GET /receiver/photos/:photoId ==========
 
 const getPhotoRoute = createRoute({
@@ -106,6 +160,10 @@ const getPhotoRoute = createRoute({
         .string()
         .uuid({ version: "v4" })
         .openapi({ param: { name: "photoId", in: "path" } }),
+    }),
+    query: z.object({
+      /** ギャラリー表示モード。prev/next をそのスコープに限定する */
+      group: z.enum(["none", "date", "sender"]).optional(),
     }),
   },
   responses: {
@@ -124,6 +182,10 @@ const getPhotoRoute = createRoute({
               view_url: z.string().nullable(),
               created_at: z.number(),
             }),
+            /** ギャラリー表示順 (created_at DESC, id DESC) で一つ前 (=より新しい) の写真ID */
+            prev_id: z.string().nullable(),
+            /** ギャラリー表示順で一つ次 (=より古い) の写真ID */
+            next_id: z.string().nullable(),
           }),
         },
       },
@@ -139,6 +201,7 @@ const getPhotoRoute = createRoute({
 receiver.openapi(getPhotoRoute, async (c) => {
   const uid = c.get("uid");
   const { photoId } = c.req.valid("param");
+  const { group } = c.req.valid("query");
 
   const photo = await c.env.DB.prepare(
     "SELECT id, sender_name, camera_model, file_size, width, height, r2_key_original, r2_key_thumb, created_at FROM photos WHERE id = ? AND receiver_id = ? AND upload_status = 'completed'",
@@ -150,15 +213,47 @@ receiver.openapi(getPhotoRoute, async (c) => {
     return c.json({ error: { code: "NOT_FOUND", message: "Photo not found" } }, 404);
   }
 
-  const [thumbUrl, viewUrl] = await Promise.all([
+  const createdAt = photo.created_at as number;
+  const currentId = photo.id as string;
+  const senderName = photo.sender_name as string | null;
+
+  // sender モードでは同一 sender_name (または NULL) 内に限定
+  const senderScope = group === "sender";
+  const senderCondition = senderScope
+    ? senderName === null
+      ? " AND sender_name IS NULL"
+      : " AND sender_name = ?"
+    : "";
+  const buildNeighborBindings = (...base: (string | number)[]) =>
+    senderScope && senderName !== null ? [...base, senderName] : base;
+
+  const [thumbUrl, viewUrl, prevRow, nextRow] = await Promise.all([
     createThumbViewUrl(c.env, photo.r2_key_thumb as string),
     createViewUrl(c.env, photo.r2_key_original as string),
+    // 新しい方向 (= gallery DESC順では「前」)
+    c.env.DB.prepare(
+      `SELECT id FROM photos
+         WHERE receiver_id = ? AND upload_status = 'completed'
+           AND (created_at > ? OR (created_at = ? AND id > ?))${senderCondition}
+         ORDER BY created_at ASC, id ASC LIMIT 1`,
+    )
+      .bind(...buildNeighborBindings(uid, createdAt, createdAt, currentId))
+      .first(),
+    // 古い方向 (= gallery DESC順では「次」)
+    c.env.DB.prepare(
+      `SELECT id FROM photos
+         WHERE receiver_id = ? AND upload_status = 'completed'
+           AND (created_at < ? OR (created_at = ? AND id < ?))${senderCondition}
+         ORDER BY created_at DESC, id DESC LIMIT 1`,
+    )
+      .bind(...buildNeighborBindings(uid, createdAt, createdAt, currentId))
+      .first(),
   ]);
 
   return c.json(
     {
       photo: {
-        id: photo.id as string,
+        id: currentId,
         sender_name: photo.sender_name as string | null,
         camera_model: photo.camera_model as string | null,
         file_size: photo.file_size as number,
@@ -166,8 +261,10 @@ receiver.openapi(getPhotoRoute, async (c) => {
         height: photo.height as number | null,
         thumb_url: thumbUrl,
         view_url: viewUrl,
-        created_at: photo.created_at as number,
+        created_at: createdAt,
       },
+      prev_id: (prevRow?.id as string | undefined) ?? null,
+      next_id: (nextRow?.id as string | undefined) ?? null,
     },
     200,
   );

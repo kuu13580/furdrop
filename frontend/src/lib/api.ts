@@ -195,8 +195,16 @@ export const receiverApi = {
     }>(`/receiver/photos${qs ? `?${qs}` : ""}`, {}, true);
   },
 
-  getPhoto: (photoId: string) =>
-    request<{
+  /** 指定した sender の写真IDを全件返す (空文字列 = 匿名) */
+  listPhotoIdsBySender: (sender: string) => {
+    const query = new URLSearchParams({ sender });
+    return request<{ photo_ids: string[] }>(`/receiver/photo-ids?${query.toString()}`, {}, true);
+  },
+
+  /** group を渡すとその表示モードに合わせて prev/next を絞り込む */
+  getPhoto: (photoId: string, group?: "none" | "date" | "sender") => {
+    const qs = group ? `?group=${group}` : "";
+    return request<{
       photo: {
         id: string;
         sender_name: string | null;
@@ -208,7 +216,10 @@ export const receiverApi = {
         view_url: string | null;
         created_at: number;
       };
-    }>(`/receiver/photos/${photoId}`, {}, true),
+      prev_id: string | null;
+      next_id: string | null;
+    }>(`/receiver/photos/${photoId}${qs}`, {}, true);
+  },
 
   downloadPhoto: (photoId: string) =>
     request<{

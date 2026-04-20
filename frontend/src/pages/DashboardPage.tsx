@@ -29,6 +29,15 @@ function PublicUrlCard({ receiveUrl }: { receiveUrl: string }) {
     }
   }, [receiveUrl]);
 
+  const handleDownloadQr = useCallback(async () => {
+    const dataUrl = await QRCode.toDataURL(receiveUrl, { width: 512, margin: 2 });
+    const slug = receiveUrl.split("/").filter(Boolean).pop() ?? "qr";
+    const a = document.createElement("a");
+    a.href = dataUrl;
+    a.download = `furdrop-${slug}.png`;
+    a.click();
+  }, [receiveUrl]);
+
   useEffect(() => {
     if (qrOpen && canvasRef.current) {
       QRCode.toCanvas(canvasRef.current, receiveUrl, { width: 200, margin: 2 });
@@ -65,8 +74,15 @@ function PublicUrlCard({ receiveUrl }: { receiveUrl: string }) {
           </button>
         </div>
         {qrOpen && (
-          <div className="flex justify-center py-2">
+          <div className="flex flex-col items-center gap-3 py-2">
             <canvas ref={canvasRef} className="rounded-xl" />
+            <button
+              type="button"
+              onClick={handleDownloadQr}
+              className="rounded-xl border border-surface-sand-deep bg-surface-sand px-3 py-1.5 text-[13px] font-medium text-ink transition-colors hover:bg-surface-sand-hover"
+            >
+              QRをダウンロード
+            </button>
           </div>
         )}
       </div>

@@ -21,21 +21,35 @@ export default function PhotoDetailPage() {
   const { photoId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const initialPhoto = (location.state as { photo?: Photo })?.photo ?? null;
+  const locationState = location.state as {
+    photo?: Photo;
+    groupMode?: "none" | "date" | "sender";
+  } | null;
+  const initialPhoto = locationState?.photo ?? null;
+  const groupMode = locationState?.groupMode ?? "none";
   const [photo, setPhoto] = useState<Photo | null>(initialPhoto);
+  const [prevId, setPrevId] = useState<string | null>(null);
+  const [nextId, setNextId] = useState<string | null>(null);
   const [loading, setLoading] = useState(!initialPhoto);
   const [viewLoaded, setViewLoaded] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  // view_url を取得する（route state 由来のデータには含まれない）
+  // photoId 変更時: view_url・prev/next を取得
   useEffect(() => {
-    if (!photoId || photo?.view_url) return;
+    if (!photoId) return;
     let cancelled = false;
+    // photoId 変更で表示写真とneighborsをリセット
+    setViewLoaded(false);
+    setPrevId(null);
+    setNextId(null);
     receiverApi
-      .getPhoto(photoId)
-      .then(({ photo: p }) => {
-        if (!cancelled) setPhoto(p);
+      .getPhoto(photoId, groupMode)
+      .then(({ photo: p, prev_id, next_id }) => {
+        if (cancelled) return;
+        setPhoto(p);
+        setPrevId(prev_id);
+        setNextId(next_id);
       })
       .catch(() => {})
       .finally(() => {
@@ -44,7 +58,26 @@ export default function PhotoDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [photoId, photo?.view_url]);
+  }, [photoId, groupMode]);
+
+  const goPrev = useCallback(() => {
+    if (prevId) navigate(`/gallery/${prevId}`, { replace: true, state: { groupMode } });
+  }, [prevId, navigate, groupMode]);
+
+  const goNext = useCallback(() => {
+    if (nextId) navigate(`/gallery/${nextId}`, { replace: true, state: { groupMode } });
+  }, [nextId, navigate, groupMode]);
+
+  // 矢印キーで前後移動
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.key === "ArrowLeft") goPrev();
+      else if (e.key === "ArrowRight") goNext();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [goPrev, goNext]);
 
   const handleDownload = useCallback(async () => {
     if (!photoId) return;
@@ -115,7 +148,7 @@ export default function PhotoDetailPage() {
       </div>
 
       {/* オリジナル表示（縦横比固定でガタつき防止。ロード中はサムネイル） */}
-      <div className="flex justify-center">
+      <div className="relative flex justify-center">
         {photo.view_url || photo.thumb_url ? (
           <div
             className="relative mx-auto overflow-hidden rounded-2xl bg-surface-canvas"
@@ -151,6 +184,55 @@ export default function PhotoDetailPage() {
           <div className="flex h-64 w-full items-center justify-center rounded-2xl bg-surface-sand text-[14px] text-ink-muted">
             画像を読み込めません
           </div>
+        )}
+
+        {prevId && (
+          <button
+            type="button"
+            onClick={goPrev}
+            aria-label="前の写真"
+            className="absolute top-1/2 left-2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-surface/90 text-ink shadow-card transition-colors hover:bg-surface sm:left-4"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              role="img"
+              aria-label="前へ"
+            >
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+        )}
+        {nextId && (
+          <button
+            type="button"
+            onClick={goNext}
+            aria-label="次の写真"
+            className="absolute top-1/2 right-2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-surface/90 text-ink shadow-card transition-colors hover:bg-surface sm:right-4"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              role="img"
+              aria-label="次へ"
+            >
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
         )}
       </div>
 
