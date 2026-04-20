@@ -2,10 +2,11 @@ packages:
   - "frontend"
   - "workers"
   - "e2e"
+minimumReleaseAge: 7d
+minimumReleaseAgeExclude:
+  - fsevents
+  - sharp
 onlyBuiltDependencies:
   - esbuild
   - workerd
   - sharp
-minimumReleaseAge: 7d
-minimumReleaseAgeExclude:
-  - fsevents

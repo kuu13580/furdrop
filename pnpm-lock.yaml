@@ -17,6 +17,9 @@ importers:
       concurrently:
         specifier: ^9.2.1
         version: 9.2.1
+      sharp:
+        specifier: 0.34.5
+        version: 0.34.5
 
   frontend:
     dependencies:
