@@ -101,6 +101,8 @@ pnpm cors:prod
 - `CLAUDE.md` — コマンド、構成、スタイルの変更
 - `docs/` — 設計ドキュメントとの乖離がないか
 - `.claude/rules/` — コーディングルール・規約の変更
+- `DESIGN.md` — デザイン規約 (色・タイポ・コンポーネント・レイアウト理念) の変更
+- `frontend/src/pages/DesignPreviewPage.tsx` — **`DESIGN.md` を更新した場合は必ずプレビューも追従更新**。プレビューは DESIGN.md の生きたカナリアであり、乖離すると視覚回帰チェックの意味が失われる
 
 ## 設計ドキュメント
 
