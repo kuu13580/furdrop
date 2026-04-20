@@ -3,8 +3,8 @@ import AppFooter from "./AppFooter";
 
 export default function SenderLayout() {
   return (
-    <div className="grid min-h-screen grid-rows-[1fr_auto]">
-      <div className="flex flex-col">
+    <div className="flex min-h-screen flex-col pb-12">
+      <div className="flex flex-1 flex-col">
         <Outlet />
       </div>
       <AppFooter />

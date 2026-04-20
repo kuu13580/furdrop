@@ -5,7 +5,7 @@ import AppFooter from "./AppFooter";
 
 export default function AppLayout() {
   return (
-    <div className="grid min-h-screen grid-rows-[auto_1fr_auto] bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-12">
       <header className="border-b bg-white">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
           <Link to="/dashboard" className="text-lg font-bold">
