@@ -5,7 +5,7 @@ import AppFooter from "./AppFooter";
 
 export default function AppLayout() {
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-12">
       <header className="border-b bg-white">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
           <Link to="/dashboard" className="text-lg font-bold">
@@ -46,7 +46,7 @@ export default function AppLayout() {
           </nav>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6">
+      <main className="mx-auto w-full max-w-5xl px-4 py-6">
         <Outlet />
       </main>
       <AppFooter />

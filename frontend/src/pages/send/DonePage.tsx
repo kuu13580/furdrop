@@ -50,7 +50,7 @@ export default function DonePage() {
   const failed = photos?.filter((p) => p.status !== "completed") ?? [];
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
+    <div className="flex flex-1 items-center justify-center">
       <div className="w-full max-w-md space-y-6 px-4 py-6 text-center">
         {photos ? (
           <>
