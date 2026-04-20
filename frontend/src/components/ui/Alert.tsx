@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
 
 const styles = {
-  error: "border-red-200 bg-red-50 text-red-800",
-  success: "border-green-200 bg-green-50 text-green-800",
-  info: "border-blue-200 bg-blue-50 text-blue-800",
+  error: "border-status-danger/30 bg-status-danger-tint text-status-danger",
+  success: "border-status-success/30 bg-status-success-tint text-status-success",
+  info: "border-brand/30 bg-brand-tint text-brand-deep",
 } as const;
 
 type Props = {
@@ -14,7 +14,10 @@ type Props = {
 
 export default function Alert({ variant = "error", children, className = "" }: Props) {
   return (
-    <div className={`rounded-lg border p-3 text-sm ${styles[variant]} ${className}`}>
+    <div
+      role={variant === "error" ? "alert" : undefined}
+      className={`rounded-xl border px-4 py-3 text-[14px] ${styles[variant]} ${className}`}
+    >
       {children}
     </div>
   );
