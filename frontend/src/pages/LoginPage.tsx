@@ -2,6 +2,7 @@ import { getAdditionalUserInfo, signInWithPopup, TwitterAuthProvider } from "fir
 import { useAtomValue, useSetAtom } from "jotai";
 import { useCallback, useState } from "react";
 import { Navigate, useNavigate } from "react-router";
+import logoUrl from "../assets/logos/logo.png";
 import { auth } from "../lib/firebase";
 import { authAtom } from "../stores/auth";
 import { sanitizeHandle, suggestedHandleAtom } from "../stores/signup";
@@ -41,7 +42,7 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center">
       <div className="w-full max-w-sm space-y-6 px-4 text-center">
-        <h1 className="text-3xl font-bold">FurDrop</h1>
+        <img src={logoUrl} alt="FurDrop" className="mx-auto h-20" />
         <p className="text-gray-600">
           写真を受け取るための
           <br />
