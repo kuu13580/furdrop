@@ -5,8 +5,6 @@ packages:
 minimumReleaseAge: 7d
 minimumReleaseAgeExclude:
   - fsevents
-  - sharp
 onlyBuiltDependencies:
   - esbuild
   - workerd
-  - sharp
