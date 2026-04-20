@@ -4,6 +4,7 @@ import AppLayout from "./components/layout/AppLayout";
 import SenderLayout from "./components/layout/SenderLayout";
 import { useAuthInit } from "./hooks/useAuthInit";
 import DashboardPage from "./pages/DashboardPage";
+import DesignPreviewPage from "./pages/DesignPreviewPage";
 import GalleryPage from "./pages/GalleryPage";
 import LoginPage from "./pages/LoginPage";
 import NotFoundPage from "./pages/NotFoundPage";
@@ -40,6 +41,9 @@ export default function App() {
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
         </Route>
+
+        {/* ⚠️ 確認用プレビュー (削除予定): DesignPreviewPage + このルートを消せば削除完了 */}
+        <Route path="/design-preview" element={<DesignPreviewPage />} />
 
         {/* ルート → ログインへ */}
         <Route path="/" element={<LoginPage />} />

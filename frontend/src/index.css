@@ -1,1 +1,31 @@
 @import "tailwindcss";
+
+/* FurDrop デザインシステムのテーマ拡張 (DESIGN.md §12 準拠) */
+@theme {
+  --color-brand: #d96a4a;
+  --color-brand-deep: #b8502f;
+  --color-brand-tint: #fcede4;
+
+  --color-ink: #2a1f1b;
+  --color-ink-soft: #6e5f52;
+  --color-ink-muted: #a79a8c;
+
+  --color-surface: #ffffff;
+  --color-surface-canvas: #faf6f0;
+  --color-surface-sand: #f1e8db;
+  --color-surface-sand-deep: #eae1d3;
+  --color-surface-sand-hover: #ded3c1;
+
+  --color-status-success: #4b7a5a;
+  --color-status-success-tint: #e8f0ea;
+  --color-status-warn: #d98f2e;
+  --color-status-danger: #a8381f;
+  --color-status-danger-tint: #fbe8e2;
+
+  --color-accent-cobalt: #4262d4;
+
+  --shadow-card:
+    0 0 0 1px rgba(0, 0, 0, 0.02), 0 2px 6px rgba(0, 0, 0, 0.04), 0 4px 8px rgba(0, 0, 0, 0.1);
+  --shadow-card-hover: 0 8px 20px rgba(0, 0, 0, 0.08);
+  --shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
