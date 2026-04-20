@@ -45,7 +45,7 @@ export default function LandingPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="flex flex-1 items-center justify-center">
         <LoadingSpinner size="lg" />
       </div>
     );
@@ -53,7 +53,7 @@ export default function LandingPage() {
 
   if (error === "not_found") {
     return (
-      <div className="flex min-h-screen items-center justify-center px-4">
+      <div className="flex flex-1 items-center justify-center px-4">
         <div className="w-full max-w-sm space-y-4 text-center">
           <h1 className="text-xl font-bold">ユーザーが見つかりません</h1>
           <p className="text-gray-600">URLに誤りがないかご確認ください。</p>
@@ -64,14 +64,14 @@ export default function LandingPage() {
 
   if (error || !receiver) {
     return (
-      <div className="flex min-h-screen items-center justify-center px-4">
+      <div className="flex flex-1 items-center justify-center px-4">
         <Alert variant="error">読み込みに失敗しました。時間をおいて再度お試しください。</Alert>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
+    <div className="flex flex-1 items-center justify-center">
       <div className="w-full max-w-sm space-y-6 px-4 text-center">
         {receiver.avatar_url ? (
           <img
