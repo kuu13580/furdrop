@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
 import Button from "../components/ui/Button";
 import LoadingSpinner from "../components/ui/LoadingSpinner";
@@ -6,6 +6,37 @@ import { receiverApi } from "../lib/api";
 import type { Photo } from "../types/photo";
 
 const PAGE_SIZE = 50;
+
+type GroupMode = "none" | "date" | "sender";
+
+type PhotoGroup = {
+  key: string;
+  label: string | null;
+  items: { photo: Photo; index: number }[];
+};
+
+function buildGroups(photos: Photo[], mode: GroupMode): PhotoGroup[] {
+  if (mode === "none") {
+    return [{ key: "all", label: null, items: photos.map((photo, index) => ({ photo, index })) }];
+  }
+  const map = new Map<string, PhotoGroup>();
+  photos.forEach((photo, index) => {
+    let key: string;
+    let label: string;
+    if (mode === "date") {
+      const d = new Date(photo.created_at * 1000);
+      key = `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+      label = `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
+    } else {
+      key = photo.sender_name ?? "__anonymous__";
+      label = photo.sender_name ?? "(匿名)";
+    }
+    const existing = map.get(key);
+    if (existing) existing.items.push({ photo, index });
+    else map.set(key, { key, label, items: [{ photo, index }] });
+  });
+  return [...map.values()];
+}
 
 export default function GalleryPage() {
   const [photos, setPhotos] = useState<Photo[]>([]);
@@ -15,6 +46,7 @@ export default function GalleryPage() {
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
+  const [groupMode, setGroupMode] = useState<GroupMode>("none");
   const sentinelRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false);
 
@@ -31,7 +63,7 @@ export default function GalleryPage() {
   const didMoveRef = useRef(false);
 
   const fetchPhotos = useCallback(async (nextCursor?: string) => {
-    if (loadingRef.current) return;
+    if (loadingRef.current) return null;
     loadingRef.current = true;
     try {
       const res = await receiverApi.listPhotos({
@@ -41,8 +73,9 @@ export default function GalleryPage() {
       setPhotos((prev) => (nextCursor ? [...prev, ...res.photos] : res.photos));
       setCursor(res.next_cursor);
       setHasMore(res.next_cursor !== null);
+      return res;
     } catch {
-      // エラー時はそのまま
+      return null;
     } finally {
       setLoading(false);
       loadingRef.current = false;
@@ -194,6 +227,102 @@ export default function GalleryPage() {
     }
   }, [selected, exitSelectMode]);
 
+  const groups = useMemo(() => buildGroups(photos, groupMode), [photos, groupMode]);
+
+  const [groupLoadingKey, setGroupLoadingKey] = useState<string | null>(null);
+
+  const toggleGroupSelection = useCallback(
+    async (group: PhotoGroup) => {
+      const currentIds = group.items.map((it) => it.photo.id);
+      const currentAllSelected =
+        currentIds.length > 0 && currentIds.every((id) => selected.has(id));
+      const mode = groupMode;
+      const targetKey = group.key;
+
+      // ---------- sender モード: 専用エンドポイントで全IDを取得 ----------
+      if (mode === "sender") {
+        setGroupLoadingKey(targetKey);
+        try {
+          const senderParam =
+            group.items[0]?.photo.sender_name ?? (targetKey === "__anonymous__" ? "" : targetKey);
+          const { photo_ids } = await receiverApi.listPhotoIdsBySender(senderParam);
+          setSelected((prev) => {
+            const next = new Set(prev);
+            if (currentAllSelected) {
+              for (const id of photo_ids) next.delete(id);
+            } else {
+              for (const id of photo_ids) next.add(id);
+            }
+            return next;
+          });
+          if (!currentAllSelected) setSelectMode(true);
+        } finally {
+          setGroupLoadingKey(null);
+        }
+        return;
+      }
+
+      // ---------- date モード: 既ロード分で足りなければ早期終了式にチェーンロード ----------
+      // 全選択状態なら解除 (ロード不要)
+      if (currentAllSelected) {
+        setSelected((prev) => {
+          const next = new Set(prev);
+          for (const id of currentIds) next.delete(id);
+          return next;
+        });
+        return;
+      }
+
+      setSelectMode(true);
+      setSelected((prev) => {
+        const next = new Set(prev);
+        for (const id of currentIds) next.add(id);
+        return next;
+      });
+
+      if (!hasMore || !cursor) return;
+
+      const keyOf = (p: Photo): string => {
+        const d = new Date(p.created_at * 1000);
+        return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+      };
+
+      setGroupLoadingKey(targetKey);
+      try {
+        let curCursor: string | null = cursor;
+        let curHasMore = true;
+        while (curHasMore && curCursor) {
+          const res = await fetchPhotos(curCursor);
+          if (!res) break;
+          curCursor = res.next_cursor;
+          curHasMore = res.next_cursor !== null;
+
+          const addIds: string[] = [];
+          let passedGroup = false;
+          for (const p of res.photos) {
+            if (keyOf(p) === targetKey) {
+              addIds.push(p.id);
+            } else {
+              // date は created_at DESC ソートなので別日付が出たら以降はすべて別グループ
+              passedGroup = true;
+            }
+          }
+          if (addIds.length > 0) {
+            setSelected((prev) => {
+              const next = new Set(prev);
+              for (const id of addIds) next.add(id);
+              return next;
+            });
+          }
+          if (passedGroup) break;
+        }
+      } finally {
+        setGroupLoadingKey(null);
+      }
+    },
+    [groupMode, cursor, hasMore, selected, fetchPhotos],
+  );
+
   const handleBatchDownload = useCallback(async () => {
     for (const id of selected) {
       try {
@@ -226,7 +355,7 @@ export default function GalleryPage() {
             onClick={() => (selectMode ? exitSelectMode() : setSelectMode(true))}
             className="rounded-lg px-3 py-1.5 text-[14px] font-medium text-brand transition-colors hover:bg-brand-tint"
           >
-            {selectMode ? "完了" : "選択"}
+            {selectMode ? "完了" : "選択/DL"}
           </button>
         )}
       </div>
@@ -265,80 +394,135 @@ export default function GalleryPage() {
         </div>
       )}
 
+      {photos.length > 0 && (
+        <div className="flex gap-1 rounded-xl bg-surface-sand p-1 text-[13px] font-medium">
+          {(
+            [
+              ["none", "新着順"],
+              ["date", "日付別"],
+              ["sender", "撮影者別"],
+            ] as const
+          ).map(([mode, label]) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => setGroupMode(mode)}
+              className={`flex-1 rounded-lg px-3 py-1.5 transition-colors ${
+                groupMode === mode
+                  ? "bg-surface text-ink shadow-card"
+                  : "text-ink-soft hover:text-ink"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {photos.length === 0 ? (
         <div className="rounded-2xl bg-surface-sand py-16 text-center">
           <p className="text-[14px] font-medium text-ink-soft">まだ写真がありません</p>
         </div>
       ) : (
         <div
-          className="grid select-none grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5"
+          className="space-y-6"
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
         >
-          {photos.map((photo, index) => {
-            const isSelected = selected.has(photo.id);
-            const thumb = photo.thumb_url ? (
-              <img
-                src={photo.thumb_url}
-                alt={photo.sender_name ?? "写真"}
-                className="max-h-full max-w-full rounded-xl object-contain"
-                loading="lazy"
-                draggable={false}
-              />
-            ) : (
-              <span className="text-2xl text-ink-muted">📷</span>
-            );
-
+          {groups.map((group) => {
+            const groupIds = group.items.map((it) => it.photo.id);
+            const allGroupSelected =
+              groupIds.length > 0 && groupIds.every((id) => selected.has(id));
             return (
-              <div key={photo.id} data-photo-index={index} className="relative touch-none">
-                {selectMode ? (
-                  <button
-                    type="button"
-                    onClick={(e) => handleSelect(index, e)}
-                    className={`flex aspect-square w-full items-center justify-center overflow-hidden rounded-2xl bg-surface-canvas outline-none transition-transform hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${
-                      isSelected ? "ring-2 ring-brand" : ""
-                    }`}
-                  >
-                    {thumb}
-                    <div
-                      className={`absolute top-2 left-2 flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors ${
-                        isSelected
-                          ? "border-brand bg-brand text-white"
-                          : "border-white bg-ink/25 text-white"
-                      }`}
+              <section key={group.key} className="space-y-3">
+                {group.label && (
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-[14px] font-semibold text-ink-soft">
+                      {group.label}
+                      <span className="ml-2 text-ink-muted">({group.items.length})</span>
+                    </h2>
+                    <button
+                      type="button"
+                      onClick={() => toggleGroupSelection(group)}
+                      disabled={groupLoadingKey === group.key}
+                      className="rounded-lg px-2.5 py-1 text-[13px] font-medium text-brand transition-colors hover:bg-brand-tint disabled:cursor-progress disabled:opacity-60"
                     >
-                      {isSelected && (
-                        <svg
-                          className="h-3.5 w-3.5"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth={3}
-                          role="img"
-                          aria-label="選択済み"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </div>
-                  </button>
-                ) : (
-                  <Link
-                    to={`/gallery/${photo.id}`}
-                    state={{ photo }}
-                    className="group flex aspect-square items-center justify-center overflow-hidden rounded-2xl bg-surface-canvas transition-transform hover:scale-[1.02]"
-                  >
-                    {thumb}
-                    {photo.sender_name && (
-                      <span className="absolute inset-x-0 bottom-0 truncate rounded-b-2xl bg-ink/55 px-2 py-1 text-[12px] text-white backdrop-blur-sm">
-                        {photo.sender_name}
-                      </span>
-                    )}
-                  </Link>
+                      {groupLoadingKey === group.key
+                        ? "読み込み中..."
+                        : allGroupSelected
+                          ? "グループ解除"
+                          : "グループ選択"}
+                    </button>
+                  </div>
                 )}
-              </div>
+                <div className="grid select-none grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5">
+                  {group.items.map(({ photo, index }) => {
+                    const isSelected = selected.has(photo.id);
+                    const thumb = photo.thumb_url ? (
+                      <img
+                        src={photo.thumb_url}
+                        alt={photo.sender_name ?? "写真"}
+                        className="max-h-full max-w-full rounded-xl object-contain"
+                        loading="lazy"
+                        draggable={false}
+                      />
+                    ) : (
+                      <span className="text-2xl text-ink-muted">📷</span>
+                    );
+
+                    return (
+                      <div key={photo.id} data-photo-index={index} className="relative touch-none">
+                        {selectMode ? (
+                          <button
+                            type="button"
+                            onClick={(e) => handleSelect(index, e)}
+                            className={`flex aspect-square w-full items-center justify-center overflow-hidden rounded-2xl bg-surface-canvas outline-none transition-transform hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${
+                              isSelected ? "ring-2 ring-brand" : ""
+                            }`}
+                          >
+                            {thumb}
+                            <div
+                              className={`absolute top-2 left-2 flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors ${
+                                isSelected
+                                  ? "border-brand bg-brand text-white"
+                                  : "border-white bg-ink/25 text-white"
+                              }`}
+                            >
+                              {isSelected && (
+                                <svg
+                                  className="h-3.5 w-3.5"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                  strokeWidth={3}
+                                  role="img"
+                                  aria-label="選択済み"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M5 13l4 4L19 7"
+                                  />
+                                </svg>
+                              )}
+                            </div>
+                          </button>
+                        ) : (
+                          <Link
+                            to={`/gallery/${photo.id}`}
+                            state={{ photo, groupMode }}
+                            className="group flex aspect-square items-center justify-center overflow-hidden rounded-2xl bg-surface-canvas transition-transform hover:scale-[1.02]"
+                          >
+                            {thumb}
+                          </Link>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
             );
           })}
         </div>

@@ -3,6 +3,29 @@
 /* スクロールバーの出現/消失によるヘッダーの横方向ガタつき防止 */
 html {
   scrollbar-gutter: stable;
+  background-color: #faf6f0;
+  /* スクロール不要時のガター領域が白く見えないようトラックを透明化 (Firefox) */
+  scrollbar-color: #c9bfb0 transparent;
+}
+
+/* WebKit (Chrome/Safari/Edge): トラック透明・thumbのみ表示 */
+html::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+html::-webkit-scrollbar-track {
+  background: transparent;
+}
+html::-webkit-scrollbar-thumb {
+  background: #c9bfb0;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: 999px;
+}
+html::-webkit-scrollbar-thumb:hover {
+  background: #a79a8c;
+  background-clip: padding-box;
+  border: 3px solid transparent;
 }
 
 /* FurDrop デザインシステムのテーマ拡張 (DESIGN.md §12 準拠) */

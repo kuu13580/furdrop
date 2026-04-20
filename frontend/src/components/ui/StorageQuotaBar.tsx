@@ -18,6 +18,7 @@ export default function StorageQuotaBar({ used, quota, className = "" }: Props) 
         <span className="text-ink-soft">ストレージ</span>
         <span className="font-mono text-ink-soft">
           {formatBytes(used)} / {formatBytes(quota)}
+          <span className="ml-1 text-ink-muted">({percent.toFixed(1)}%)</span>
         </span>
       </div>
       <div className="h-2 overflow-hidden rounded-full bg-surface-sand">
