@@ -85,7 +85,7 @@ export default function PhotoDetailPage() {
   if (!photo) {
     return (
       <div className="py-16 text-center">
-        <p className="text-gray-500">写真が見つかりません</p>
+        <p className="text-[14px] text-ink-soft">写真が見つかりません</p>
         <Button variant="ghost" onClick={() => navigate("/gallery")} className="mt-4">
           ギャラリーに戻る
         </Button>
@@ -100,7 +100,7 @@ export default function PhotoDetailPage() {
         <button
           type="button"
           onClick={() => navigate("/gallery")}
-          className="text-sm text-gray-500 hover:text-gray-700"
+          className="rounded-lg px-2 py-1 text-[14px] text-ink-soft transition-colors hover:bg-surface-sand hover:text-ink"
         >
           &larr; ギャラリー
         </button>
@@ -118,7 +118,7 @@ export default function PhotoDetailPage() {
       <div className="flex justify-center">
         {photo.view_url || photo.thumb_url ? (
           <div
-            className="relative mx-auto overflow-hidden rounded-lg bg-gray-100"
+            className="relative mx-auto overflow-hidden rounded-2xl bg-surface-canvas"
             style={{
               height: "70vh",
               aspectRatio:
@@ -148,7 +148,7 @@ export default function PhotoDetailPage() {
             )}
           </div>
         ) : (
-          <div className="flex h-64 w-full items-center justify-center rounded-lg bg-gray-100 text-gray-300">
+          <div className="flex h-64 w-full items-center justify-center rounded-2xl bg-surface-sand text-[14px] text-ink-muted">
             画像を読み込めません
           </div>
         )}
@@ -156,28 +156,28 @@ export default function PhotoDetailPage() {
 
       {/* メタデータ */}
       <Card title="写真情報">
-        <dl className="space-y-2 text-sm">
+        <dl className="space-y-2 text-[14px]">
           {photo.sender_name && (
             <div className="flex justify-between">
-              <dt className="text-gray-500">送信者</dt>
-              <dd className="font-medium">{photo.sender_name}</dd>
+              <dt className="text-ink-soft">送信者</dt>
+              <dd className="font-medium text-ink">{photo.sender_name}</dd>
             </div>
           )}
           <div className="flex justify-between">
-            <dt className="text-gray-500">サイズ</dt>
-            <dd className="font-medium">{formatBytes(photo.file_size)}</dd>
+            <dt className="text-ink-soft">サイズ</dt>
+            <dd className="font-mono text-ink">{formatBytes(photo.file_size)}</dd>
           </div>
           {photo.width && photo.height && (
             <div className="flex justify-between">
-              <dt className="text-gray-500">解像度</dt>
-              <dd className="font-medium">
+              <dt className="text-ink-soft">解像度</dt>
+              <dd className="font-mono text-ink">
                 {photo.width} &times; {photo.height}
               </dd>
             </div>
           )}
           <div className="flex justify-between">
-            <dt className="text-gray-500">受信日</dt>
-            <dd className="font-medium">{formatDate(photo.created_at)}</dd>
+            <dt className="text-ink-soft">受信日</dt>
+            <dd className="font-mono text-ink">{formatDate(photo.created_at)}</dd>
           </div>
         </dl>
       </Card>
