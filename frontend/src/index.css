@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* スクロールバーの出現/消失によるヘッダーの横方向ガタつき防止 */
+html {
+  scrollbar-gutter: stable;
+}
+
 /* FurDrop デザインシステムのテーマ拡張 (DESIGN.md §12 準拠) */
 @theme {
   --color-brand: #d96a4a;

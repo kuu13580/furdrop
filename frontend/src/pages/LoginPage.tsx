@@ -40,20 +40,27 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <div className="w-full max-w-sm space-y-6 px-4 text-center">
+    <div className="flex min-h-screen items-center justify-center bg-surface-canvas px-4 text-ink antialiased">
+      <div className="w-full max-w-sm space-y-6 text-center">
         <img src={logoUrl} alt="FurDrop" className="mx-auto h-20" />
-        <p className="text-gray-600">
+        <p className="text-[16px] leading-[1.5] text-ink-soft">
           写真を受け取るための
           <br />
           あなた専用URLを作ろう
         </p>
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && (
+          <div
+            role="alert"
+            className="rounded-xl border border-status-danger/30 bg-status-danger-tint px-4 py-3 text-left text-[14px] text-status-danger"
+          >
+            {error}
+          </div>
+        )}
         <button
           type="button"
           onClick={handleTwitterLogin}
           disabled={loading || authState.status === "loading"}
-          className="w-full rounded-lg bg-black px-4 py-3 font-medium text-white disabled:opacity-50"
+          className="w-full rounded-xl bg-ink px-4 py-3 text-[16px] font-medium text-white transition-all hover:bg-ink-soft active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
         >
           {loading ? "ログイン中..." : "Twitterでログイン"}
         </button>
