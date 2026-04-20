@@ -134,7 +134,7 @@ export default function WatermarkDialog({
       }
     >
       <div className="space-y-4">
-        <div className="relative flex aspect-video items-center justify-center overflow-hidden rounded-md bg-gray-100">
+        <div className="relative flex aspect-video items-center justify-center overflow-hidden rounded-2xl bg-surface-canvas">
           {previewFile && !previewError ? (
             <>
               <canvas
@@ -153,28 +153,28 @@ export default function WatermarkDialog({
                 onClick={() => setZoomed((v) => !v)}
                 aria-label={zoomed ? "ズーム解除" : "透かし箇所をズーム"}
                 aria-pressed={zoomed}
-                className={`absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full shadow transition-colors ${
-                  zoomed ? "bg-blue-600 text-white" : "bg-white/90 text-gray-700 hover:bg-white"
+                className={`absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full shadow-card transition-colors ${
+                  zoomed ? "bg-brand text-white" : "bg-surface/90 text-ink-soft hover:bg-surface"
                 }`}
               >
                 <ZoomIcon zoomed={zoomed} />
               </button>
             </>
           ) : (
-            <p className="px-4 text-center text-xs text-gray-500">
+            <p className="px-4 text-center text-[13px] text-ink-soft">
               {previewError ?? "プレビュー用の画像がありません"}
             </p>
           )}
         </div>
 
         {!text && (
-          <p className="rounded bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          <p className="rounded-xl border border-status-warn/30 bg-status-warn/10 px-3 py-2 text-[13px] text-ink">
             送信者名が未入力です。透かしには送信者名が使われます
           </p>
         )}
 
         <div>
-          <p className="mb-2 block text-xs font-medium text-gray-600">位置</p>
+          <p className="mb-2 block text-[13px] font-medium text-ink-soft">位置</p>
           <div className="grid w-24 grid-cols-3 gap-1">
             {POSITIONS.map((p) => (
               <button
@@ -182,10 +182,10 @@ export default function WatermarkDialog({
                 type="button"
                 onClick={() => onChange({ ...options, position: p })}
                 aria-label={p}
-                className={`h-6 w-6 rounded-sm border ${
+                className={`h-6 w-6 rounded-md border transition-colors ${
                   options.position === p
-                    ? "border-blue-500 bg-blue-500"
-                    : "border-gray-300 bg-white hover:bg-gray-100"
+                    ? "border-brand bg-brand"
+                    : "border-surface-sand-deep bg-surface hover:bg-surface-sand"
                 }`}
               />
             ))}
@@ -193,7 +193,7 @@ export default function WatermarkDialog({
         </div>
 
         <div>
-          <label htmlFor="wmSize" className="block text-xs font-medium text-gray-600">
+          <label htmlFor="wmSize" className="block text-[13px] font-medium text-ink-soft">
             サイズ ({(options.fontSizeRatio * 100).toFixed(1)}%)
           </label>
           <input
@@ -206,12 +206,12 @@ export default function WatermarkDialog({
             onChange={(e) =>
               onChange({ ...options, fontSizeRatio: Number.parseFloat(e.target.value) })
             }
-            className="w-full"
+            className="w-full accent-brand"
           />
         </div>
 
         <div>
-          <label htmlFor="wmOpacity" className="block text-xs font-medium text-gray-600">
+          <label htmlFor="wmOpacity" className="block text-[13px] font-medium text-ink-soft">
             透明度 ({Math.round(options.opacity * 100)}%)
           </label>
           <input
@@ -222,18 +222,18 @@ export default function WatermarkDialog({
             step="0.05"
             value={options.opacity}
             onChange={(e) => onChange({ ...options, opacity: Number.parseFloat(e.target.value) })}
-            className="w-full"
+            className="w-full accent-brand"
           />
         </div>
 
         <div>
-          <p className="mb-1 block text-xs font-medium text-gray-600">色</p>
+          <p className="mb-1 block text-[13px] font-medium text-ink-soft">色</p>
           <div className="flex gap-2">
             <button
               type="button"
               onClick={() => onChange({ ...options, color: "#ffffff" })}
-              className={`h-7 w-12 rounded border-2 bg-white ${
-                options.color === "#ffffff" ? "border-blue-500" : "border-gray-300"
+              className={`h-7 w-12 rounded-md border-2 bg-white text-[13px] text-ink transition-colors ${
+                options.color === "#ffffff" ? "border-brand" : "border-surface-sand-deep"
               }`}
             >
               白
@@ -241,8 +241,8 @@ export default function WatermarkDialog({
             <button
               type="button"
               onClick={() => onChange({ ...options, color: "#000000" })}
-              className={`h-7 w-12 rounded border-2 bg-black text-white ${
-                options.color === "#000000" ? "border-blue-500" : "border-gray-700"
+              className={`h-7 w-12 rounded-md border-2 bg-ink text-[13px] text-white transition-colors ${
+                options.color === "#000000" ? "border-brand" : "border-ink-soft"
               }`}
             >
               黒
@@ -250,22 +250,23 @@ export default function WatermarkDialog({
             <button
               type="button"
               onClick={() => onChange({ ...options, color: "auto" })}
-              className={`h-7 rounded border-2 bg-gradient-to-r from-black from-50% to-white to-50% px-3 text-xs font-medium ${
-                options.color === "auto" ? "border-blue-500" : "border-gray-300"
+              className={`h-7 rounded-md border-2 bg-gradient-to-r from-ink from-50% to-white to-50% px-3 text-[12px] font-medium transition-colors ${
+                options.color === "auto" ? "border-brand" : "border-surface-sand-deep"
               }`}
               title="描画領域の明るさから白/黒を自動選択"
             >
               <span className="text-white">自</span>
-              <span className="text-black">動</span>
+              <span className="text-ink">動</span>
             </button>
           </div>
         </div>
 
-        <label className="flex items-center gap-2 text-xs font-medium text-gray-600">
+        <label className="flex items-center gap-2 text-[13px] font-medium text-ink-soft">
           <input
             type="checkbox"
             checked={options.stroke}
             onChange={(e) => onChange({ ...options, stroke: e.target.checked })}
+            className="h-4 w-4 accent-brand"
           />
           <span>縁取り（反対色のアウトラインで視認性UP）</span>
         </label>

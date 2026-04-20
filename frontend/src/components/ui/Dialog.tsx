@@ -26,7 +26,7 @@ export default function Dialog({ open, onClose, title, children, footer }: Props
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4 backdrop-blur-sm">
       <button
         type="button"
         aria-label="閉じる"
@@ -37,25 +37,27 @@ export default function Dialog({ open, onClose, title, children, footer }: Props
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? "dialog-title" : undefined}
-        className="relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-lg bg-white shadow-xl"
+        className="relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-[20px] bg-surface text-ink shadow-modal"
       >
         {title && (
-          <div className="flex shrink-0 items-center justify-between border-b px-4 py-3">
-            <h2 id="dialog-title" className="text-base font-semibold">
+          <div className="flex shrink-0 items-center justify-between border-b border-surface-sand-deep px-5 py-3.5">
+            <h2 id="dialog-title" className="text-[16px] font-semibold text-ink">
               {title}
             </h2>
             <button
               type="button"
               onClick={onClose}
               aria-label="閉じる"
-              className="text-xl leading-none text-gray-400 hover:text-gray-600"
+              className="rounded-full px-2 text-[20px] leading-none text-ink-muted transition-colors hover:bg-surface-sand hover:text-ink"
             >
               ×
             </button>
           </div>
         )}
-        <div className="flex-1 overflow-auto p-4">{children}</div>
-        {footer && <div className="shrink-0 border-t px-4 py-3">{footer}</div>}
+        <div className="flex-1 overflow-auto p-5">{children}</div>
+        {footer && (
+          <div className="shrink-0 border-t border-surface-sand-deep px-5 py-3.5">{footer}</div>
+        )}
       </div>
     </div>
   );
