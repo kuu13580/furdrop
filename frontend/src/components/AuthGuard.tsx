@@ -9,8 +9,8 @@ export default function AuthGuard() {
 
   if (authState.status === "loading") {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-gray-400">読み込み中...</p>
+      <div className="flex min-h-screen items-center justify-center bg-surface-canvas">
+        <p className="text-[14px] text-ink-muted">読み込み中...</p>
       </div>
     );
   }
