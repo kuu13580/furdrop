@@ -10,28 +10,28 @@ export default function FormField({ label, error, hint, id, className = "", ...p
   const fieldId = id ?? label.toLowerCase().replace(/\s+/g, "-");
 
   return (
-    <div className="space-y-1">
-      <label htmlFor={fieldId} className="block text-sm font-medium text-gray-700">
+    <div className="space-y-1.5">
+      <label htmlFor={fieldId} className="block text-[14px] font-medium text-ink">
         {label}
       </label>
       <input
         id={fieldId}
-        className={`block w-full rounded-lg border px-3 py-2 text-sm transition-colors ${
+        className={`block w-full rounded-xl border bg-surface px-4 py-3 text-[14px] text-ink placeholder:text-ink-muted transition-all focus:outline-none focus:ring-3 disabled:bg-surface-sand disabled:text-ink-muted ${
           error
-            ? "border-red-300 focus:border-red-500 focus:ring-red-500"
-            : "border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-        } focus:outline-none focus:ring-1 disabled:bg-gray-50 disabled:text-gray-500 ${className}`}
+            ? "border-status-danger focus:border-status-danger focus:ring-status-danger/15"
+            : "border-surface-sand-deep focus:border-brand focus:ring-brand/15"
+        } ${className}`}
         aria-invalid={!!error}
         aria-describedby={error ? `${fieldId}-error` : hint ? `${fieldId}-hint` : undefined}
         {...props}
       />
       {error && (
-        <p id={`${fieldId}-error`} className="text-sm text-red-600">
+        <p id={`${fieldId}-error`} className="text-[13px] text-status-danger">
           {error}
         </p>
       )}
       {!error && hint && (
-        <p id={`${fieldId}-hint`} className="text-sm text-gray-500">
+        <p id={`${fieldId}-hint`} className="text-[13px] text-ink-soft">
           {hint}
         </p>
       )}

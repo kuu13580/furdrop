@@ -97,8 +97,8 @@ function RegisterForm() {
   return (
     <div className="mx-auto max-w-md space-y-6">
       <div className="text-center">
-        <h1 className="text-2xl font-bold">アカウント設定</h1>
-        <p className="mt-2 text-gray-500">写真を受け取るための公開URLを作成します</p>
+        <h1 className="text-[28px] font-bold tracking-[-0.015em] text-ink">アカウント設定</h1>
+        <p className="mt-2 text-[14px] text-ink-soft">写真を受け取るための公開URLを作成します</p>
       </div>
       <Card>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -125,35 +125,35 @@ function RegisterForm() {
             placeholder="太郎カメラ"
             maxLength={50}
           />
-          <div className="space-y-3 border-t pt-3">
-            <p className="text-sm font-medium text-gray-700">受信オプション</p>
-            <p className="text-xs text-gray-500">
+          <div className="space-y-3 border-t border-surface-sand-deep pt-4">
+            <p className="text-[14px] font-medium text-ink">受信オプション</p>
+            <p className="text-[13px] text-ink-soft">
               送信者に提示するオプションを設定します。あとから設定ページで変更できます。
             </p>
-            <label className="flex items-start gap-2 text-sm">
+            <label className="flex items-start gap-2.5 text-[14px]">
               <input
                 type="checkbox"
                 checked={allowExifEmbed}
                 onChange={(e) => setAllowExifEmbed(e.target.checked)}
-                className="mt-0.5 shrink-0"
+                className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
               />
               <span>
-                <span className="font-medium text-gray-700">EXIF埋め込みを許可</span>
-                <span className="mt-0.5 block text-xs text-gray-500">
+                <span className="font-medium text-ink">EXIF埋め込みを許可</span>
+                <span className="mt-0.5 block text-[13px] text-ink-soft">
                   送信者がカメラモデル欄に名前を書き込めます（メタデータのみ、除去可能）
                 </span>
               </span>
             </label>
-            <label className="flex items-start gap-2 text-sm">
+            <label className="flex items-start gap-2.5 text-[14px]">
               <input
                 type="checkbox"
                 checked={allowWatermark}
                 onChange={(e) => setAllowWatermark(e.target.checked)}
-                className="mt-0.5 shrink-0"
+                className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
               />
               <span>
-                <span className="font-medium text-gray-700">透かしを許可</span>
-                <span className="mt-0.5 block text-xs text-gray-500">
+                <span className="font-medium text-ink">透かしを許可</span>
+                <span className="mt-0.5 block text-[13px] text-ink-soft">
                   送信者が画像にクレジットテキストを描き込めます（不可逆）
                 </span>
               </span>
@@ -196,7 +196,7 @@ function ReceiveOptionsCard({
 
   return (
     <Card title="受信オプション">
-      <p className="mb-4 text-xs text-gray-500">
+      <p className="mb-4 text-[13px] text-ink-soft">
         送信者に提示するオプションを設定します。許可したオプションのみ送信者の画面に表示されます。
       </p>
       {error && (
@@ -211,11 +211,11 @@ function ReceiveOptionsCard({
             checked={user.allow_exif_embed}
             disabled={saving}
             onChange={(e) => toggle("allow_exif_embed", e.target.checked)}
-            className="mt-0.5 shrink-0"
+            className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
           />
           <span>
-            <span className="text-sm font-medium text-gray-700">EXIF埋め込みを許可</span>
-            <span className="mt-0.5 block text-xs text-gray-500">
+            <span className="text-[14px] font-medium text-ink">EXIF埋め込みを許可</span>
+            <span className="mt-0.5 block text-[13px] text-ink-soft">
               送信者がカメラモデル欄に名前を書き込めます（メタデータのみ、除去可能）
             </span>
           </span>
@@ -226,11 +226,11 @@ function ReceiveOptionsCard({
             checked={user.allow_watermark}
             disabled={saving}
             onChange={(e) => toggle("allow_watermark", e.target.checked)}
-            className="mt-0.5 shrink-0"
+            className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
           />
           <span>
-            <span className="text-sm font-medium text-gray-700">透かしを許可</span>
-            <span className="mt-0.5 block text-xs text-gray-500">
+            <span className="text-[14px] font-medium text-ink">透かしを許可</span>
+            <span className="mt-0.5 block text-[13px] text-ink-soft">
               送信者が画像にクレジットテキストを描き込めます（不可逆）
             </span>
           </span>
@@ -247,16 +247,16 @@ function ProfileSettings() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">設定</h1>
+      <h1 className="text-[28px] font-bold tracking-[-0.015em] text-ink">設定</h1>
       <Card title="プロフィール">
-        <dl className="space-y-3">
+        <dl className="space-y-3 text-[14px]">
           <div>
-            <dt className="text-sm text-gray-500">ハンドル</dt>
-            <dd className="font-medium">{user.handle}</dd>
+            <dt className="text-ink-soft">ハンドル</dt>
+            <dd className="font-mono font-medium text-ink">{user.handle}</dd>
           </div>
           <div>
-            <dt className="text-sm text-gray-500">表示名</dt>
-            <dd className="font-medium">{user.display_name}</dd>
+            <dt className="text-ink-soft">表示名</dt>
+            <dd className="font-medium text-ink">{user.display_name}</dd>
           </div>
         </dl>
       </Card>

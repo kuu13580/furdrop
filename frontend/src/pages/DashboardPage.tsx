@@ -38,33 +38,35 @@ function PublicUrlCard({ receiveUrl }: { receiveUrl: string }) {
   return (
     <Card title="あなたの受信URL">
       <div className="space-y-3">
-        <p className="break-all rounded bg-gray-50 px-3 py-2 font-mono text-sm">{receiveUrl}</p>
-        <div className="flex gap-2">
+        <p className="break-all rounded-xl bg-surface-canvas px-3 py-2 font-mono text-[14px] text-ink">
+          {receiveUrl}
+        </p>
+        <div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={handleCopy}
-            className="rounded-lg border px-3 py-1.5 text-sm hover:bg-gray-50"
+            className="rounded-xl border border-surface-sand-deep bg-surface-sand px-3 py-2 text-[14px] font-medium text-ink transition-colors hover:bg-surface-sand-hover"
           >
             {copied ? "コピーしました!" : "コピー"}
           </button>
           <button
             type="button"
             onClick={() => setQrOpen((v) => !v)}
-            className="rounded-lg border px-3 py-1.5 text-sm hover:bg-gray-50"
+            className="rounded-xl border border-surface-sand-deep bg-surface-sand px-3 py-2 text-[14px] font-medium text-ink transition-colors hover:bg-surface-sand-hover"
           >
             QR
           </button>
           <button
             type="button"
             onClick={handleShare}
-            className="rounded-lg border px-3 py-1.5 text-sm hover:bg-gray-50"
+            className="rounded-xl border border-surface-sand-deep bg-surface-sand px-3 py-2 text-[14px] font-medium text-ink transition-colors hover:bg-surface-sand-hover"
           >
             シェア
           </button>
         </div>
         {qrOpen && (
           <div className="flex justify-center py-2">
-            <canvas ref={canvasRef} />
+            <canvas ref={canvasRef} className="rounded-xl" />
           </div>
         )}
       </div>
@@ -86,52 +88,53 @@ function RecentPhotos({ photos, loading }: { photos: Photo[]; loading: boolean }
   if (photos.length === 0) {
     return (
       <Card title="最近の写真">
-        <p className="py-4 text-center text-gray-400">まだ写真がありません</p>
+        <p className="py-6 text-center text-[14px] text-ink-muted">まだ写真がありません</p>
       </Card>
     );
   }
 
   return (
     <Card title="最近の写真">
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
         {photos.map((photo) => (
           <Link
             key={photo.id}
             to={`/gallery/${photo.id}`}
             state={{ photo }}
-            className="group relative aspect-square overflow-hidden rounded-lg bg-gray-100"
+            className="group flex aspect-square items-center justify-center overflow-hidden rounded-2xl bg-surface-canvas transition-transform hover:scale-[1.02]"
           >
             {photo.thumb_url ? (
               <img
                 src={photo.thumb_url}
                 alt={photo.sender_name ?? "写真"}
-                className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                className="max-h-full max-w-full rounded-xl object-contain"
                 loading="lazy"
               />
             ) : (
-              <div className="flex h-full items-center justify-center text-gray-300">
-                <svg
-                  className="h-8 w-8"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  role="img"
-                  aria-label="画像なし"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z"
-                  />
-                </svg>
-              </div>
+              <svg
+                className="h-8 w-8 text-ink-muted"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                role="img"
+                aria-label="画像なし"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z"
+                />
+              </svg>
             )}
           </Link>
         ))}
       </div>
-      <div className="mt-3 text-right">
-        <Link to="/gallery" className="text-sm text-blue-600 hover:underline">
+      <div className="mt-4 text-right">
+        <Link
+          to="/gallery"
+          className="text-[14px] font-medium text-brand transition-colors hover:text-brand-deep"
+        >
           全て見る &rarr;
         </Link>
       </div>
@@ -182,7 +185,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">ダッシュボード</h1>
+      <h1 className="text-[28px] font-bold tracking-[-0.015em] text-ink">ダッシュボード</h1>
       <PublicUrlCard receiveUrl={`${window.location.origin}${user.receive_url}`} />
       <Card title="ストレージ">
         <StorageQuotaBar used={user.storage_used} quota={user.storage_quota} />

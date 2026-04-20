@@ -219,12 +219,12 @@ export default function GalleryPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">ギャラリー</h1>
+        <h1 className="text-[28px] font-bold tracking-[-0.015em] text-ink">ギャラリー</h1>
         {photos.length > 0 && (
           <button
             type="button"
             onClick={() => (selectMode ? exitSelectMode() : setSelectMode(true))}
-            className="text-sm text-blue-600 hover:underline"
+            className="rounded-lg px-3 py-1.5 text-[14px] font-medium text-brand transition-colors hover:bg-brand-tint"
           >
             {selectMode ? "完了" : "選択"}
           </button>
@@ -232,16 +232,16 @@ export default function GalleryPage() {
       </div>
 
       {selectMode && (
-        <div className="flex items-center justify-between rounded-lg bg-gray-100 px-4 py-2">
+        <div className="flex items-center justify-between rounded-2xl border border-surface-sand-deep bg-surface-sand px-4 py-2.5">
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={toggleSelectAll}
-              className="text-sm text-blue-600 hover:underline"
+              className="text-[14px] font-medium text-brand transition-colors hover:text-brand-deep"
             >
               {selected.size === photos.length ? "全解除" : "全選択"}
             </button>
-            <span className="text-sm text-gray-500">{selected.size}枚選択中</span>
+            <span className="text-[14px] text-ink-soft">{selected.size}枚選択中</span>
           </div>
           <div className="flex gap-2">
             <Button
@@ -266,87 +266,81 @@ export default function GalleryPage() {
       )}
 
       {photos.length === 0 ? (
-        <p className="py-16 text-center text-gray-400">まだ写真がありません</p>
+        <div className="rounded-2xl bg-surface-sand py-16 text-center">
+          <p className="text-[14px] font-medium text-ink-soft">まだ写真がありません</p>
+        </div>
       ) : (
         <div
-          className="grid grid-cols-2 gap-2 select-none sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"
+          className="grid select-none grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5"
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
         >
-          {photos.map((photo, index) => (
-            <div key={photo.id} data-photo-index={index} className="relative touch-none">
-              {selectMode ? (
-                <button
-                  type="button"
-                  onClick={(e) => handleSelect(index, e)}
-                  className={`aspect-square w-full overflow-hidden rounded-lg bg-gray-100 outline-none transition-transform hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-400 ${
-                    selected.has(photo.id) ? "ring-2 ring-blue-500" : ""
-                  }`}
-                >
-                  {photo.thumb_url ? (
-                    <img
-                      src={photo.thumb_url}
-                      alt={photo.sender_name ?? "写真"}
-                      className="h-full w-full object-cover"
-                      loading="lazy"
-                      draggable={false}
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center text-gray-300">
-                      <span className="text-2xl">📷</span>
-                    </div>
-                  )}
-                  <div
-                    className={`absolute top-1.5 left-1.5 flex h-5 w-5 items-center justify-center rounded-full border-2 ${
-                      selected.has(photo.id)
-                        ? "border-blue-500 bg-blue-500 text-white"
-                        : "border-white bg-black/20"
+          {photos.map((photo, index) => {
+            const isSelected = selected.has(photo.id);
+            const thumb = photo.thumb_url ? (
+              <img
+                src={photo.thumb_url}
+                alt={photo.sender_name ?? "写真"}
+                className="max-h-full max-w-full rounded-xl object-contain"
+                loading="lazy"
+                draggable={false}
+              />
+            ) : (
+              <span className="text-2xl text-ink-muted">📷</span>
+            );
+
+            return (
+              <div key={photo.id} data-photo-index={index} className="relative touch-none">
+                {selectMode ? (
+                  <button
+                    type="button"
+                    onClick={(e) => handleSelect(index, e)}
+                    className={`flex aspect-square w-full items-center justify-center overflow-hidden rounded-2xl bg-surface-canvas outline-none transition-transform hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${
+                      isSelected ? "ring-2 ring-brand" : ""
                     }`}
                   >
-                    {selected.has(photo.id) && (
-                      <svg
-                        className="h-3 w-3"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={3}
-                        role="img"
-                        aria-label="選択済み"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </div>
-                </button>
-              ) : (
-                <Link
-                  to={`/gallery/${photo.id}`}
-                  state={{ photo }}
-                  className="group block aspect-square overflow-hidden rounded-lg bg-gray-100"
-                >
-                  {photo.thumb_url ? (
-                    <img
-                      src={photo.thumb_url}
-                      alt={photo.sender_name ?? "写真"}
-                      className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center text-gray-300">
-                      <span className="text-2xl">📷</span>
+                    {thumb}
+                    <div
+                      className={`absolute top-2 left-2 flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors ${
+                        isSelected
+                          ? "border-brand bg-brand text-white"
+                          : "border-white bg-ink/25 text-white"
+                      }`}
+                    >
+                      {isSelected && (
+                        <svg
+                          className="h-3.5 w-3.5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={3}
+                          role="img"
+                          aria-label="選択済み"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
                     </div>
-                  )}
-                  {photo.sender_name && (
-                    <span className="absolute bottom-0 left-0 w-full truncate bg-black/40 px-1.5 py-0.5 text-xs text-white">
-                      {photo.sender_name}
-                    </span>
-                  )}
-                </Link>
-              )}
-            </div>
-          ))}
+                  </button>
+                ) : (
+                  <Link
+                    to={`/gallery/${photo.id}`}
+                    state={{ photo }}
+                    className="group flex aspect-square items-center justify-center overflow-hidden rounded-2xl bg-surface-canvas transition-transform hover:scale-[1.02]"
+                  >
+                    {thumb}
+                    {photo.sender_name && (
+                      <span className="absolute inset-x-0 bottom-0 truncate rounded-b-2xl bg-ink/55 px-2 py-1 text-[12px] text-white backdrop-blur-sm">
+                        {photo.sender_name}
+                      </span>
+                    )}
+                  </Link>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
