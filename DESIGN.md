@@ -86,18 +86,33 @@ Twitterハンドル (`@taro_camera`) やスラッグ (`/send/taro_camera`) は�
 
 ### Hierarchy
 
-| Role | Size | Weight | Line Height | Letter Spacing | 用途 |
-|---|---|---|---|---|---|
-| Display Hero | 40px / 2.5rem | 700 | 1.15 | -0.02em | 送信完了ヒーロー (S04) |
-| Page Title | 28px / 1.75rem | 700 | 1.25 | -0.015em | ダッシュボード・ギャラリー見出し |
-| Section Heading | 22px / 1.375rem | 600 | 1.30 | -0.01em | 「最近の写真」「ストレージ」等 |
-| Card Title | 18px / 1.125rem | 600 | 1.35 | -0.005em | 受信者名、ファイル名 |
-| Body Emphasis | 16px / 1rem | 500 | 1.50 | normal | 強調本文、ナビゲーション |
-| Body | 16px / 1rem | 400 | 1.50 | normal | 標準本文 |
-| UI Label | 14px / 0.875rem | 500 | 1.40 | normal | ボタン、フォームラベル |
-| Meta | 14px / 0.875rem | 400 | 1.45 | normal | 送信者名、日付、ファイルサイズ |
-| Caption | 12px / 0.75rem | 400 | 1.40 | 0.01em | タグ、補助テキスト |
-| Micro Upper | 11px / 0.688rem | 700 | 1.30 | 0.08em | 「NEW」「BETA」等の uppercase バッジ |
+| Role | Mobile (<sm) | Desktop (sm+) | Weight | Line Height | Letter Spacing | 用途 |
+|---|---|---|---|---|---|---|
+| Display Hero | 28px | 40px / 2.5rem | 700 | 1.15 | -0.02em | 送信完了ヒーロー (S04) |
+| Page Title | 22px | 28px / 1.75rem | 700 | 1.25 | -0.015em | ダッシュボード・ギャラリー見出し |
+| Section Heading | 22px | 22px / 1.375rem | 600 | 1.30 | -0.01em | 「最近の写真」「ストレージ」等 |
+| Card Title | 18px | 18px / 1.125rem | 600 | 1.35 | -0.005em | 受信者名、ファイル名 |
+| Body Emphasis | 16px | 16px / 1rem | 500 | 1.50 | normal | 強調本文、ナビゲーション |
+| Body | 16px | 16px / 1rem | 400 | 1.50 | normal | 標準本文 |
+| UI Label | 14px | 14px / 0.875rem | 500 | 1.40 | normal | ボタン、フォームラベル |
+| Meta | 14px | 14px / 0.875rem | 400 | 1.45 | normal | 送信者名、日付、ファイルサイズ |
+| Caption | 12px | 12px / 0.75rem | 400 | 1.40 | 0.01em | タグ、補助テキスト |
+| Micro Upper | 11px | 11px / 0.688rem | 700 | 1.30 | 0.08em | 「NEW」「BETA」等の uppercase バッジ |
+
+### Mobile Type Scale (縮小対象)
+
+**縮小する (Hero / Title 級のみ)**: モバイルは視野が狭く、ヒーロー・ページタイトルの 40/28px は視覚的に支配的すぎる。コンテンツの呼吸量を確保するため、**タイトル級のみを 1 段階下げる**。
+- Display Hero: `text-[28px] sm:text-[40px]`
+- Page Title: `text-[22px] sm:text-[28px]`
+
+**縮小しない (インタラクティブ・情報密度要素)**: 以下は**モバイルでも現状サイズを維持する**。操作の確実性・情報の読み取りに直結し、小さくすると UX が劣化する。
+- Section Heading (22px) — 既にモバイル適正。これ以上下げない
+- Card Title (18px) — ファイル名・受信者名の読み取り
+- Body / Body Emphasis (16px) — 本文の a11y 下限
+- UI Label (14px) — ボタン・フォームラベル
+- Meta (14px) — 送信者名・日付などメタデータ
+- **グループヘッダー・選択/DL・グループ選択ボタン**等のギャラリー操作系 (13–14px) — 選択 UX の要
+- Caption (12px) — 下限、これ以下は a11y 違反
 
 ### Principles
 - **負トラッキング on 見出し**: 見出しには -0.005em 〜 -0.02em を入れ、親密さを出す。本文 (16px 以下) には入れない。
@@ -198,9 +213,24 @@ Twitterハンドル (`@taro_camera`) やスラッグ (`/send/taro_camera`) は�
 - Background: `rgba(255,255,255,0.85)` + `backdrop-filter: blur(12px)`
 - Border-bottom: `1px solid #EAE1D3`
 - Height: `56px` (モバイル) / `64px` (デスクトップ)
-- 左: ロゴ (Sunset Coral) — `h-9`
-- 右: NavLink (`#6E5F52`) / active (`#D96A4A` + 600 weight)
-- Sticky top, z-10
+- 左: ロゴ (Sunset Coral) — `h-9`。ロゴは `shrink-0` でつぶれを禁止
+- Sticky top, z-30 (モバイルドロワーより前面)
+
+**デスクトップ (sm 以上)**
+- 右: NavLink (`#6E5F52`) / active (`#D96A4A` + 600 weight) を横並び
+- ログアウトボタンは Ghost スタイル (`#A79A8C` / hover で sand 背景)
+
+**モバイル (sm 未満) — ハンバーガー必須**
+- NavLink を横並びにしない (日本語メニュー「ダッシュボード」「ギャラリー」等で改行・押しつぶしが発生するため)
+- 右端に円形ハンバーガーボタン (`44×44px`, radius `50%`, icon `24px`)
+- タップで上から展開するドロワー:
+  - ヘッダー直下 (`top: 56px`) に `fixed inset-x-0` の白パネル (背景 `#FFFFFF`)
+  - 背景半透明オーバーレイ `rgba(42,31,27,0.4)` + `backdrop-blur-sm` を全面に敷く
+  - メニュー項目は縦積み、各行 `px-4 py-3`、ラベル 16px、tap target 44px 以上
+  - active は `bg-brand-tint` + `text-brand` + 600 weight、非active は `text-ink` で hover `bg-surface-sand`
+  - ドロワー z-20、オーバーレイ z-10、ヘッダー z-30
+- 展開中は `body { overflow: hidden }` で背景スクロールをロック
+- Escape キー・オーバーレイタップ・ルート遷移でクローズ
 
 ### Footer (Fixed)
 
@@ -252,7 +282,8 @@ Twitterハンドル (`@taro_camera`) やスラッグ (`/send/taro_camera`) は�
 
 **Gallery (S07) — 均一グリッド (正方形)**
 - CSS Grid (`grid-template-columns: repeat(N, minmax(0, 1fr))`) + 各カード `aspect-ratio: 1/1`
-- カラム数: モバイル 2 / タブレット 3 / デスクトップ 4 / ラージ 5
+- カラム数: モバイル・タブレット 3 / デスクトップ 4 / ラージ 5
+  - モバイルも 3 列でサムネイル個々のサイズを抑え、一度に視界に入る枚数を増やしてスキャン効率を上げる (DL 選択 UX 優先)
 - カード間ギャップ: `8px` (モバイル) / `12px` (タブレット以上)
 - 無限スクロール (Intersection Observer) — 50件/リクエスト
 - **masonry は採用しない** — 不揃いな形状は選択UXを阻害する
@@ -309,7 +340,7 @@ FurDropの本質的ユースケースは「受信者が大量の写真の中か�
 - **ギャラリー (S07)**: 均一グリッド (全カード `aspect-ratio: 1/1`)。写真は `object-fit: contain` で枠内に全体を収め、余白は Cream 台座で吸収。masonry は採用しない (選択UX阻害のため)。長辺 400px のサムネイルを使用。
 - **Dashboard 最近の写真 (S06)**: 3枚の等幅カードなど固定グリッドを使う場合、カードは `aspect-ratio: 1/1` 程度に固定し、写真は `object-fit: contain` で中に収める。はみ出た余白は Cream で埋める。
 - **送信完了 (S04)**: 送信した写真のサムネイル一覧。同様に長辺合わせで全体表示。
-- **詳細画面 (S08)**: 拡大表示。画面の縦横のうち余裕のある方に長辺を合わせる (`max-width: 100%; max-height: calc(100vh - header - meta)`, `object-fit: contain`)。
+- **詳細画面 (S08)**: 拡大表示。**アスペクト比を必ず保持する**。コンテナは `aspect-ratio: width / height` を持たせたうえで、`width: min(100%, calc(70vh * ratio))` で幅を決める。こうすると縦辺は必ず `70vh` 以下に収まり、横辺は親幅を超えず、どの画面サイズ・縦横比の写真でも歪みなく表示できる。固定 `height` + `aspect-ratio` + `max-width` の組み合わせは**禁止** (モバイル幅に clamp された瞬間にアスペクト比が崩れ、サムネイルが歪むため)。`object-fit: contain` を画像自体にも適用。ロード中サムネイルのブラーも `object-contain` を使い、コンテナのアスペクト比に頼ってクロップしない。
 - **受信者アバター**: 円形 (`50%`)、`2px solid #FFFFFF` の白縁 + 三層シャドウ。アバターは例外的にクロップ可 (プロフィール画像は一般にクロップ前提で用意されるため)。
 - **空状態**: 写真0件時はキャンバス色のイラスト枠 (radius `20px`, bg `#F1E8DB`) に「まだ写真がありません」をエスプレッソ 500 で表示。
 - **アップロード中プレースホルダ**: ぼんやりした skeleton (`#F1E8DB` → `#EAE1D3` の shimmer) を使い、完了時にフェードイン (`opacity 300ms ease-out`)。
@@ -337,6 +368,33 @@ FurDropの本質的ユースケースは「受信者が大量の写真の中か�
 - **Respect `prefers-reduced-motion`**: アニメーションを無効化するメディアクエリを必ず入れる
 - **Scale on tap**: プライマリボタンは active 時 `scale(0.98)` で触覚フィードバック (Airbnb流)
 - **Loader**: 円形スピナーよりプログレスバーを優先 (アップロード枚数が見えるため)
+
+## 8.5 Interaction - Destructive Confirm
+
+取り消し不可・副作用の大きい操作は、**必ずブランド付きの確認ダイアログ (`ConfirmDialog`) を挟む**。native `window.confirm()` は使用しない (ブラウザ標準スタイルでブランドが崩れ、日本語の改行も不自然になるため)。
+
+**対象となる操作 (要確認)**
+- 写真の削除 (単体・一括) — R2/D1 からの物理削除で復元不可
+- ログアウト — 再ログインに OAuth フローが必要
+- セッション破棄・アカウント設定のリセット (将来)
+- その他、一度実行するとロールバックできない操作
+
+**対象外 (確認不要)**
+- 送信・保存・更新など「正の操作」
+- 選択のトグル、フィルタ切替、モード切替 (ローカル状態のみ)
+- 自動保存・下書きの上書き (ユーザーが明示的に触っていない)
+
+**`ConfirmDialog` の規約** (`frontend/src/components/ui/ConfirmDialog.tsx`)
+- `title`: 疑問形で簡潔に (例: `"この写真を削除しますか？"` / `"ログアウトしますか？"`)
+- `description`: 結果の不可逆性や副作用を 1 文で (例: `"削除された写真は復元できません。"`)
+- `confirmLabel`: 動詞 + `する` で明示 (`"削除する"` / `"ログアウト"`)。「OK」は曖昧なので避ける
+- `cancelLabel`: `"キャンセル"` を基本
+- `variant`:
+  - `"danger"`: 削除・ログアウト等すべての destructive 操作で必須
+  - `"primary"`: 非破壊的な最終確認 (将来用途)
+- `loading`: 呼び出し側で管理。処理中は Dialog の外側タップ・Escape・キャンセルを無効化する
+
+**ダイアログの見た目** は §4 Modal / Dialog を継承: radius `24px`, shadow `modal`, backdrop `rgba(42,31,27,0.4)` + backdrop-blur。
 
 ## 9. Do's and Don'ts
 
@@ -367,6 +425,10 @@ FurDropの本質的ユースケースは「受信者が大量の写真の中か�
 - **写真を `object-fit: fill` で引き伸ばさない** — 縦横比を破壊する
 - 固定グリッドで余白を黒や濃いグレーで埋めない — Cream/Sand の台座を使う
 - **masonry レイアウトを使わない** — 不揃いなカード形状はDL選択時のスキャン・タップUXを阻害する。ギャラリーは常に均一グリッド
+- **モバイルヘッダーに複数の日本語メニューを横並びで詰め込まない** — ロゴが押しつぶされてメニューが改行する。sm 未満は必ずハンバーガードロワー化
+- **詳細画像で固定 `height` + `aspect-ratio` + `max-width` を併用しない** — モバイル幅に clamp されるとアスペクト比が崩れる。必ず `width: min(100%, calc(70vh * ratio))` で幅を決めて縦辺を間接制御する
+- **ギャラリーをモバイル 2 列にしない** — 3 列のほうが DL 選択時のスキャン効率が高い。カラム数は 3 → 4 → 5 のみ
+- **destructive 操作に native `window.confirm()` を使わない** — ブラウザ標準のモーダルではブランドが崩れ、日本語の改行も不自然。`ConfirmDialog` (variant=danger) を必ず挟む (§8.5)
 
 ## 10. Responsive Behavior
 
@@ -379,11 +441,12 @@ FurDropの本質的ユースケースは「受信者が大量の写真の中か�
 | Large | `>1440px` (`2xl+`) | ギャラリー 5列、最大幅 1280px で中央寄せ |
 
 ### Collapsing Strategy
-- ギャラリー: 5 → 4 → 3 → 2 列
-- ヘッダー: フルナビ → ハンバーガー (モバイル、将来)
+- ギャラリー: 5 → 4 → 3 列 (モバイルも 3 列。2 列まで落とさない)
+- **ヘッダー: デスクトップはフルナビ、モバイル (sm 未満) はハンバーガードロワー** (§4 Navigation 参照)。日本語メニュー「ダッシュボード」「ギャラリー」「設定」「ログアウト」を横並びにするとモバイル幅ではロゴが押しつぶされ改行が発生するため、**必ずハンバーガー化する**
 - Dashboard カード: 横並び → 縦積み
 - S02 詳細設定: アコーディオン (全サイズ)
 - S08 前後ナビ: キーボード矢印 (デスクトップ) + スワイプ (モバイル)
+- **S08 詳細画像**: モバイルでもアスペクト比を保持 (§7.2 詳細画面 参照)。固定 `height` + `aspect-ratio` + `max-width` の組み合わせは使わない
 
 ### Touch Targets
 - ボタン最小 44×44px

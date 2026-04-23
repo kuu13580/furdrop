@@ -97,7 +97,9 @@ function RegisterForm() {
   return (
     <div className="mx-auto max-w-md space-y-6">
       <div className="text-center">
-        <h1 className="text-[28px] font-bold tracking-[-0.015em] text-ink">アカウント設定</h1>
+        <h1 className="text-[22px] font-bold tracking-[-0.015em] text-ink sm:text-[28px]">
+          アカウント設定
+        </h1>
         <p className="mt-2 text-[14px] text-ink-soft">写真を受け取るための公開URLを作成します</p>
       </div>
       <Card>
@@ -247,7 +249,7 @@ function ProfileSettings() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-[28px] font-bold tracking-[-0.015em] text-ink">設定</h1>
+      <h1 className="text-[22px] font-bold tracking-[-0.015em] text-ink sm:text-[28px]">設定</h1>
       <Card title="プロフィール">
         <dl className="space-y-3 text-[14px]">
           <div>

@@ -184,56 +184,69 @@ function ColorsSection() {
 
 function TypographySection() {
   const sample = "こんにちは、FurDrop — @taro_camera";
-  const rows: { role: string; sampleClass: string; meta: string }[] = [
+  // sampleClass は実際のレスポンシブ挙動を視覚化するため responsive prefix 付きで定義
+  const rows: { role: string; sampleClass: string; meta: string; scaled: boolean }[] = [
     {
       role: "Display Hero",
-      sampleClass: "text-[40px] font-bold leading-[1.15] tracking-[-0.02em] text-ink",
-      meta: "40px / 700 / -0.02em",
+      sampleClass:
+        "text-[28px] sm:text-[40px] font-bold leading-[1.15] tracking-[-0.02em] text-ink",
+      meta: "mobile 28px / sm+ 40px / 700 / -0.02em",
+      scaled: true,
     },
     {
       role: "Page Title",
-      sampleClass: "text-[28px] font-bold leading-[1.25] tracking-[-0.015em] text-ink",
-      meta: "28px / 700 / -0.015em",
+      sampleClass:
+        "text-[22px] sm:text-[28px] font-bold leading-[1.25] tracking-[-0.015em] text-ink",
+      meta: "mobile 22px / sm+ 28px / 700 / -0.015em",
+      scaled: true,
     },
     {
       role: "Section Heading",
       sampleClass: "text-[22px] font-semibold leading-[1.30] tracking-[-0.01em] text-ink",
       meta: "22px / 600 / -0.01em",
+      scaled: false,
     },
     {
       role: "Card Title",
       sampleClass: "text-[18px] font-semibold leading-[1.35] tracking-[-0.005em] text-ink",
       meta: "18px / 600 / -0.005em",
+      scaled: false,
     },
     {
       role: "Body Emphasis",
       sampleClass: "text-[16px] font-medium leading-[1.5] text-ink",
       meta: "16px / 500",
+      scaled: false,
     },
     {
       role: "Body",
       sampleClass: "text-[16px] font-normal leading-[1.5] text-ink",
       meta: "16px / 400",
+      scaled: false,
     },
     {
       role: "UI Label",
       sampleClass: "text-[14px] font-medium leading-[1.4] text-ink",
       meta: "14px / 500",
+      scaled: false,
     },
     {
       role: "Meta",
       sampleClass: "text-[14px] font-normal leading-[1.45] text-ink-soft",
       meta: "14px / 400 / Mocha",
+      scaled: false,
     },
     {
       role: "Caption",
       sampleClass: "text-[12px] font-normal leading-[1.4] tracking-[0.01em] text-ink-soft",
       meta: "12px / 400 / 0.01em",
+      scaled: false,
     },
     {
       role: "Micro Upper",
       sampleClass: "text-[11px] font-bold uppercase leading-[1.3] tracking-[0.08em] text-brand",
       meta: "11px / 700 / 0.08em",
+      scaled: false,
     },
   ];
 
@@ -241,7 +254,7 @@ function TypographySection() {
     <SectionShell
       id="02"
       title="タイポグラフィ"
-      caption="Inter + Noto Sans JP の2段ファミリー。見出しには負トラッキング、ウェイトは 400/500/600/700 のみ。"
+      caption="Inter + Noto Sans JP の2段ファミリー。見出しには負トラッキング、ウェイトは 400/500/600/700 のみ。Display Hero と Page Title のみモバイルで縮小 (sm+ で元サイズに戻す)。"
     >
       <div className="overflow-hidden rounded-[20px] border border-surface-sand-deep bg-surface shadow-card">
         {rows.map((row, idx) => (
@@ -252,8 +265,15 @@ function TypographySection() {
             }`}
           >
             <div className="space-y-1">
-              <div className="font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-ink-muted">
-                {row.role}
+              <div className="flex items-center gap-2">
+                <div className="font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-ink-muted">
+                  {row.role}
+                </div>
+                {row.scaled && (
+                  <span className="rounded-full bg-brand-tint px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[0.08em] text-brand-deep">
+                    mobile scaled
+                  </span>
+                )}
               </div>
               <div className={row.sampleClass}>{sample}</div>
             </div>
@@ -261,6 +281,11 @@ function TypographySection() {
           </div>
         ))}
       </div>
+      <p className="mt-4 text-[13px] text-ink-soft">
+        ※ Display Hero / Page Title は幅 640px 未満で縮小。Section Heading 以下は
+        a11y・操作性・情報密度のため モバイルでもサイズ据え置き
+        (ギャラリーのグループヘッダー・選択/DL ボタンなどはこれらに該当)。
+      </p>
     </SectionShell>
   );
 }
@@ -764,7 +789,252 @@ function GallerySection() {
 }
 
 /* -------------------------------------------------------------------------- */
-/* 10. Depth levels                                                           */
+/* 10. Mobile Header (hamburger)                                              */
+/* -------------------------------------------------------------------------- */
+
+function MobileHeaderSection() {
+  return (
+    <SectionShell
+      id="10"
+      title="モバイルヘッダー (ハンバーガー)"
+      caption="sm 未満では NavLink を横並びにせず、ハンバーガーボタン + ドロワーに集約する。ロゴが押しつぶされ改行が発生する NG パターンと、正しいハンバーガー展開を並記する。"
+    >
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* NG: メニュー横並びで押しつぶし・改行 */}
+        <div className="rounded-[20px] border border-status-danger/30 bg-status-danger-tint/40 p-5">
+          <div className="mb-3 flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-status-danger">
+            Don&rsquo;t
+          </div>
+          <div className="mx-auto w-[360px] max-w-full overflow-hidden rounded-[16px] border border-surface-sand-deep bg-surface shadow-card">
+            <div className="flex h-14 items-center justify-between gap-2 border-b border-surface-sand-deep bg-surface/85 px-4 backdrop-blur">
+              <div className="flex min-w-0 items-center">
+                <div className="h-6 min-w-0 flex-1 truncate font-semibold text-brand">FurDrop</div>
+              </div>
+              <nav className="flex flex-wrap items-center gap-2 text-[13px] text-ink-soft">
+                <span>ダッシュボード</span>
+                <span>ギャラリー</span>
+                <span>設定</span>
+                <span>ログアウト</span>
+              </nav>
+            </div>
+            <div className="flex h-24 items-center justify-center bg-surface-canvas text-[12px] text-ink-muted">
+              Content
+            </div>
+          </div>
+          <p className="mt-3 text-[13px] text-status-danger">
+            日本語メニューを横並びにすると、ロゴが縦に伸び / メニューが改行し / タップ領域が 44px
+            未満になる。
+          </p>
+        </div>
+
+        {/* Do: ハンバーガー + ドロワー */}
+        <div className="rounded-[20px] border border-status-success/30 bg-status-success-tint/40 p-5">
+          <div className="mb-3 flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-status-success">
+            Do
+          </div>
+          <div className="mx-auto w-[360px] max-w-full overflow-hidden rounded-[16px] border border-surface-sand-deep bg-surface shadow-card">
+            <div className="flex h-14 items-center justify-between gap-3 border-b border-surface-sand-deep bg-surface/85 px-4 backdrop-blur">
+              <div className="flex shrink-0 items-center font-semibold text-brand">FurDrop</div>
+              <button
+                type="button"
+                aria-label="メニューを開く"
+                className="flex h-11 w-11 items-center justify-center rounded-full text-ink hover:bg-surface-sand"
+              >
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  role="img"
+                  aria-hidden="true"
+                >
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="12" x2="21" y2="12" />
+                  <line x1="3" y1="18" x2="21" y2="18" />
+                </svg>
+              </button>
+            </div>
+            <div className="border-b border-surface-sand-deep bg-surface shadow-card">
+              <nav className="flex flex-col gap-1 px-4 py-3">
+                <div className="rounded-xl bg-brand-tint px-4 py-3 text-[16px] font-semibold text-brand">
+                  ダッシュボード
+                </div>
+                <div className="rounded-xl px-4 py-3 text-[16px] font-medium text-ink">
+                  ギャラリー
+                </div>
+                <div className="rounded-xl px-4 py-3 text-[16px] font-medium text-ink">設定</div>
+                <div className="mt-1 rounded-xl px-4 py-3 text-[14px] font-medium text-ink-soft">
+                  ログアウト
+                </div>
+              </nav>
+            </div>
+            <div className="flex h-20 items-center justify-center bg-ink/40 text-[12px] text-white">
+              Backdrop (ink/40)
+            </div>
+          </div>
+          <p className="mt-3 text-[13px] text-status-success">
+            ロゴ <code className="font-mono">shrink-0</code> で縮みを禁止。右端に円形 44×44
+            のハンバーガー。展開ドロワーは active に{" "}
+            <code className="font-mono">bg-brand-tint</code>
+            、各行 tap target 44px 以上。
+          </p>
+        </div>
+      </div>
+    </SectionShell>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* 11. Detail Viewer (aspect-ratio preservation)                              */
+/* -------------------------------------------------------------------------- */
+
+function DetailViewerSection() {
+  const samples: { label: string; w: number; h: number }[] = [
+    { label: "横長 3:2", w: 600, h: 400 },
+    { label: "正方形 1:1", w: 500, h: 500 },
+    { label: "縦長 2:3", w: 400, h: 600 },
+    { label: "パノラマ 2:1", w: 800, h: 400 },
+  ];
+
+  return (
+    <SectionShell
+      id="11"
+      title="詳細画像ビューア (アスペクト比保持)"
+      caption="S08 詳細画像は width: min(100%, 70vh * ratio) + aspect-ratio で縦辺を 70vh 以下に抑えつつアスペクト比を必ず保持する。固定 height + aspect-ratio + max-width の併用は禁止 (モバイル幅 clamp でアスペクト比が崩れるため)。"
+    >
+      <div className="grid gap-6 sm:grid-cols-2">
+        {samples.map((s) => {
+          const ratio = s.w / s.h;
+          return (
+            <div
+              key={s.label}
+              className="rounded-[20px] border border-surface-sand-deep bg-surface p-4 shadow-card sm:p-6"
+            >
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-[14px] font-semibold text-ink">{s.label}</span>
+                <span className="font-mono text-[11px] text-ink-muted">
+                  {s.w} × {s.h} (ratio {ratio.toFixed(2)})
+                </span>
+              </div>
+              <div className="flex justify-center">
+                <div
+                  className="relative overflow-hidden rounded-2xl bg-surface-canvas"
+                  style={{
+                    aspectRatio: `${s.w} / ${s.h}`,
+                    width: `min(100%, calc(40vh * ${ratio}))`,
+                  }}
+                >
+                  <img
+                    src={`https://picsum.photos/seed/furdrop-detail-${s.w}x${s.h}/${s.w}/${s.h}`}
+                    alt={s.label}
+                    className="absolute inset-0 h-full w-full object-contain"
+                    loading="lazy"
+                  />
+                </div>
+              </div>
+              <div className="mt-3 font-mono text-[11px] leading-[1.5] text-ink-muted">
+                aspectRatio: {s.w} / {s.h}
+                <br />
+                width: min(100%, calc(40vh * {ratio.toFixed(2)}))
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <p className="mt-4 text-[13px] text-ink-soft">
+        ※ プレビューは 40vh で縮小表示。本番 (S08) では 70vh
+        を上限に。横長・パノラマはコンテナ幅が親幅に clamp され、縦長はコンテナ幅が計算値に clamp
+        されて縦辺が 70vh を超えない。
+      </p>
+    </SectionShell>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* 11b. Destructive Confirm Dialog                                            */
+/* -------------------------------------------------------------------------- */
+
+function ConfirmDialogSection() {
+  return (
+    <SectionShell
+      id="11b"
+      title="Destructive Confirm Dialog"
+      caption="取り消し不可の操作は ConfirmDialog (variant=danger) を必ず挟む。native window.confirm() は使わない。title は疑問形、confirmLabel は動詞 + する (例: 削除する / ログアウト)。"
+    >
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Delete sample */}
+        <div className="rounded-[20px] border border-surface-sand-deep bg-surface-canvas p-6">
+          <div className="mb-3 font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-ink-muted">
+            例: 写真を削除
+          </div>
+          <div className="relative overflow-hidden rounded-[20px] bg-ink/40 p-6 backdrop-blur-sm">
+            <div className="mx-auto w-full max-w-lg overflow-hidden rounded-[20px] bg-surface shadow-modal">
+              <div className="flex items-center justify-between border-b border-surface-sand-deep px-5 py-3.5">
+                <div className="text-[16px] font-semibold text-ink">3枚の写真を削除しますか？</div>
+                <div className="text-[20px] leading-none text-ink-muted">×</div>
+              </div>
+              <div className="p-5 text-[14px] leading-[1.6] text-ink">
+                削除された写真は復元できません。
+              </div>
+              <div className="flex justify-end gap-2 border-t border-surface-sand-deep px-5 py-3.5">
+                <div className="rounded-xl border border-surface-sand-deep bg-surface-sand px-4 py-2.5 text-[14px] font-medium text-ink">
+                  キャンセル
+                </div>
+                <div className="rounded-xl bg-status-danger px-4 py-2.5 text-[14px] font-medium text-white">
+                  削除する
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Logout sample */}
+        <div className="rounded-[20px] border border-surface-sand-deep bg-surface-canvas p-6">
+          <div className="mb-3 font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-ink-muted">
+            例: ログアウト
+          </div>
+          <div className="relative overflow-hidden rounded-[20px] bg-ink/40 p-6 backdrop-blur-sm">
+            <div className="mx-auto w-full max-w-lg overflow-hidden rounded-[20px] bg-surface shadow-modal">
+              <div className="flex items-center justify-between border-b border-surface-sand-deep px-5 py-3.5">
+                <div className="text-[16px] font-semibold text-ink">ログアウトしますか？</div>
+                <div className="text-[20px] leading-none text-ink-muted">×</div>
+              </div>
+              <div className="p-5 text-[14px] leading-[1.6] text-ink">
+                再度ログインするには Twitter 認証が必要です。
+              </div>
+              <div className="flex justify-end gap-2 border-t border-surface-sand-deep px-5 py-3.5">
+                <div className="rounded-xl border border-surface-sand-deep bg-surface-sand px-4 py-2.5 text-[14px] font-medium text-ink">
+                  キャンセル
+                </div>
+                <div className="rounded-xl bg-status-danger px-4 py-2.5 text-[14px] font-medium text-white">
+                  ログアウト
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6 rounded-[16px] border border-status-danger/30 bg-status-danger-tint/40 p-5">
+        <div className="mb-2 font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-status-danger">
+          Don&rsquo;t
+        </div>
+        <p className="text-[14px] leading-[1.6] text-ink">
+          <code className="font-mono text-[13px]">window.confirm("削除しますか？")</code> のような
+          native confirm
+          を使わない。ブラウザ標準スタイルはブランドと合わず、日本語の改行も不自然になる。
+        </p>
+      </div>
+    </SectionShell>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* 12. Depth levels                                                           */
 /* -------------------------------------------------------------------------- */
 
 function DepthSection() {
@@ -793,7 +1063,7 @@ function DepthSection() {
 
   return (
     <SectionShell
-      id="10"
+      id="12"
       title="影レベル"
       caption="三層シャドウをカードに採用。ギャラリーサムネイルは意図的にフラット。opacity > 0.15 を主層にしない。"
     >
@@ -915,6 +1185,9 @@ export default function DesignPreviewPage() {
         <BadgesSection />
         <DropZoneSection />
         <GallerySection />
+        <MobileHeaderSection />
+        <DetailViewerSection />
+        <ConfirmDialogSection />
         <DepthSection />
         <MaintenanceGuide />
       </main>

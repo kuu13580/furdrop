@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router";
 import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
+import ConfirmDialog from "../components/ui/ConfirmDialog";
 import LoadingSpinner from "../components/ui/LoadingSpinner";
 import { receiverApi } from "../lib/api";
 import { formatBytes } from "../lib/format";
@@ -34,6 +35,7 @@ export default function PhotoDetailPage() {
   const [viewLoaded, setViewLoaded] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   // photoId 変更時: view_url・prev/next を取得
   useEffect(() => {
@@ -97,13 +99,13 @@ export default function PhotoDetailPage() {
 
   const handleDelete = useCallback(async () => {
     if (!photoId) return;
-    if (!confirm("この写真を削除しますか？")) return;
     setDeleting(true);
     try {
       await receiverApi.deletePhoto(photoId);
       navigate("/gallery", { replace: true });
     } catch {
       setDeleting(false);
+      setDeleteConfirmOpen(false);
     }
   }, [photoId, navigate]);
 
@@ -141,45 +143,57 @@ export default function PhotoDetailPage() {
           <Button size="sm" variant="secondary" onClick={handleDownload} loading={downloading}>
             ダウンロード
           </Button>
-          <Button size="sm" variant="danger" onClick={handleDelete} loading={deleting}>
+          <Button
+            size="sm"
+            variant="danger"
+            onClick={() => setDeleteConfirmOpen(true)}
+            loading={deleting}
+          >
             削除
           </Button>
         </div>
       </div>
 
-      {/* オリジナル表示（縦横比固定でガタつき防止。ロード中はサムネイル） */}
+      {/* オリジナル表示（縦横比固定でガタつき防止。ロード中はサムネイル）
+          width = min(100%, 縦辺上限 × ratio) により
+          縦辺が画面縦の70%を超えず、アスペクト比も必ず保持される */}
       <div className="relative flex justify-center">
         {photo.view_url || photo.thumb_url ? (
-          <div
-            className="relative mx-auto overflow-hidden rounded-2xl bg-surface-canvas"
-            style={{
-              height: "70vh",
-              aspectRatio:
-                photo.width && photo.height ? `${photo.width} / ${photo.height}` : "4 / 3",
-              maxWidth: "100%",
-            }}
-          >
-            {photo.thumb_url && (
-              <img
-                src={photo.thumb_url}
-                alt=""
-                aria-hidden="true"
-                className={`absolute inset-0 h-full w-full object-cover blur-md transition-opacity duration-300 ${
-                  viewLoaded ? "opacity-0" : "opacity-100"
-                }`}
-              />
-            )}
-            {photo.view_url && (
-              <img
-                src={photo.view_url}
-                alt={photo.sender_name ?? "写真"}
-                onLoad={() => setViewLoaded(true)}
-                className={`absolute inset-0 h-full w-full object-contain transition-opacity duration-300 ${
-                  viewLoaded ? "opacity-100" : "opacity-0"
-                }`}
-              />
-            )}
-          </div>
+          (() => {
+            const ratioNum = photo.width && photo.height ? photo.width / photo.height : 4 / 3;
+            const aspectRatio =
+              photo.width && photo.height ? `${photo.width} / ${photo.height}` : "4 / 3";
+            return (
+              <div
+                className="relative mx-auto overflow-hidden rounded-2xl bg-surface-canvas"
+                style={{
+                  aspectRatio,
+                  width: `min(100%, calc(70vh * ${ratioNum}))`,
+                }}
+              >
+                {photo.thumb_url && (
+                  <img
+                    src={photo.thumb_url}
+                    alt=""
+                    aria-hidden="true"
+                    className={`absolute inset-0 h-full w-full object-contain blur-md transition-opacity duration-300 ${
+                      viewLoaded ? "opacity-0" : "opacity-100"
+                    }`}
+                  />
+                )}
+                {photo.view_url && (
+                  <img
+                    src={photo.view_url}
+                    alt={photo.sender_name ?? "写真"}
+                    onLoad={() => setViewLoaded(true)}
+                    className={`absolute inset-0 h-full w-full object-contain transition-opacity duration-300 ${
+                      viewLoaded ? "opacity-100" : "opacity-0"
+                    }`}
+                  />
+                )}
+              </div>
+            );
+          })()
         ) : (
           <div className="flex h-64 w-full items-center justify-center rounded-2xl bg-surface-sand text-[14px] text-ink-muted">
             画像を読み込めません
@@ -263,6 +277,18 @@ export default function PhotoDetailPage() {
           </div>
         </dl>
       </Card>
+
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        onConfirm={handleDelete}
+        title="この写真を削除しますか？"
+        description="削除された写真は復元できません。"
+        confirmLabel="削除する"
+        cancelLabel="キャンセル"
+        variant="danger"
+        loading={deleting}
+      />
     </div>
   );
 }
