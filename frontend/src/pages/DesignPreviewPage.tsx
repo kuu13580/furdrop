@@ -955,6 +955,85 @@ function DetailViewerSection() {
 }
 
 /* -------------------------------------------------------------------------- */
+/* 11b. Destructive Confirm Dialog                                            */
+/* -------------------------------------------------------------------------- */
+
+function ConfirmDialogSection() {
+  return (
+    <SectionShell
+      id="11b"
+      title="Destructive Confirm Dialog"
+      caption="取り消し不可の操作は ConfirmDialog (variant=danger) を必ず挟む。native window.confirm() は使わない。title は疑問形、confirmLabel は動詞 + する (例: 削除する / ログアウト)。"
+    >
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Delete sample */}
+        <div className="rounded-[20px] border border-surface-sand-deep bg-surface-canvas p-6">
+          <div className="mb-3 font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-ink-muted">
+            例: 写真を削除
+          </div>
+          <div className="relative overflow-hidden rounded-[20px] bg-ink/40 p-6 backdrop-blur-sm">
+            <div className="mx-auto w-full max-w-lg overflow-hidden rounded-[20px] bg-surface shadow-modal">
+              <div className="flex items-center justify-between border-b border-surface-sand-deep px-5 py-3.5">
+                <div className="text-[16px] font-semibold text-ink">3枚の写真を削除しますか？</div>
+                <div className="text-[20px] leading-none text-ink-muted">×</div>
+              </div>
+              <div className="p-5 text-[14px] leading-[1.6] text-ink">
+                削除された写真は復元できません。
+              </div>
+              <div className="flex justify-end gap-2 border-t border-surface-sand-deep px-5 py-3.5">
+                <div className="rounded-xl border border-surface-sand-deep bg-surface-sand px-4 py-2.5 text-[14px] font-medium text-ink">
+                  キャンセル
+                </div>
+                <div className="rounded-xl bg-status-danger px-4 py-2.5 text-[14px] font-medium text-white">
+                  削除する
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Logout sample */}
+        <div className="rounded-[20px] border border-surface-sand-deep bg-surface-canvas p-6">
+          <div className="mb-3 font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-ink-muted">
+            例: ログアウト
+          </div>
+          <div className="relative overflow-hidden rounded-[20px] bg-ink/40 p-6 backdrop-blur-sm">
+            <div className="mx-auto w-full max-w-lg overflow-hidden rounded-[20px] bg-surface shadow-modal">
+              <div className="flex items-center justify-between border-b border-surface-sand-deep px-5 py-3.5">
+                <div className="text-[16px] font-semibold text-ink">ログアウトしますか？</div>
+                <div className="text-[20px] leading-none text-ink-muted">×</div>
+              </div>
+              <div className="p-5 text-[14px] leading-[1.6] text-ink">
+                再度ログインするには Twitter 認証が必要です。
+              </div>
+              <div className="flex justify-end gap-2 border-t border-surface-sand-deep px-5 py-3.5">
+                <div className="rounded-xl border border-surface-sand-deep bg-surface-sand px-4 py-2.5 text-[14px] font-medium text-ink">
+                  キャンセル
+                </div>
+                <div className="rounded-xl bg-status-danger px-4 py-2.5 text-[14px] font-medium text-white">
+                  ログアウト
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6 rounded-[16px] border border-status-danger/30 bg-status-danger-tint/40 p-5">
+        <div className="mb-2 font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-status-danger">
+          Don&rsquo;t
+        </div>
+        <p className="text-[14px] leading-[1.6] text-ink">
+          <code className="font-mono text-[13px]">window.confirm("削除しますか？")</code> のような
+          native confirm
+          を使わない。ブラウザ標準スタイルはブランドと合わず、日本語の改行も不自然になる。
+        </p>
+      </div>
+    </SectionShell>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
 /* 12. Depth levels                                                           */
 /* -------------------------------------------------------------------------- */
 
@@ -1108,6 +1187,7 @@ export default function DesignPreviewPage() {
         <GallerySection />
         <MobileHeaderSection />
         <DetailViewerSection />
+        <ConfirmDialogSection />
         <DepthSection />
         <MaintenanceGuide />
       </main>

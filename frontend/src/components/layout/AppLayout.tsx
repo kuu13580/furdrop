@@ -1,8 +1,9 @@
 import { signOut } from "firebase/auth";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router";
 import logoUrl from "../../assets/logos/logo.png";
 import { auth } from "../../lib/firebase";
+import ConfirmDialog from "../ui/ConfirmDialog";
 import AppFooter from "./AppFooter";
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -19,7 +20,19 @@ const mobileNavLinkClass = ({ isActive }: { isActive: boolean }) =>
 
 export default function AppLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const location = useLocation();
+
+  const handleLogout = useCallback(async () => {
+    setLoggingOut(true);
+    try {
+      await signOut(auth);
+    } finally {
+      setLoggingOut(false);
+      setLogoutConfirmOpen(false);
+    }
+  }, []);
 
   // ルート遷移でメニューを自動クローズ
   // biome-ignore lint/correctness/useExhaustiveDependencies: pathname 変化の検知のみが目的
@@ -63,7 +76,7 @@ export default function AppLayout() {
             </NavLink>
             <button
               type="button"
-              onClick={() => signOut(auth)}
+              onClick={() => setLogoutConfirmOpen(true)}
               className="rounded-lg px-2 py-1 text-[13px] text-ink-muted transition-colors hover:bg-surface-sand hover:text-ink-soft"
             >
               ログアウト
@@ -133,7 +146,10 @@ export default function AppLayout() {
               </NavLink>
               <button
                 type="button"
-                onClick={() => signOut(auth)}
+                onClick={() => {
+                  setMenuOpen(false);
+                  setLogoutConfirmOpen(true);
+                }}
                 className="mt-1 rounded-xl px-4 py-3 text-left text-[14px] font-medium text-ink-soft transition-colors hover:bg-surface-sand"
               >
                 ログアウト
@@ -147,6 +163,18 @@ export default function AppLayout() {
         <Outlet />
       </main>
       <AppFooter />
+
+      <ConfirmDialog
+        open={logoutConfirmOpen}
+        onClose={() => setLogoutConfirmOpen(false)}
+        onConfirm={handleLogout}
+        title="ログアウトしますか？"
+        description="再度ログインするには Twitter 認証が必要です。"
+        confirmLabel="ログアウト"
+        cancelLabel="キャンセル"
+        variant="danger"
+        loading={loggingOut}
+      />
     </div>
   );
 }

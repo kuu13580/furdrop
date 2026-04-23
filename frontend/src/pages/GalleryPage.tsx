@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
 import Button from "../components/ui/Button";
+import ConfirmDialog from "../components/ui/ConfirmDialog";
 import LoadingSpinner from "../components/ui/LoadingSpinner";
 import { receiverApi } from "../lib/api";
 import type { Photo } from "../types/photo";
@@ -46,6 +47,7 @@ export default function GalleryPage() {
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [groupMode, setGroupMode] = useState<GroupMode>("none");
   const sentinelRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false);
@@ -214,7 +216,6 @@ export default function GalleryPage() {
 
   const handleBatchDelete = useCallback(async () => {
     if (selected.size === 0) return;
-    if (!confirm(`${selected.size}枚の写真を削除しますか？`)) return;
     setDeleting(true);
     try {
       await receiverApi.batchDeletePhotos([...selected]);
@@ -224,6 +225,7 @@ export default function GalleryPage() {
       // エラー時はそのまま
     } finally {
       setDeleting(false);
+      setDeleteConfirmOpen(false);
     }
   }, [selected, exitSelectMode]);
 
@@ -386,7 +388,7 @@ export default function GalleryPage() {
             <Button
               size="sm"
               variant="danger"
-              onClick={handleBatchDelete}
+              onClick={() => setDeleteConfirmOpen(true)}
               disabled={selected.size === 0}
               loading={deleting}
             >
@@ -535,6 +537,18 @@ export default function GalleryPage() {
           <LoadingSpinner />
         </div>
       )}
+
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        onConfirm={handleBatchDelete}
+        title={`${selected.size}枚の写真を削除しますか？`}
+        description="削除された写真は復元できません。"
+        confirmLabel="削除する"
+        cancelLabel="キャンセル"
+        variant="danger"
+        loading={deleting}
+      />
     </div>
   );
 }
