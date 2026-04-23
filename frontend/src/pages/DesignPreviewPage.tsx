@@ -864,7 +864,73 @@ function MobileHeaderSection() {
 }
 
 /* -------------------------------------------------------------------------- */
-/* 11. Depth levels                                                           */
+/* 11. Detail Viewer (aspect-ratio preservation)                              */
+/* -------------------------------------------------------------------------- */
+
+function DetailViewerSection() {
+  const samples: { label: string; w: number; h: number }[] = [
+    { label: "横長 3:2", w: 600, h: 400 },
+    { label: "正方形 1:1", w: 500, h: 500 },
+    { label: "縦長 2:3", w: 400, h: 600 },
+    { label: "パノラマ 2:1", w: 800, h: 400 },
+  ];
+
+  return (
+    <SectionShell
+      id="11"
+      title="詳細画像ビューア (アスペクト比保持)"
+      caption="S08 詳細画像は width: min(100%, 70vh * ratio) + aspect-ratio で縦辺を 70vh 以下に抑えつつアスペクト比を必ず保持する。固定 height + aspect-ratio + max-width の併用は禁止 (モバイル幅 clamp でアスペクト比が崩れるため)。"
+    >
+      <div className="grid gap-6 sm:grid-cols-2">
+        {samples.map((s) => {
+          const ratio = s.w / s.h;
+          return (
+            <div
+              key={s.label}
+              className="rounded-[20px] border border-surface-sand-deep bg-surface p-4 shadow-card sm:p-6"
+            >
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-[14px] font-semibold text-ink">{s.label}</span>
+                <span className="font-mono text-[11px] text-ink-muted">
+                  {s.w} × {s.h} (ratio {ratio.toFixed(2)})
+                </span>
+              </div>
+              <div className="flex justify-center">
+                <div
+                  className="relative overflow-hidden rounded-2xl bg-surface-canvas"
+                  style={{
+                    aspectRatio: `${s.w} / ${s.h}`,
+                    width: `min(100%, calc(40vh * ${ratio}))`,
+                  }}
+                >
+                  <img
+                    src={`https://picsum.photos/seed/furdrop-detail-${s.w}x${s.h}/${s.w}/${s.h}`}
+                    alt={s.label}
+                    className="absolute inset-0 h-full w-full object-contain"
+                    loading="lazy"
+                  />
+                </div>
+              </div>
+              <div className="mt-3 font-mono text-[11px] leading-[1.5] text-ink-muted">
+                aspectRatio: {s.w} / {s.h}
+                <br />
+                width: min(100%, calc(40vh * {ratio.toFixed(2)}))
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <p className="mt-4 text-[13px] text-ink-soft">
+        ※ プレビューは 40vh で縮小表示。本番 (S08) では 70vh
+        を上限に。横長・パノラマはコンテナ幅が親幅に clamp され、縦長はコンテナ幅が計算値に clamp
+        されて縦辺が 70vh を超えない。
+      </p>
+    </SectionShell>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* 12. Depth levels                                                           */
 /* -------------------------------------------------------------------------- */
 
 function DepthSection() {
@@ -893,7 +959,7 @@ function DepthSection() {
 
   return (
     <SectionShell
-      id="11"
+      id="12"
       title="影レベル"
       caption="三層シャドウをカードに採用。ギャラリーサムネイルは意図的にフラット。opacity > 0.15 を主層にしない。"
     >
@@ -1016,6 +1082,7 @@ export default function DesignPreviewPage() {
         <DropZoneSection />
         <GallerySection />
         <MobileHeaderSection />
+        <DetailViewerSection />
         <DepthSection />
         <MaintenanceGuide />
       </main>

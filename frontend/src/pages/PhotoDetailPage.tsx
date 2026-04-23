@@ -147,39 +147,46 @@ export default function PhotoDetailPage() {
         </div>
       </div>
 
-      {/* オリジナル表示（縦横比固定でガタつき防止。ロード中はサムネイル） */}
+      {/* オリジナル表示（縦横比固定でガタつき防止。ロード中はサムネイル）
+          width = min(100%, 縦辺上限 × ratio) により
+          縦辺が画面縦の70%を超えず、アスペクト比も必ず保持される */}
       <div className="relative flex justify-center">
         {photo.view_url || photo.thumb_url ? (
-          <div
-            className="relative mx-auto overflow-hidden rounded-2xl bg-surface-canvas"
-            style={{
-              height: "70vh",
-              aspectRatio:
-                photo.width && photo.height ? `${photo.width} / ${photo.height}` : "4 / 3",
-              maxWidth: "100%",
-            }}
-          >
-            {photo.thumb_url && (
-              <img
-                src={photo.thumb_url}
-                alt=""
-                aria-hidden="true"
-                className={`absolute inset-0 h-full w-full object-cover blur-md transition-opacity duration-300 ${
-                  viewLoaded ? "opacity-0" : "opacity-100"
-                }`}
-              />
-            )}
-            {photo.view_url && (
-              <img
-                src={photo.view_url}
-                alt={photo.sender_name ?? "写真"}
-                onLoad={() => setViewLoaded(true)}
-                className={`absolute inset-0 h-full w-full object-contain transition-opacity duration-300 ${
-                  viewLoaded ? "opacity-100" : "opacity-0"
-                }`}
-              />
-            )}
-          </div>
+          (() => {
+            const ratioNum = photo.width && photo.height ? photo.width / photo.height : 4 / 3;
+            const aspectRatio =
+              photo.width && photo.height ? `${photo.width} / ${photo.height}` : "4 / 3";
+            return (
+              <div
+                className="relative mx-auto overflow-hidden rounded-2xl bg-surface-canvas"
+                style={{
+                  aspectRatio,
+                  width: `min(100%, calc(70vh * ${ratioNum}))`,
+                }}
+              >
+                {photo.thumb_url && (
+                  <img
+                    src={photo.thumb_url}
+                    alt=""
+                    aria-hidden="true"
+                    className={`absolute inset-0 h-full w-full object-contain blur-md transition-opacity duration-300 ${
+                      viewLoaded ? "opacity-0" : "opacity-100"
+                    }`}
+                  />
+                )}
+                {photo.view_url && (
+                  <img
+                    src={photo.view_url}
+                    alt={photo.sender_name ?? "写真"}
+                    onLoad={() => setViewLoaded(true)}
+                    className={`absolute inset-0 h-full w-full object-contain transition-opacity duration-300 ${
+                      viewLoaded ? "opacity-100" : "opacity-0"
+                    }`}
+                  />
+                )}
+              </div>
+            );
+          })()
         ) : (
           <div className="flex h-64 w-full items-center justify-center rounded-2xl bg-surface-sand text-[14px] text-ink-muted">
             画像を読み込めません
