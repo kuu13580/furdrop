@@ -86,18 +86,33 @@ Twitterハンドル (`@taro_camera`) やスラッグ (`/send/taro_camera`) は�
 
 ### Hierarchy
 
-| Role | Size | Weight | Line Height | Letter Spacing | 用途 |
-|---|---|---|---|---|---|
-| Display Hero | 40px / 2.5rem | 700 | 1.15 | -0.02em | 送信完了ヒーロー (S04) |
-| Page Title | 28px / 1.75rem | 700 | 1.25 | -0.015em | ダッシュボード・ギャラリー見出し |
-| Section Heading | 22px / 1.375rem | 600 | 1.30 | -0.01em | 「最近の写真」「ストレージ」等 |
-| Card Title | 18px / 1.125rem | 600 | 1.35 | -0.005em | 受信者名、ファイル名 |
-| Body Emphasis | 16px / 1rem | 500 | 1.50 | normal | 強調本文、ナビゲーション |
-| Body | 16px / 1rem | 400 | 1.50 | normal | 標準本文 |
-| UI Label | 14px / 0.875rem | 500 | 1.40 | normal | ボタン、フォームラベル |
-| Meta | 14px / 0.875rem | 400 | 1.45 | normal | 送信者名、日付、ファイルサイズ |
-| Caption | 12px / 0.75rem | 400 | 1.40 | 0.01em | タグ、補助テキスト |
-| Micro Upper | 11px / 0.688rem | 700 | 1.30 | 0.08em | 「NEW」「BETA」等の uppercase バッジ |
+| Role | Mobile (<sm) | Desktop (sm+) | Weight | Line Height | Letter Spacing | 用途 |
+|---|---|---|---|---|---|---|
+| Display Hero | 28px | 40px / 2.5rem | 700 | 1.15 | -0.02em | 送信完了ヒーロー (S04) |
+| Page Title | 22px | 28px / 1.75rem | 700 | 1.25 | -0.015em | ダッシュボード・ギャラリー見出し |
+| Section Heading | 22px | 22px / 1.375rem | 600 | 1.30 | -0.01em | 「最近の写真」「ストレージ」等 |
+| Card Title | 18px | 18px / 1.125rem | 600 | 1.35 | -0.005em | 受信者名、ファイル名 |
+| Body Emphasis | 16px | 16px / 1rem | 500 | 1.50 | normal | 強調本文、ナビゲーション |
+| Body | 16px | 16px / 1rem | 400 | 1.50 | normal | 標準本文 |
+| UI Label | 14px | 14px / 0.875rem | 500 | 1.40 | normal | ボタン、フォームラベル |
+| Meta | 14px | 14px / 0.875rem | 400 | 1.45 | normal | 送信者名、日付、ファイルサイズ |
+| Caption | 12px | 12px / 0.75rem | 400 | 1.40 | 0.01em | タグ、補助テキスト |
+| Micro Upper | 11px | 11px / 0.688rem | 700 | 1.30 | 0.08em | 「NEW」「BETA」等の uppercase バッジ |
+
+### Mobile Type Scale (縮小対象)
+
+**縮小する (Hero / Title 級のみ)**: モバイルは視野が狭く、ヒーロー・ページタイトルの 40/28px は視覚的に支配的すぎる。コンテンツの呼吸量を確保するため、**タイトル級のみを 1 段階下げる**。
+- Display Hero: `text-[28px] sm:text-[40px]`
+- Page Title: `text-[22px] sm:text-[28px]`
+
+**縮小しない (インタラクティブ・情報密度要素)**: 以下は**モバイルでも現状サイズを維持する**。操作の確実性・情報の読み取りに直結し、小さくすると UX が劣化する。
+- Section Heading (22px) — 既にモバイル適正。これ以上下げない
+- Card Title (18px) — ファイル名・受信者名の読み取り
+- Body / Body Emphasis (16px) — 本文の a11y 下限
+- UI Label (14px) — ボタン・フォームラベル
+- Meta (14px) — 送信者名・日付などメタデータ
+- **グループヘッダー・選択/DL・グループ選択ボタン**等のギャラリー操作系 (13–14px) — 選択 UX の要
+- Caption (12px) — 下限、これ以下は a11y 違反
 
 ### Principles
 - **負トラッキング on 見出し**: 見出しには -0.005em 〜 -0.02em を入れ、親密さを出す。本文 (16px 以下) には入れない。

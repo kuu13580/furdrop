@@ -201,7 +201,9 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-[28px] font-bold tracking-[-0.015em] text-ink">ダッシュボード</h1>
+      <h1 className="text-[22px] font-bold tracking-[-0.015em] text-ink sm:text-[28px]">
+        ダッシュボード
+      </h1>
       <PublicUrlCard receiveUrl={`${window.location.origin}${user.receive_url}`} />
       <Card title="ストレージ">
         <StorageQuotaBar used={user.storage_used} quota={user.storage_quota} />

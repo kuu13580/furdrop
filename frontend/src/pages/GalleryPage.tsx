@@ -348,7 +348,9 @@ export default function GalleryPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-[28px] font-bold tracking-[-0.015em] text-ink">ギャラリー</h1>
+        <h1 className="text-[22px] font-bold tracking-[-0.015em] text-ink sm:text-[28px]">
+          ギャラリー
+        </h1>
         {photos.length > 0 && (
           <button
             type="button"

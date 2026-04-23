@@ -184,56 +184,69 @@ function ColorsSection() {
 
 function TypographySection() {
   const sample = "こんにちは、FurDrop — @taro_camera";
-  const rows: { role: string; sampleClass: string; meta: string }[] = [
+  // sampleClass は実際のレスポンシブ挙動を視覚化するため responsive prefix 付きで定義
+  const rows: { role: string; sampleClass: string; meta: string; scaled: boolean }[] = [
     {
       role: "Display Hero",
-      sampleClass: "text-[40px] font-bold leading-[1.15] tracking-[-0.02em] text-ink",
-      meta: "40px / 700 / -0.02em",
+      sampleClass:
+        "text-[28px] sm:text-[40px] font-bold leading-[1.15] tracking-[-0.02em] text-ink",
+      meta: "mobile 28px / sm+ 40px / 700 / -0.02em",
+      scaled: true,
     },
     {
       role: "Page Title",
-      sampleClass: "text-[28px] font-bold leading-[1.25] tracking-[-0.015em] text-ink",
-      meta: "28px / 700 / -0.015em",
+      sampleClass:
+        "text-[22px] sm:text-[28px] font-bold leading-[1.25] tracking-[-0.015em] text-ink",
+      meta: "mobile 22px / sm+ 28px / 700 / -0.015em",
+      scaled: true,
     },
     {
       role: "Section Heading",
       sampleClass: "text-[22px] font-semibold leading-[1.30] tracking-[-0.01em] text-ink",
       meta: "22px / 600 / -0.01em",
+      scaled: false,
     },
     {
       role: "Card Title",
       sampleClass: "text-[18px] font-semibold leading-[1.35] tracking-[-0.005em] text-ink",
       meta: "18px / 600 / -0.005em",
+      scaled: false,
     },
     {
       role: "Body Emphasis",
       sampleClass: "text-[16px] font-medium leading-[1.5] text-ink",
       meta: "16px / 500",
+      scaled: false,
     },
     {
       role: "Body",
       sampleClass: "text-[16px] font-normal leading-[1.5] text-ink",
       meta: "16px / 400",
+      scaled: false,
     },
     {
       role: "UI Label",
       sampleClass: "text-[14px] font-medium leading-[1.4] text-ink",
       meta: "14px / 500",
+      scaled: false,
     },
     {
       role: "Meta",
       sampleClass: "text-[14px] font-normal leading-[1.45] text-ink-soft",
       meta: "14px / 400 / Mocha",
+      scaled: false,
     },
     {
       role: "Caption",
       sampleClass: "text-[12px] font-normal leading-[1.4] tracking-[0.01em] text-ink-soft",
       meta: "12px / 400 / 0.01em",
+      scaled: false,
     },
     {
       role: "Micro Upper",
       sampleClass: "text-[11px] font-bold uppercase leading-[1.3] tracking-[0.08em] text-brand",
       meta: "11px / 700 / 0.08em",
+      scaled: false,
     },
   ];
 
@@ -241,7 +254,7 @@ function TypographySection() {
     <SectionShell
       id="02"
       title="タイポグラフィ"
-      caption="Inter + Noto Sans JP の2段ファミリー。見出しには負トラッキング、ウェイトは 400/500/600/700 のみ。"
+      caption="Inter + Noto Sans JP の2段ファミリー。見出しには負トラッキング、ウェイトは 400/500/600/700 のみ。Display Hero と Page Title のみモバイルで縮小 (sm+ で元サイズに戻す)。"
     >
       <div className="overflow-hidden rounded-[20px] border border-surface-sand-deep bg-surface shadow-card">
         {rows.map((row, idx) => (
@@ -252,8 +265,15 @@ function TypographySection() {
             }`}
           >
             <div className="space-y-1">
-              <div className="font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-ink-muted">
-                {row.role}
+              <div className="flex items-center gap-2">
+                <div className="font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-ink-muted">
+                  {row.role}
+                </div>
+                {row.scaled && (
+                  <span className="rounded-full bg-brand-tint px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[0.08em] text-brand-deep">
+                    mobile scaled
+                  </span>
+                )}
               </div>
               <div className={row.sampleClass}>{sample}</div>
             </div>
@@ -261,6 +281,11 @@ function TypographySection() {
           </div>
         ))}
       </div>
+      <p className="mt-4 text-[13px] text-ink-soft">
+        ※ Display Hero / Page Title は幅 640px 未満で縮小。Section Heading 以下は
+        a11y・操作性・情報密度のため モバイルでもサイズ据え置き
+        (ギャラリーのグループヘッダー・選択/DL ボタンなどはこれらに該当)。
+      </p>
     </SectionShell>
   );
 }

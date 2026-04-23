@@ -60,7 +60,7 @@ export default function DonePage() {
             >
               ✓
             </div>
-            <h1 className="text-[28px] font-bold leading-[1.2] tracking-[-0.015em] text-ink">
+            <h1 className="text-[22px] font-bold leading-[1.2] tracking-[-0.015em] text-ink sm:text-[28px]">
               {completed.length}枚の写真を
               <br className="sm:hidden" />
               送信しました！
