@@ -14,7 +14,14 @@ import {
 } from "../../lib/image-processing";
 import { type SelectedFile, selectedFilesAtom, uploadFormAtom } from "../../stores/sender";
 
-type Phase = "pending" | "converting" | "processing" | "uploading" | "completed" | "failed";
+type Phase =
+  | "pending"
+  | "converting"
+  | "processing"
+  | "processed"
+  | "uploading"
+  | "completed"
+  | "failed";
 
 type FileProgress = {
   selected: SelectedFile;
@@ -77,9 +84,15 @@ export default function UploadingPage() {
     });
   }, []);
 
-  const completed = progress.filter((p) => p.phase === "completed").length;
   const total = progress.length;
-  const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
+  // 加工と送信で独立した 0-100% 進捗。フェーズ移行時にバーは一度 0 に戻る。
+  const processedCount = progress.filter(
+    (p) => p.phase === "processed" || p.phase === "uploading" || p.phase === "completed",
+  ).length;
+  const uploadedCount = progress.filter((p) => p.phase === "completed").length;
+  const isUploadingPhase = overall === "session" || overall === "uploading" || overall === "done";
+  const current = isUploadingPhase ? uploadedCount : processedCount;
+  const percent = total === 0 ? 0 : Math.round((current / total) * 100);
 
   return (
     <div className="mx-auto max-w-lg space-y-6 px-4 py-6">
@@ -92,7 +105,7 @@ export default function UploadingPage() {
         <div className="flex justify-between text-[14px]">
           <span className="font-medium text-ink">{overallLabel(overall)}</span>
           <span className="font-mono text-ink-soft">
-            {completed}/{total} ({percent}%)
+            {current}/{total}枚 · {percent}%
           </span>
         </div>
         <div className="h-2 overflow-hidden rounded-full bg-surface-sand">
@@ -160,6 +173,8 @@ function phaseLabel(p: Phase): string {
       return "HEIC変換中...";
     case "processing":
       return "加工中";
+    case "processed":
+      return "加工済";
     case "uploading":
       return "送信中";
     case "completed":
@@ -177,6 +192,8 @@ function phaseColor(p: Phase): string {
       return "text-status-danger";
     case "pending":
       return "text-ink-muted";
+    case "processed":
+      return "text-ink-soft";
     default:
       return "text-brand";
   }
@@ -257,6 +274,8 @@ async function runPipeline({
           : afterWatermark;
 
         const thumb = await generateThumbnail(finalBlob);
+
+        updatePhase(f.id, "processed");
 
         return {
           id: f.id,
