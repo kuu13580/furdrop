@@ -53,18 +53,29 @@ receiver.openapi(listPhotosRoute, async (c) => {
   const { limit, cursor } = c.req.valid("query");
 
   let query =
-    "SELECT id, sender_name, camera_model, file_size, width, height, r2_key_thumb, created_at FROM photos WHERE receiver_id = ? AND upload_status = 'completed'";
+    "SELECT id, sender_name, camera_model, file_size, width, height, r2_key_thumb, batch_index, created_at FROM photos WHERE receiver_id = ? AND upload_status = 'completed'";
   const params: (string | number)[] = [uid];
 
   if (cursor) {
-    // カーソル = Base64エンコードされた created_at:id
+    // カーソル = Base64エンコードされた created_at:batch_index:id
+    // ギャラリー順: created_at DESC, batch_index ASC, id DESC
     const decoded = atob(cursor);
-    const [cursorCreatedAt, cursorId] = decoded.split(":");
-    query += " AND (created_at < ? OR (created_at = ? AND id < ?))";
-    params.push(Number(cursorCreatedAt), Number(cursorCreatedAt), cursorId);
+    const [cursorCreatedAt, cursorBatchIndex, cursorId] = decoded.split(":");
+    query += `
+       AND (created_at < ?
+         OR (created_at = ? AND batch_index > ?)
+         OR (created_at = ? AND batch_index = ? AND id < ?))`;
+    params.push(
+      Number(cursorCreatedAt),
+      Number(cursorCreatedAt),
+      Number(cursorBatchIndex),
+      Number(cursorCreatedAt),
+      Number(cursorBatchIndex),
+      cursorId,
+    );
   }
 
-  query += " ORDER BY created_at DESC, id DESC LIMIT ?";
+  query += " ORDER BY created_at DESC, batch_index ASC, id DESC LIMIT ?";
   params.push(limit + 1); // 1件多く取得してnext_cursorを判定
 
   const result = await c.env.DB.prepare(query)
@@ -88,7 +99,10 @@ receiver.openapi(listPhotosRoute, async (c) => {
   );
 
   const lastPhoto = photos[photos.length - 1];
-  const nextCursor = hasMore && lastPhoto ? btoa(`${lastPhoto.created_at}:${lastPhoto.id}`) : null;
+  const nextCursor =
+    hasMore && lastPhoto
+      ? btoa(`${lastPhoto.created_at}:${lastPhoto.batch_index}:${lastPhoto.id}`)
+      : null;
 
   return c.json({ photos: photosWithUrls, next_cursor: nextCursor }, 200);
 });
@@ -204,7 +218,7 @@ receiver.openapi(getPhotoRoute, async (c) => {
   const { group } = c.req.valid("query");
 
   const photo = await c.env.DB.prepare(
-    "SELECT id, sender_name, camera_model, file_size, width, height, r2_key_original, r2_key_thumb, created_at FROM photos WHERE id = ? AND receiver_id = ? AND upload_status = 'completed'",
+    "SELECT id, sender_name, camera_model, file_size, width, height, r2_key_original, r2_key_thumb, batch_index, created_at FROM photos WHERE id = ? AND receiver_id = ? AND upload_status = 'completed'",
   )
     .bind(photoId, uid)
     .first();
@@ -214,6 +228,7 @@ receiver.openapi(getPhotoRoute, async (c) => {
   }
 
   const createdAt = photo.created_at as number;
+  const batchIndex = photo.batch_index as number;
   const currentId = photo.id as string;
   const senderName = photo.sender_name as string | null;
 
@@ -224,29 +239,58 @@ receiver.openapi(getPhotoRoute, async (c) => {
       ? " AND sender_name IS NULL"
       : " AND sender_name = ?"
     : "";
-  const buildNeighborBindings = (...base: (string | number)[]) =>
+  const buildNeighborBindings = (base: (string | number)[]) =>
     senderScope && senderName !== null ? [...base, senderName] : base;
 
+  // ギャラリー順: created_at DESC, batch_index ASC, id DESC
+  // prev (= 新しい方向): current より「上」にある最も近いもの → 逆順ソートで先頭
+  // next (= 古い方向): current より「下」にある最も近いもの → ギャラリー順で先頭
   const [thumbUrl, viewUrl, prevRow, nextRow] = await Promise.all([
     createThumbViewUrl(c.env, photo.r2_key_thumb as string),
     createViewUrl(c.env, photo.r2_key_original as string),
-    // 新しい方向 (= gallery DESC順では「前」)
     c.env.DB.prepare(
       `SELECT id FROM photos
          WHERE receiver_id = ? AND upload_status = 'completed'
-           AND (created_at > ? OR (created_at = ? AND id > ?))${senderCondition}
-         ORDER BY created_at ASC, id ASC LIMIT 1`,
+           AND (
+             created_at > ?
+             OR (created_at = ? AND batch_index < ?)
+             OR (created_at = ? AND batch_index = ? AND id > ?)
+           )${senderCondition}
+         ORDER BY created_at ASC, batch_index DESC, id ASC LIMIT 1`,
     )
-      .bind(...buildNeighborBindings(uid, createdAt, createdAt, currentId))
+      .bind(
+        ...buildNeighborBindings([
+          uid,
+          createdAt,
+          createdAt,
+          batchIndex,
+          createdAt,
+          batchIndex,
+          currentId,
+        ]),
+      )
       .first(),
-    // 古い方向 (= gallery DESC順では「次」)
     c.env.DB.prepare(
       `SELECT id FROM photos
          WHERE receiver_id = ? AND upload_status = 'completed'
-           AND (created_at < ? OR (created_at = ? AND id < ?))${senderCondition}
-         ORDER BY created_at DESC, id DESC LIMIT 1`,
+           AND (
+             created_at < ?
+             OR (created_at = ? AND batch_index > ?)
+             OR (created_at = ? AND batch_index = ? AND id < ?)
+           )${senderCondition}
+         ORDER BY created_at DESC, batch_index ASC, id DESC LIMIT 1`,
     )
-      .bind(...buildNeighborBindings(uid, createdAt, createdAt, currentId))
+      .bind(
+        ...buildNeighborBindings([
+          uid,
+          createdAt,
+          createdAt,
+          batchIndex,
+          createdAt,
+          batchIndex,
+          currentId,
+        ]),
+      )
       .first(),
   ]);
 

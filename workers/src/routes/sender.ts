@@ -275,18 +275,22 @@ sender.openapi(createPhotosRoute, async (c) => {
     );
   }
 
+  // 既存のセッション内写真枚数を取得 (複数バッチでも連番になるよう batch_index を累積)
+  const baseBatchIndex = currentCount;
+
   // 各写真のレコード作成 + Presigned URL発行
   const uploads = await Promise.all(
-    photos.map(async (photo) => {
+    photos.map(async (photo, i) => {
       const photoId = crypto.randomUUID();
       const r2KeyOriginal = buildR2Key(handle, photoId, "original");
       const r2KeyThumb = buildR2Key(handle, photoId, "thumb");
+      const batchIndex = baseBatchIndex + i;
 
       await c.env.DB.prepare(
         `INSERT INTO photos (id, receiver_id, session_id, r2_key_original, r2_key_thumb,
           sender_name, camera_model, watermark_text, original_filename,
-          file_size, width, height, upload_status, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)`,
+          file_size, width, height, upload_status, batch_index, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)`,
       )
         .bind(
           photoId,
@@ -301,6 +305,7 @@ sender.openapi(createPhotosRoute, async (c) => {
           photo.file_size,
           photo.width ?? null,
           photo.height ?? null,
+          batchIndex,
           now,
           now,
         )
@@ -510,7 +515,8 @@ sender.openapi(getSessionRoute, async (c) => {
 
   const photos = await c.env.DB.prepare(
     `SELECT id, r2_key_thumb, original_filename, upload_status
-     FROM photos WHERE session_id = ? ORDER BY created_at ASC`,
+     FROM photos WHERE session_id = ?
+     ORDER BY batch_index ASC, created_at ASC, id ASC`,
   )
     .bind(sessionId)
     .all();

@@ -118,10 +118,14 @@ CREATE TABLE photos (
     -- DL期限 (R13)
     expires_at        INTEGER,                -- UNIX秒。NULLの場合はデフォルト(created_at + 30日)
 
+    -- 同一 created_at (秒精度) 内の送信順を保持するための tiebreak
+    batch_index       INTEGER NOT NULL DEFAULT 0,
+
     created_at        INTEGER NOT NULL,
     updated_at        INTEGER NOT NULL
 );
 
+-- ギャラリー並び順: ORDER BY created_at DESC, batch_index ASC, id DESC
 CREATE INDEX idx_photos_receiver ON photos(receiver_id, created_at DESC);
 CREATE INDEX idx_photos_session ON photos(session_id);
 CREATE INDEX idx_photos_status ON photos(receiver_id, upload_status);
