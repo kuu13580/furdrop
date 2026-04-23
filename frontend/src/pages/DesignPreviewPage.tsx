@@ -764,7 +764,107 @@ function GallerySection() {
 }
 
 /* -------------------------------------------------------------------------- */
-/* 10. Depth levels                                                           */
+/* 10. Mobile Header (hamburger)                                              */
+/* -------------------------------------------------------------------------- */
+
+function MobileHeaderSection() {
+  return (
+    <SectionShell
+      id="10"
+      title="モバイルヘッダー (ハンバーガー)"
+      caption="sm 未満では NavLink を横並びにせず、ハンバーガーボタン + ドロワーに集約する。ロゴが押しつぶされ改行が発生する NG パターンと、正しいハンバーガー展開を並記する。"
+    >
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* NG: メニュー横並びで押しつぶし・改行 */}
+        <div className="rounded-[20px] border border-status-danger/30 bg-status-danger-tint/40 p-5">
+          <div className="mb-3 flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-status-danger">
+            Don&rsquo;t
+          </div>
+          <div className="mx-auto w-[360px] max-w-full overflow-hidden rounded-[16px] border border-surface-sand-deep bg-surface shadow-card">
+            <div className="flex h-14 items-center justify-between gap-2 border-b border-surface-sand-deep bg-surface/85 px-4 backdrop-blur">
+              <div className="flex min-w-0 items-center">
+                <div className="h-6 min-w-0 flex-1 truncate font-semibold text-brand">FurDrop</div>
+              </div>
+              <nav className="flex flex-wrap items-center gap-2 text-[13px] text-ink-soft">
+                <span>ダッシュボード</span>
+                <span>ギャラリー</span>
+                <span>設定</span>
+                <span>ログアウト</span>
+              </nav>
+            </div>
+            <div className="flex h-24 items-center justify-center bg-surface-canvas text-[12px] text-ink-muted">
+              Content
+            </div>
+          </div>
+          <p className="mt-3 text-[13px] text-status-danger">
+            日本語メニューを横並びにすると、ロゴが縦に伸び / メニューが改行し / タップ領域が 44px
+            未満になる。
+          </p>
+        </div>
+
+        {/* Do: ハンバーガー + ドロワー */}
+        <div className="rounded-[20px] border border-status-success/30 bg-status-success-tint/40 p-5">
+          <div className="mb-3 flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-status-success">
+            Do
+          </div>
+          <div className="mx-auto w-[360px] max-w-full overflow-hidden rounded-[16px] border border-surface-sand-deep bg-surface shadow-card">
+            <div className="flex h-14 items-center justify-between gap-3 border-b border-surface-sand-deep bg-surface/85 px-4 backdrop-blur">
+              <div className="flex shrink-0 items-center font-semibold text-brand">FurDrop</div>
+              <button
+                type="button"
+                aria-label="メニューを開く"
+                className="flex h-11 w-11 items-center justify-center rounded-full text-ink hover:bg-surface-sand"
+              >
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  role="img"
+                  aria-hidden="true"
+                >
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="12" x2="21" y2="12" />
+                  <line x1="3" y1="18" x2="21" y2="18" />
+                </svg>
+              </button>
+            </div>
+            <div className="border-b border-surface-sand-deep bg-surface shadow-card">
+              <nav className="flex flex-col gap-1 px-4 py-3">
+                <div className="rounded-xl bg-brand-tint px-4 py-3 text-[16px] font-semibold text-brand">
+                  ダッシュボード
+                </div>
+                <div className="rounded-xl px-4 py-3 text-[16px] font-medium text-ink">
+                  ギャラリー
+                </div>
+                <div className="rounded-xl px-4 py-3 text-[16px] font-medium text-ink">設定</div>
+                <div className="mt-1 rounded-xl px-4 py-3 text-[14px] font-medium text-ink-soft">
+                  ログアウト
+                </div>
+              </nav>
+            </div>
+            <div className="flex h-20 items-center justify-center bg-ink/40 text-[12px] text-white">
+              Backdrop (ink/40)
+            </div>
+          </div>
+          <p className="mt-3 text-[13px] text-status-success">
+            ロゴ <code className="font-mono">shrink-0</code> で縮みを禁止。右端に円形 44×44
+            のハンバーガー。展開ドロワーは active に{" "}
+            <code className="font-mono">bg-brand-tint</code>
+            、各行 tap target 44px 以上。
+          </p>
+        </div>
+      </div>
+    </SectionShell>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* 11. Depth levels                                                           */
 /* -------------------------------------------------------------------------- */
 
 function DepthSection() {
@@ -793,7 +893,7 @@ function DepthSection() {
 
   return (
     <SectionShell
-      id="10"
+      id="11"
       title="影レベル"
       caption="三層シャドウをカードに採用。ギャラリーサムネイルは意図的にフラット。opacity > 0.15 を主層にしない。"
     >
@@ -915,6 +1015,7 @@ export default function DesignPreviewPage() {
         <BadgesSection />
         <DropZoneSection />
         <GallerySection />
+        <MobileHeaderSection />
         <DepthSection />
         <MaintenanceGuide />
       </main>

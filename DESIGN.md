@@ -198,9 +198,24 @@ Twitterハンドル (`@taro_camera`) やスラッグ (`/send/taro_camera`) は�
 - Background: `rgba(255,255,255,0.85)` + `backdrop-filter: blur(12px)`
 - Border-bottom: `1px solid #EAE1D3`
 - Height: `56px` (モバイル) / `64px` (デスクトップ)
-- 左: ロゴ (Sunset Coral) — `h-9`
-- 右: NavLink (`#6E5F52`) / active (`#D96A4A` + 600 weight)
-- Sticky top, z-10
+- 左: ロゴ (Sunset Coral) — `h-9`。ロゴは `shrink-0` でつぶれを禁止
+- Sticky top, z-30 (モバイルドロワーより前面)
+
+**デスクトップ (sm 以上)**
+- 右: NavLink (`#6E5F52`) / active (`#D96A4A` + 600 weight) を横並び
+- ログアウトボタンは Ghost スタイル (`#A79A8C` / hover で sand 背景)
+
+**モバイル (sm 未満) — ハンバーガー必須**
+- NavLink を横並びにしない (日本語メニュー「ダッシュボード」「ギャラリー」等で改行・押しつぶしが発生するため)
+- 右端に円形ハンバーガーボタン (`44×44px`, radius `50%`, icon `24px`)
+- タップで上から展開するドロワー:
+  - ヘッダー直下 (`top: 56px`) に `fixed inset-x-0` の白パネル (背景 `#FFFFFF`)
+  - 背景半透明オーバーレイ `rgba(42,31,27,0.4)` + `backdrop-blur-sm` を全面に敷く
+  - メニュー項目は縦積み、各行 `px-4 py-3`、ラベル 16px、tap target 44px 以上
+  - active は `bg-brand-tint` + `text-brand` + 600 weight、非active は `text-ink` で hover `bg-surface-sand`
+  - ドロワー z-20、オーバーレイ z-10、ヘッダー z-30
+- 展開中は `body { overflow: hidden }` で背景スクロールをロック
+- Escape キー・オーバーレイタップ・ルート遷移でクローズ
 
 ### Footer (Fixed)
 
@@ -367,6 +382,7 @@ FurDropの本質的ユースケースは「受信者が大量の写真の中か�
 - **写真を `object-fit: fill` で引き伸ばさない** — 縦横比を破壊する
 - 固定グリッドで余白を黒や濃いグレーで埋めない — Cream/Sand の台座を使う
 - **masonry レイアウトを使わない** — 不揃いなカード形状はDL選択時のスキャン・タップUXを阻害する。ギャラリーは常に均一グリッド
+- **モバイルヘッダーに複数の日本語メニューを横並びで詰め込まない** — ロゴが押しつぶされてメニューが改行する。sm 未満は必ずハンバーガードロワー化
 
 ## 10. Responsive Behavior
 
@@ -380,7 +396,7 @@ FurDropの本質的ユースケースは「受信者が大量の写真の中か�
 
 ### Collapsing Strategy
 - ギャラリー: 5 → 4 → 3 → 2 列
-- ヘッダー: フルナビ → ハンバーガー (モバイル、将来)
+- **ヘッダー: デスクトップはフルナビ、モバイル (sm 未満) はハンバーガードロワー** (§4 Navigation 参照)。日本語メニュー「ダッシュボード」「ギャラリー」「設定」「ログアウト」を横並びにするとモバイル幅ではロゴが押しつぶされ改行が発生するため、**必ずハンバーガー化する**
 - Dashboard カード: 横並び → 縦積み
 - S02 詳細設定: アコーディオン (全サイズ)
 - S08 前後ナビ: キーボード矢印 (デスクトップ) + スワイプ (モバイル)
