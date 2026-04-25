@@ -1,9 +1,13 @@
+import { useAtomValue } from "jotai";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
+import BatchDownloadModal from "../components/BatchDownloadModal";
 import Button from "../components/ui/Button";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
 import LoadingSpinner from "../components/ui/LoadingSpinner";
 import { receiverApi } from "../lib/api";
+import { buildZipName, downloadAsZip } from "../lib/zip-download";
+import { userAtom } from "../stores/user";
 import type { Photo } from "../types/photo";
 
 const PAGE_SIZE = 50;
@@ -51,6 +55,15 @@ export default function GalleryPage() {
   const [groupMode, setGroupMode] = useState<GroupMode>("none");
   const sentinelRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false);
+  const user = useAtomValue(userAtom);
+
+  // 一括 ZIP DL 用ステート
+  const [zipState, setZipState] = useState<{
+    processed: number;
+    total: number;
+    failed: number;
+  } | null>(null);
+  const zipControllerRef = useRef<AbortController | null>(null);
 
   // Shift+クリック & ドラッグ選択用
   const lastClickedRef = useRef<number | null>(null);
@@ -326,18 +339,42 @@ export default function GalleryPage() {
   );
 
   const handleBatchDownload = useCallback(async () => {
-    for (const id of selected) {
-      try {
-        const { download_url, filename } = await receiverApi.downloadPhoto(id);
-        const a = document.createElement("a");
-        a.href = download_url;
-        a.download = filename ?? `${id}.jpg`;
-        a.click();
-      } catch {
-        // 個別失敗は無視
-      }
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    if (zipControllerRef.current) return;
+
+    const controller = new AbortController();
+    zipControllerRef.current = controller;
+    setZipState({ processed: 0, total: ids.length, failed: 0 });
+
+    try {
+      await downloadAsZip({
+        photoIds: ids,
+        zipName: buildZipName(user?.handle ?? "photos"),
+        signal: controller.signal,
+        onProgress: (p) => setZipState(p),
+      });
+    } catch {
+      // 中断・致命エラーはモーダルを閉じるだけ
+    } finally {
+      zipControllerRef.current = null;
+      setZipState(null);
     }
-  }, [selected]);
+  }, [selected, user?.handle]);
+
+  const cancelBatchDownload = useCallback(() => {
+    zipControllerRef.current?.abort();
+  }, []);
+
+  // ZIP 生成中はページ離脱を抑止
+  useEffect(() => {
+    if (!zipState) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [zipState]);
 
   if (loading) {
     return (
@@ -381,7 +418,8 @@ export default function GalleryPage() {
               size="sm"
               variant="secondary"
               onClick={handleBatchDownload}
-              disabled={selected.size === 0}
+              disabled={selected.size === 0 || zipState !== null}
+              loading={zipState !== null}
             >
               DL
             </Button>
@@ -548,6 +586,14 @@ export default function GalleryPage() {
         cancelLabel="キャンセル"
         variant="danger"
         loading={deleting}
+      />
+
+      <BatchDownloadModal
+        open={zipState !== null}
+        processed={zipState?.processed ?? 0}
+        total={zipState?.total ?? 0}
+        failed={zipState?.failed ?? 0}
+        onCancel={cancelBatchDownload}
       />
     </div>
   );
