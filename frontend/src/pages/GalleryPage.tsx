@@ -446,13 +446,13 @@ export default function GalleryPage() {
             </span>
           )}
         </h1>
-        {photos.length > 0 && (
+        {photos.length > 0 && !selectMode && (
           <button
             type="button"
-            onClick={() => (selectMode ? exitSelectMode() : setSelectMode(true))}
+            onClick={() => setSelectMode(true)}
             className="rounded-lg px-3 py-1.5 text-[14px] font-medium text-brand transition-colors hover:bg-brand-tint"
           >
-            {selectMode ? "完了" : "選択/DL"}
+            選択/DL
           </button>
         )}
       </div>
@@ -469,7 +469,7 @@ export default function GalleryPage() {
             </button>
             <span className="text-[14px] text-ink-soft">{selected.size}枚選択中</span>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             <Button
               size="sm"
               variant="secondary"
@@ -488,6 +488,13 @@ export default function GalleryPage() {
             >
               削除
             </Button>
+            <button
+              type="button"
+              onClick={exitSelectMode}
+              className="rounded-lg px-2.5 py-1.5 text-[14px] font-medium text-brand transition-colors hover:bg-brand-tint"
+            >
+              完了
+            </button>
           </div>
         </div>
       )}
