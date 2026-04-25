@@ -60,6 +60,11 @@ export default function UploadingPage() {
     }
   }, [files.length, handle, navigate]);
 
+  // ルート遷移時にスクロール位置が前ページから引き継がれるため、初回マウントで先頭へ
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   // 離脱防止
   useEffect(() => {
     if (overall === "done" || overall === "failed" || overall === "idle") return;
