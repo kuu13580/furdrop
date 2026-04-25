@@ -192,6 +192,9 @@ export const receiverApi = {
         created_at: number;
       }[];
       next_cursor: string | null;
+      total: number;
+      date_counts: { key: string; count: number }[] | null;
+      sender_counts: { key: string; count: number }[] | null;
     }>(`/receiver/photos${qs ? `?${qs}` : ""}`, {}, true);
   },
 

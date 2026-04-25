@@ -20,6 +20,19 @@ type PhotoGroup = {
   items: { photo: Photo; index: number }[];
 };
 
+/**
+ * date のキーは JST 基準の ISO `YYYY-MM-DD`。サーバー集計 (date_counts) と揃えるため、
+ * UTC 秒に +9h して getUTC* で取り出す (ブラウザのローカル TZ に依存しない)
+ */
+function buildDateKeyAndLabel(createdAt: number): { key: string; label: string } {
+  const jst = new Date((createdAt + 9 * 3600) * 1000);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const y = jst.getUTCFullYear();
+  const m = pad(jst.getUTCMonth() + 1);
+  const d = pad(jst.getUTCDate());
+  return { key: `${y}-${m}-${d}`, label: `${y}/${m}/${d}` };
+}
+
 function buildGroups(photos: Photo[], mode: GroupMode): PhotoGroup[] {
   if (mode === "none") {
     return [{ key: "all", label: null, items: photos.map((photo, index) => ({ photo, index })) }];
@@ -29,9 +42,7 @@ function buildGroups(photos: Photo[], mode: GroupMode): PhotoGroup[] {
     let key: string;
     let label: string;
     if (mode === "date") {
-      const d = new Date(photo.created_at * 1000);
-      key = `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
-      label = `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
+      ({ key, label } = buildDateKeyAndLabel(photo.created_at));
     } else {
       key = photo.sender_name ?? "__anonymous__";
       label = photo.sender_name ?? "(匿名)";
@@ -53,6 +64,13 @@ export default function GalleryPage() {
   const [deleting, setDeleting] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [groupMode, setGroupMode] = useState<GroupMode>("none");
+  /** 受信者が保持する completed photos の総数。listPhotos の各ページで返ってくる */
+  const [totalCount, setTotalCount] = useState<number | null>(null);
+  /** 日付別 / 送信者別の真の件数。listPhotos 初回フェッチ (cursor なし) でだけ更新される */
+  const [groupCounts, setGroupCounts] = useState<{
+    date: Map<string, number>;
+    sender: Map<string, number>;
+  } | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false);
   const user = useAtomValue(userAtom);
@@ -88,6 +106,14 @@ export default function GalleryPage() {
       setPhotos((prev) => (nextCursor ? [...prev, ...res.photos] : res.photos));
       setCursor(res.next_cursor);
       setHasMore(res.next_cursor !== null);
+      setTotalCount(res.total);
+      // date_counts / sender_counts は初回フェッチでのみ返ってくる
+      if (res.date_counts && res.sender_counts) {
+        setGroupCounts({
+          date: new Map(res.date_counts.map((c) => [c.key, c.count])),
+          sender: new Map(res.sender_counts.map((c) => [c.key, c.count])),
+        });
+      }
       return res;
     } catch {
       return null;
@@ -232,7 +258,34 @@ export default function GalleryPage() {
     setDeleting(true);
     try {
       await receiverApi.batchDeletePhotos([...selected]);
+      // 削除分の集計差分を groupCounts / totalCount に反映 (再フェッチなしで一致を保つ)
+      const deleted = photos.filter((p) => selected.has(p.id));
+      const dateDelta = new Map<string, number>();
+      const senderDelta = new Map<string, number>();
+      for (const p of deleted) {
+        const dk = buildDateKeyAndLabel(p.created_at).key;
+        dateDelta.set(dk, (dateDelta.get(dk) ?? 0) + 1);
+        const sk = p.sender_name ?? "__anonymous__";
+        senderDelta.set(sk, (senderDelta.get(sk) ?? 0) + 1);
+      }
       setPhotos((prev) => prev.filter((p) => !selected.has(p.id)));
+      setTotalCount((prev) => (prev !== null ? Math.max(0, prev - deleted.length) : prev));
+      setGroupCounts((prev) => {
+        if (!prev) return prev;
+        const date = new Map(prev.date);
+        const sender = new Map(prev.sender);
+        for (const [k, n] of dateDelta) {
+          const cur = (date.get(k) ?? 0) - n;
+          if (cur <= 0) date.delete(k);
+          else date.set(k, cur);
+        }
+        for (const [k, n] of senderDelta) {
+          const cur = (sender.get(k) ?? 0) - n;
+          if (cur <= 0) sender.delete(k);
+          else sender.set(k, cur);
+        }
+        return { date, sender };
+      });
       exitSelectMode();
     } catch {
       // エラー時はそのまま
@@ -240,7 +293,7 @@ export default function GalleryPage() {
       setDeleting(false);
       setDeleteConfirmOpen(false);
     }
-  }, [selected, exitSelectMode]);
+  }, [selected, exitSelectMode, photos]);
 
   const groups = useMemo(() => buildGroups(photos, groupMode), [photos, groupMode]);
 
@@ -297,10 +350,7 @@ export default function GalleryPage() {
 
       if (!hasMore || !cursor) return;
 
-      const keyOf = (p: Photo): string => {
-        const d = new Date(p.created_at * 1000);
-        return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
-      };
+      const keyOf = (p: Photo): string => buildDateKeyAndLabel(p.created_at).key;
 
       setGroupLoadingKey(targetKey);
       try {
@@ -389,6 +439,11 @@ export default function GalleryPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-[22px] font-bold tracking-[-0.015em] text-ink sm:text-[28px]">
           ギャラリー
+          {totalCount !== null && (
+            <span className="ml-2 text-[14px] font-medium text-ink-muted sm:text-[16px]">
+              ({totalCount})
+            </span>
+          )}
         </h1>
         {photos.length > 0 && (
           <button
@@ -483,7 +538,13 @@ export default function GalleryPage() {
                   <div className="flex items-center justify-between">
                     <h2 className="text-[14px] font-semibold text-ink-soft">
                       {group.label}
-                      <span className="ml-2 text-ink-muted">({group.items.length})</span>
+                      <span className="ml-2 text-ink-muted">
+                        (
+                        {groupCounts && groupMode !== "none"
+                          ? (groupCounts[groupMode].get(group.key) ?? group.items.length)
+                          : group.items.length}
+                        )
+                      </span>
                     </h2>
                     <button
                       type="button"

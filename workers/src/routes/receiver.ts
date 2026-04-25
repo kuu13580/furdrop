@@ -40,6 +40,12 @@ const listPhotosRoute = createRoute({
               }),
             ),
             next_cursor: z.string().nullable(),
+            /** 受信者の completed photos の合計件数。ページに関わらず常に同じ値 */
+            total: z.number(),
+            /** 日付別件数 (JST)。初回フェッチ (cursor なし) のみ非 null */
+            date_counts: z.array(z.object({ key: z.string(), count: z.number() })).nullable(),
+            /** 送信者別件数。匿名は key="__anonymous__"。初回フェッチ (cursor なし) のみ非 null */
+            sender_counts: z.array(z.object({ key: z.string(), count: z.number() })).nullable(),
           }),
         },
       },
@@ -78,10 +84,40 @@ receiver.openapi(listPhotosRoute, async (c) => {
   query += " ORDER BY created_at DESC, batch_index ASC, id DESC LIMIT ?";
   params.push(limit + 1); // 1件多く取得してnext_cursorを判定
 
-  const result = await c.env.DB.prepare(query)
-    .bind(...params)
-    .all();
+  // 集計は初回フェッチ (cursor なし) のみ。後続ページでは photos データだけ返す
+  const [result, totalResult, dateCountsResult, senderCountsResult] = await Promise.all([
+    c.env.DB.prepare(query)
+      .bind(...params)
+      .all(),
+    c.env.DB.prepare(
+      "SELECT COUNT(*) AS count FROM photos WHERE receiver_id = ? AND upload_status = 'completed'",
+    )
+      .bind(uid)
+      .first<{ count: number }>(),
+    cursor
+      ? null
+      : c.env.DB.prepare(
+          // JST 日付 (UTC+9) で集計し、ISO 8601 'YYYY-MM-DD' をキーにする
+          "SELECT strftime('%Y-%m-%d', datetime(created_at + 9*3600, 'unixepoch')) AS key, " +
+            "COUNT(*) AS count FROM photos " +
+            "WHERE receiver_id = ? AND upload_status = 'completed' GROUP BY key ORDER BY key DESC",
+        )
+          .bind(uid)
+          .all<{ key: string; count: number }>(),
+    cursor
+      ? null
+      : c.env.DB.prepare(
+          // 匿名 (NULL) は固定キー __anonymous__ で集計
+          "SELECT COALESCE(sender_name, '__anonymous__') AS key, COUNT(*) AS count FROM photos " +
+            "WHERE receiver_id = ? AND upload_status = 'completed' GROUP BY key ORDER BY count DESC",
+        )
+          .bind(uid)
+          .all<{ key: string; count: number }>(),
+  ]);
 
+  const total = totalResult?.count ?? 0;
+  const dateCounts = dateCountsResult?.results ?? null;
+  const senderCounts = senderCountsResult?.results ?? null;
   const hasMore = result.results.length > limit;
   const photos = hasMore ? result.results.slice(0, limit) : result.results;
 
@@ -104,7 +140,16 @@ receiver.openapi(listPhotosRoute, async (c) => {
       ? btoa(`${lastPhoto.created_at}:${lastPhoto.batch_index}:${lastPhoto.id}`)
       : null;
 
-  return c.json({ photos: photosWithUrls, next_cursor: nextCursor }, 200);
+  return c.json(
+    {
+      photos: photosWithUrls,
+      next_cursor: nextCursor,
+      total,
+      date_counts: dateCounts,
+      sender_counts: senderCounts,
+    },
+    200,
+  );
 });
 
 // ========== GET /receiver/photo-ids ==========
