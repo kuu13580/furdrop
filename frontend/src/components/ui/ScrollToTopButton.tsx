@@ -19,7 +19,7 @@ export default function ScrollToTopButton() {
       type="button"
       aria-label="先頭にスクロール"
       onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-      className="fixed right-4 bottom-[calc(env(safe-area-inset-bottom)+1rem)] z-30 flex h-11 w-11 items-center justify-center rounded-full border border-surface-sand-deep bg-surface text-ink-soft shadow-modal transition-colors hover:bg-surface-sand hover:text-ink active:scale-[0.96]"
+      className="fixed right-4 bottom-[calc(env(safe-area-inset-bottom)+4rem)] z-30 flex h-11 w-11 items-center justify-center rounded-full border border-surface-sand-deep bg-surface text-ink-soft shadow-modal transition-colors hover:bg-surface-sand hover:text-ink active:scale-[0.96]"
     >
       <svg
         viewBox="0 0 24 24"
