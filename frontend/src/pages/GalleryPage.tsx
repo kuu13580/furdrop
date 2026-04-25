@@ -5,6 +5,7 @@ import BatchDownloadModal from "../components/BatchDownloadModal";
 import Button from "../components/ui/Button";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
 import LoadingSpinner from "../components/ui/LoadingSpinner";
+import ScrollToTopButton from "../components/ui/ScrollToTopButton";
 import { receiverApi } from "../lib/api";
 import { buildZipName, downloadAsZip } from "../lib/zip-download";
 import { userAtom } from "../stores/user";
@@ -445,19 +446,19 @@ export default function GalleryPage() {
             </span>
           )}
         </h1>
-        {photos.length > 0 && (
+        {photos.length > 0 && !selectMode && (
           <button
             type="button"
-            onClick={() => (selectMode ? exitSelectMode() : setSelectMode(true))}
+            onClick={() => setSelectMode(true)}
             className="rounded-lg px-3 py-1.5 text-[14px] font-medium text-brand transition-colors hover:bg-brand-tint"
           >
-            {selectMode ? "完了" : "選択/DL"}
+            選択/DL
           </button>
         )}
       </div>
 
       {selectMode && (
-        <div className="flex items-center justify-between rounded-2xl border border-surface-sand-deep bg-surface-sand px-4 py-2.5">
+        <div className="sticky top-[calc(theme(spacing.14)+0.5rem)] z-20 flex items-center justify-between rounded-2xl border border-surface-sand-deep bg-surface-sand/95 px-4 py-2.5 backdrop-blur-sm sm:top-[calc(theme(spacing.16)+0.5rem)]">
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -468,7 +469,7 @@ export default function GalleryPage() {
             </button>
             <span className="text-[14px] text-ink-soft">{selected.size}枚選択中</span>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             <Button
               size="sm"
               variant="secondary"
@@ -487,6 +488,13 @@ export default function GalleryPage() {
             >
               削除
             </Button>
+            <button
+              type="button"
+              onClick={exitSelectMode}
+              className="rounded-lg px-2.5 py-1.5 text-[14px] font-medium text-brand transition-colors hover:bg-brand-tint"
+            >
+              完了
+            </button>
           </div>
         </div>
       )}
@@ -656,6 +664,8 @@ export default function GalleryPage() {
         failed={zipState?.failed ?? 0}
         onCancel={cancelBatchDownload}
       />
+
+      <ScrollToTopButton />
     </div>
   );
 }
