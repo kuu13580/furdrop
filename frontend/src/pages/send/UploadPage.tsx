@@ -342,11 +342,18 @@ export default function UploadPage() {
 }
 
 function PreviewTile({ file, onRemove }: { file: SelectedFile; onRemove: () => void }) {
+  const heic = isHeicFile(file.file);
   const hasPreview = file.previewUrl.length > 0;
   const generating = !file.previewReady;
   return (
     <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded-2xl bg-surface-canvas">
-      {hasPreview ? (
+      {heic ? (
+        <div className="flex flex-col items-center justify-center px-2 text-center text-ink-soft">
+          <span className="font-mono text-[13px] font-semibold">HEIC</span>
+          <span className="mt-0.5 text-[11px]">プレビュー不可</span>
+          <span className="mt-1 max-w-full truncate text-[11px]">{file.file.name}</span>
+        </div>
+      ) : hasPreview ? (
         <img
           src={file.previewUrl}
           alt={file.file.name}
@@ -400,6 +407,11 @@ async function generatePreviews(items: SelectedFile[], setFiles: SetFiles) {
     });
   };
   await runConcurrent(items, PREVIEW_CONCURRENCY, async (item) => {
+    // HEIC は専用の「プレビュー不可」表示にするため生成試行しない
+    if (isHeicFile(item.file)) {
+      applyUpdate(item.id, { previewReady: true });
+      return;
+    }
     try {
       const thumb = await generateThumbnail(item.file);
       applyUpdate(item.id, { previewUrl: URL.createObjectURL(thumb), previewReady: true });
