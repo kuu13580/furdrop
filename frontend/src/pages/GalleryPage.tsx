@@ -75,6 +75,24 @@ export default function GalleryPage() {
   const loadingRef = useRef(false);
   const user = useAtomValue(userAtom);
 
+  /** 選択モードバーが画面内にあるか。スクロールで外に出たら下部 floating UI を出す */
+  const selectionBarRef = useRef<HTMLDivElement>(null);
+  const [selectionBarInView, setSelectionBarInView] = useState(true);
+  useEffect(() => {
+    if (!selectMode) {
+      setSelectionBarInView(true);
+      return;
+    }
+    const target = selectionBarRef.current;
+    if (!target) return;
+    const observer = new IntersectionObserver(
+      (entries) => setSelectionBarInView(entries[0]?.isIntersecting ?? true),
+      { threshold: 0 },
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [selectMode]);
+
   // 一括 ZIP DL 用ステート
   const [zipState, setZipState] = useState<{
     processed: number;
@@ -457,7 +475,10 @@ export default function GalleryPage() {
       </div>
 
       {selectMode && (
-        <div className="flex items-center justify-between rounded-2xl border border-surface-sand-deep bg-surface-sand px-4 py-2.5">
+        <div
+          ref={selectionBarRef}
+          className="flex items-center justify-between rounded-2xl border border-surface-sand-deep bg-surface-sand px-4 py-2.5"
+        >
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -634,6 +655,31 @@ export default function GalleryPage() {
       {hasMore && (
         <div ref={sentinelRef} className="flex justify-center py-4">
           <LoadingSpinner />
+        </div>
+      )}
+
+      {selectMode && !selectionBarInView && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center px-4 pt-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)]">
+          <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-surface-sand-deep bg-surface px-3 py-2 shadow-modal">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={handleBatchDownload}
+              disabled={selected.size === 0 || zipState !== null}
+              loading={zipState !== null}
+            >
+              DL
+            </Button>
+            <Button
+              size="sm"
+              variant="danger"
+              onClick={() => setDeleteConfirmOpen(true)}
+              disabled={selected.size === 0}
+              loading={deleting}
+            >
+              削除
+            </Button>
+          </div>
         </div>
       )}
 
