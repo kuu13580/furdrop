@@ -4,7 +4,10 @@ import { DEFAULT_WATERMARK, type WatermarkOptions } from "../lib/image-processin
 export type SelectedFile = {
   id: string;
   file: File;
+  /** プレビュー用サムネ (長辺 400px) の ObjectURL。未生成時は空文字。 */
   previewUrl: string;
+  /** サムネ生成試行済み (成功 or 失敗が確定) */
+  previewReady: boolean;
 };
 
 export type UploadFormState = {

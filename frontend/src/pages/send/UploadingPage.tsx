@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router";
 import Alert from "../../components/ui/Alert";
 import Button from "../../components/ui/Button";
 import { ApiError, senderApi } from "../../lib/api";
+import { runConcurrent } from "../../lib/concurrency";
 import {
   applyWatermark,
   embedSenderInfoInExif,
@@ -13,6 +14,12 @@ import {
   normalizeToJpeg,
 } from "../../lib/image-processing";
 import { type SelectedFile, selectedFilesAtom, uploadFormAtom } from "../../stores/sender";
+
+// 同時実行数の上限。モバイルのメモリ枯渇を避けるため並列度を抑える。
+// 加工は createImageBitmap + Canvas 再エンコードで巨大な中間バッファが出るため少なめ。
+// 送信はネットワーク I/O バウンドなので加工より多め。
+const PROCESS_CONCURRENCY = 3;
+const UPLOAD_CONCURRENCY = 4;
 
 type Phase =
   | "pending"
@@ -52,6 +59,11 @@ export default function UploadingPage() {
       navigate(`/send/${handle}/upload`, { replace: true });
     }
   }, [files.length, handle, navigate]);
+
+  // ルート遷移時にスクロール位置が前ページから引き継がれるため、初回マウントで先頭へ
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   // 離脱防止
   useEffect(() => {
@@ -244,8 +256,10 @@ async function runPipeline({
   const credit = formatCredit(form.senderName);
   const exifText = form.exifEnabled && credit ? credit : "";
   const watermarkText = form.watermarkEnabled && credit ? credit : "";
-  const processedResults = await Promise.allSettled(
-    files.map(async (f): Promise<ProcessedFile> => {
+  const processedResults = await runConcurrent(
+    files,
+    PROCESS_CONCURRENCY,
+    async (f): Promise<ProcessedFile> => {
       try {
         if (isHeic(f.file)) updatePhase(f.id, "converting");
         const jpeg = await normalizeToJpeg(f.file);
@@ -289,7 +303,7 @@ async function runPipeline({
         updatePhase(f.id, "failed", describeError(err));
         throw err;
       }
-    }),
+    },
   );
 
   const processed: ProcessedFile[] = [];
@@ -343,26 +357,24 @@ async function runPipeline({
     setPhotoId(processed[i].id, uploads[i].photo_id);
   }
 
-  // --- アップロード + confirm（並列） ---
+  // --- アップロード + confirm（並列度制限） ---
   onOverall("uploading");
-  await Promise.allSettled(
-    processed.map(async (p, i) => {
-      const up = uploads[i];
-      updatePhase(p.id, "uploading");
-      try {
-        await Promise.all([
-          putBlob(up.upload_url, p.processedBlob),
-          putBlob(up.thumb_upload_url, p.thumbBlob),
-        ]);
-        await senderApi.confirmPhoto(handle, sessionId, up.photo_id, {
-          thumb_size: p.thumbBlob.size,
-        });
-        updatePhase(p.id, "completed");
-      } catch (err) {
-        updatePhase(p.id, "failed", describeError(err));
-      }
-    }),
-  );
+  await runConcurrent(processed, UPLOAD_CONCURRENCY, async (p, i) => {
+    const up = uploads[i];
+    updatePhase(p.id, "uploading");
+    try {
+      await Promise.all([
+        putBlob(up.upload_url, p.processedBlob),
+        putBlob(up.thumb_upload_url, p.thumbBlob),
+      ]);
+      await senderApi.confirmPhoto(handle, sessionId, up.photo_id, {
+        thumb_size: p.thumbBlob.size,
+      });
+      updatePhase(p.id, "completed");
+    } catch (err) {
+      updatePhase(p.id, "failed", describeError(err));
+    }
+  });
 
   // 結果に応じてDoneへ
   onOverall("done");
