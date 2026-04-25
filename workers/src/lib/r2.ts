@@ -74,8 +74,13 @@ export async function createThumbViewUrl(env: Env, key: string): Promise<string>
   return getSignedUrl(client, command, { expiresIn: 3600 });
 }
 
-/** オリジナルDL用 URL（開発時はプロキシ、本番はPresigned GET） */
-export async function createDownloadUrl(env: Env, key: string): Promise<string> {
+/** オリジナルDL用 URL（開発時はプロキシ、本番はPresigned GET）
+ *
+ * filename を渡すと R2 の response-content-disposition に attachment ヘッダを付与する。
+ * これにより クロスオリジン Presigned URL でもブラウザが強制 DL 扱いにする
+ * (a タグの download 属性は same-origin にしか効かないため、モバイルでは別タブ表示になっていた)
+ */
+export async function createDownloadUrl(env: Env, key: string, filename: string): Promise<string> {
   if (env.ENVIRONMENT !== "production") {
     return `/dev/images/originals/${key}`;
   }
@@ -83,6 +88,7 @@ export async function createDownloadUrl(env: Env, key: string): Promise<string> 
   const command = new GetObjectCommand({
     Bucket: env.R2_BUCKET_ORIGINALS,
     Key: key,
+    ResponseContentDisposition: `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`,
   });
   return getSignedUrl(client, command, { expiresIn: 3600 });
 }
