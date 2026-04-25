@@ -5,6 +5,7 @@ import BatchDownloadModal from "../components/BatchDownloadModal";
 import Button from "../components/ui/Button";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
 import LoadingSpinner from "../components/ui/LoadingSpinner";
+import ScrollToTopButton from "../components/ui/ScrollToTopButton";
 import { receiverApi } from "../lib/api";
 import { buildZipName, downloadAsZip } from "../lib/zip-download";
 import { userAtom } from "../stores/user";
@@ -656,6 +657,8 @@ export default function GalleryPage() {
         failed={zipState?.failed ?? 0}
         onCancel={cancelBatchDownload}
       />
+
+      <ScrollToTopButton />
     </div>
   );
 }
