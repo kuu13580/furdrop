@@ -373,11 +373,11 @@ receiver.openapi(downloadRoute, async (c) => {
     return c.json({ error: { code: "NOT_FOUND", message: "Photo not found" } }, 404);
   }
 
-  const downloadUrl = await createDownloadUrl(c.env, photo.r2_key_original as string);
   const filename = buildDownloadFilename(
     photo.created_at as number,
     (photo.session_index as number) || 1,
   );
+  const downloadUrl = await createDownloadUrl(c.env, photo.r2_key_original as string, filename);
 
   return c.json(
     {
