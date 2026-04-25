@@ -6,11 +6,13 @@ import Alert from "../../components/ui/Alert";
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
 import { senderApi } from "../../lib/api";
-import { formatCredit, MAX_FILE_SIZE } from "../../lib/image-processing";
+import { runConcurrent } from "../../lib/concurrency";
+import { formatCredit, generateThumbnail, MAX_FILE_SIZE } from "../../lib/image-processing";
 import { type SelectedFile, selectedFilesAtom, uploadFormAtom } from "../../stores/sender";
 
 const ACCEPT = "image/jpeg,image/png,image/heic,image/heif,.heic,.heif";
 const MAX_PHOTOS_PER_SESSION = 100;
+const PREVIEW_CONCURRENCY = 3;
 
 const ACCEPTED_EXTS = /\.(jpe?g|png|hei[cf])$/i;
 
@@ -87,18 +89,24 @@ export default function UploadPage() {
       accepted.push({
         id: crypto.randomUUID(),
         file: f,
-        previewUrl: isHeicFile(f) ? "" : URL.createObjectURL(f),
+        previewUrl: "",
+        previewReady: false,
       });
     }
 
     const merged = [...files, ...accepted];
+    const overflowed: SelectedFile[] = [];
     if (merged.length > MAX_PHOTOS_PER_SESSION) {
       rejected.push(`一度に送れるのは${MAX_PHOTOS_PER_SESSION}枚までです`);
-      const overflow = merged.splice(MAX_PHOTOS_PER_SESSION);
-      for (const o of overflow) if (o.previewUrl) URL.revokeObjectURL(o.previewUrl);
+      overflowed.push(...merged.splice(MAX_PHOTOS_PER_SESSION));
     }
     setFiles(merged);
     setError(rejected.length > 0 ? rejected.join("\n") : null);
+
+    // 上限超過で切り落とされた分は新規生成前なので URL 解放不要
+    // 採用分のうちまだ未処理のもののみプレビュー生成
+    const toProcess = accepted.filter((a) => !overflowed.includes(a));
+    void generatePreviews(toProcess, setFiles);
   };
 
   const removeFile = (id: string) => {
@@ -334,20 +342,28 @@ export default function UploadPage() {
 }
 
 function PreviewTile({ file, onRemove }: { file: SelectedFile; onRemove: () => void }) {
-  const heic = !file.previewUrl;
+  const hasPreview = file.previewUrl.length > 0;
+  const generating = !file.previewReady;
   return (
     <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded-2xl bg-surface-canvas">
-      {heic ? (
-        <div className="flex flex-col items-center justify-center px-2 text-center text-[12px] text-ink-soft">
-          <span className="font-mono font-semibold">HEIC</span>
-          <span className="mt-1 max-w-full truncate">{file.file.name}</span>
-        </div>
-      ) : (
+      {hasPreview ? (
         <img
           src={file.previewUrl}
           alt={file.file.name}
+          loading="lazy"
+          decoding="async"
           className="max-h-full max-w-full rounded-xl object-contain"
         />
+      ) : generating ? (
+        <div className="flex flex-col items-center justify-center gap-1.5 px-2 text-center text-[12px] text-ink-soft">
+          <span className="h-5 w-5 animate-spin rounded-full border-2 border-surface-sand-deep border-t-brand" />
+          <span className="max-w-full truncate">{file.file.name}</span>
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center px-2 text-center text-[12px] text-ink-soft">
+          <span className="font-mono font-semibold">画像</span>
+          <span className="mt-1 max-w-full truncate">{file.file.name}</span>
+        </div>
       )}
       <button
         type="button"
@@ -362,4 +378,33 @@ function PreviewTile({ file, onRemove }: { file: SelectedFile; onRemove: () => v
       </button>
     </div>
   );
+}
+
+type SetFiles = (update: SelectedFile[] | ((prev: SelectedFile[]) => SelectedFile[])) => void;
+
+/**
+ * 選択された各ファイルについて非同期にサムネプレビュー (長辺 400px) を生成する。
+ * オリジナルを `<img>` に渡すとモバイルで巨大な raw データがデコードされて重くなるため、
+ * プレビュー表示に使う画像自体を小さくしておく。
+ */
+async function generatePreviews(items: SelectedFile[], setFiles: SetFiles) {
+  const applyUpdate = (id: string, patch: Partial<SelectedFile>) => {
+    setFiles((prev) => {
+      const target = prev.find((f) => f.id === id);
+      // 途中で削除/上限オーバー等で外されていたら生成分の URL を解放して無視
+      if (!target) {
+        if (patch.previewUrl) URL.revokeObjectURL(patch.previewUrl);
+        return prev;
+      }
+      return prev.map((f) => (f.id === id ? { ...f, ...patch } : f));
+    });
+  };
+  await runConcurrent(items, PREVIEW_CONCURRENCY, async (item) => {
+    try {
+      const thumb = await generateThumbnail(item.file);
+      applyUpdate(item.id, { previewUrl: URL.createObjectURL(thumb), previewReady: true });
+    } catch {
+      applyUpdate(item.id, { previewReady: true });
+    }
+  });
 }
