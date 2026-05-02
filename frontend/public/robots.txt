@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /gallery
+Disallow: /settings
+Disallow: /design-preview
+
+Sitemap: https://furdrop.pages.dev/sitemap.xml

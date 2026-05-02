@@ -7,7 +7,73 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="theme-color" content="#D96A4A" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FurDrop</title>
+    <link rel="canonical" href="https://%VITE_PUBLIC_HOST%/" />
+    <meta
+      name="description"
+      content="FurDropは、メアドもアカウントも交換せず、撮影者情報を残して匿名で写真を受け取れるサービス。受け取りURLひとつで、面倒な個人情報のやりとりなく写真を集められます。"
+    />
+    <meta
+      name="keywords"
+      content="FurDrop,写真受け取り,匿名,EXIF,撮影者情報,イベント写真,写真共有"
+    />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="FurDrop" />
+    <meta property="og:locale" content="ja_JP" />
+    <meta property="og:url" content="https://%VITE_PUBLIC_HOST%/" />
+    <meta property="og:title" content="FurDrop — 撮ってもらった写真を、ちゃんと受け取る。" />
+    <meta
+      property="og:description"
+      content="メアドもアカウントも交換せず、撮影者情報を残して匿名で写真を受け取れる。受け取りURLひとつで完結。"
+    />
+    <meta property="og:image" content="https://%VITE_PUBLIC_HOST%/og.png" />
+    <meta property="og:image:alt" content="FurDrop — 撮ってもらった写真を、ちゃんと受け取る。" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="FurDrop — 撮ってもらった写真を、ちゃんと受け取る。" />
+    <meta
+      name="twitter:description"
+      content="メアドもアカウントも交換せず、撮影者情報を残して匿名で写真を受け取れる。受け取りURLひとつで完結。"
+    />
+    <meta name="twitter:image" content="https://%VITE_PUBLIC_HOST%/og.png" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <title>FurDrop — 撮ってもらった写真を、ちゃんと受け取る。</title>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "FurDrop",
+        "alternateName": "ファードロップ",
+        "url": "https://%VITE_PUBLIC_HOST%/",
+        "description": "メアドもアカウントも交換せず、撮影者情報を残して匿名で写真を受け取れるサービス。",
+        "inLanguage": "ja-JP",
+        "publisher": {
+          "@type": "Organization",
+          "name": "FurDrop",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://%VITE_PUBLIC_HOST%/icons/icon-512.png"
+          }
+        }
+      }
+    </script>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-BE16TKNVZ5"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'G-BE16TKNVZ5');
+    </script>
   </head>
   <body>
     <div id="root"></div>

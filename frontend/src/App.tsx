@@ -6,12 +6,13 @@ import { useAuthInit } from "./hooks/useAuthInit";
 import DashboardPage from "./pages/DashboardPage";
 import DesignPreviewPage from "./pages/DesignPreviewPage";
 import GalleryPage from "./pages/GalleryPage";
+import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import PhotoDetailPage from "./pages/PhotoDetailPage";
 import SettingsPage from "./pages/SettingsPage";
 import DonePage from "./pages/send/DonePage";
-import LandingPage from "./pages/send/LandingPage";
+import SendLandingPage from "./pages/send/LandingPage";
 import UploadingPage from "./pages/send/UploadingPage";
 import UploadPage from "./pages/send/UploadPage";
 
@@ -23,7 +24,7 @@ export default function App() {
       <Routes>
         {/* 送信者フロー（認証不要） */}
         <Route element={<SenderLayout />}>
-          <Route path="/send/:handle" element={<LandingPage />} />
+          <Route path="/send/:handle" element={<SendLandingPage />} />
           <Route path="/send/:handle/upload" element={<UploadPage />} />
           <Route path="/send/:handle/uploading" element={<UploadingPage />} />
           <Route path="/send/:handle/done" element={<DonePage />} />
@@ -45,8 +46,8 @@ export default function App() {
         {/* ⚠️ 確認用プレビュー (削除予定): DesignPreviewPage + このルートを消せば削除完了 */}
         <Route path="/design-preview" element={<DesignPreviewPage />} />
 
-        {/* ルート → ログインへ */}
-        <Route path="/" element={<LoginPage />} />
+        {/* ルート → ランディングページ (LP) */}
+        <Route path="/" element={<LandingPage />} />
 
         {/* 404 */}
         <Route path="*" element={<NotFoundPage />} />

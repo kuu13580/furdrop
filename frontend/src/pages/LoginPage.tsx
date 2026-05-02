@@ -1,7 +1,7 @@
 import { getAdditionalUserInfo, signInWithPopup, TwitterAuthProvider } from "firebase/auth";
 import { useAtomValue, useSetAtom } from "jotai";
 import { useCallback, useState } from "react";
-import { Navigate, useNavigate } from "react-router";
+import { Link, Navigate, useNavigate } from "react-router";
 import logoUrl from "../assets/logos/logo.png";
 import { auth } from "../lib/firebase";
 import { authAtom } from "../stores/auth";
@@ -42,7 +42,9 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-surface-canvas px-4 text-ink antialiased">
       <div className="w-full max-w-sm space-y-6 text-center">
-        <img src={logoUrl} alt="FurDrop" className="mx-auto h-20" />
+        <Link to="/" aria-label="トップへ" className="inline-block">
+          <img src={logoUrl} alt="FurDrop" className="mx-auto h-20" />
+        </Link>
         <p className="text-[16px] leading-[1.5] text-ink-soft">
           写真を受け取るための
           <br />
