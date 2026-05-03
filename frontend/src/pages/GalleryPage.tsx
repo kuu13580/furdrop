@@ -584,7 +584,11 @@ export default function GalleryPage() {
                     );
 
                     return (
-                      <div key={photo.id} data-photo-index={index} className="relative touch-none">
+                      <div
+                        key={photo.id}
+                        data-photo-index={index}
+                        className={`relative ${selectMode ? "touch-none" : ""}`}
+                      >
                         {selectMode ? (
                           <button
                             type="button"
