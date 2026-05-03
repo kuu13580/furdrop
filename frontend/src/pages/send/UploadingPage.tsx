@@ -14,6 +14,7 @@ import {
   normalizeToJpeg,
   stripExifGps,
 } from "../../lib/image-processing";
+import { debugAtom } from "../../stores/debug";
 import { type SelectedFile, selectedFilesAtom, uploadFormAtom } from "../../stores/sender";
 
 // 同時実行数の上限。モバイルのメモリ枯渇を避けるため並列度を抑える。
@@ -31,10 +32,14 @@ type Phase =
   | "completed"
   | "failed";
 
+/** どのステップで失敗したか。"failed" 時に画像ごとの内訳を出すために保持 */
+type FailedAt = "convert" | "upload";
+
 type FileProgress = {
   selected: SelectedFile;
   phase: Phase;
   error?: string;
+  failedAt?: FailedAt;
   photoId?: string;
 };
 
@@ -43,6 +48,8 @@ type OverallPhase = "idle" | "processing" | "session" | "uploading" | "done" | "
 export default function UploadingPage() {
   const { handle } = useParams<{ handle: string }>();
   const navigate = useNavigate();
+  // debugAtom はアプリ全体で共有。?debug=true は App 直下の DebugUrlSync が同期する
+  const debug = useAtomValue(debugAtom);
   const [files, setFiles] = useAtom(selectedFilesAtom);
   const form = useAtomValue(uploadFormAtom);
 
@@ -133,14 +140,18 @@ export default function UploadingPage() {
 
       <ul className="divide-y divide-surface-sand-deep overflow-hidden rounded-2xl bg-surface shadow-card">
         {progress.map((p) => (
-          <li
-            key={p.selected.id}
-            className="flex items-center justify-between px-4 py-2.5 text-[14px]"
-          >
-            <span className="truncate pr-3 text-ink">{p.selected.file.name}</span>
-            <span className={`shrink-0 font-medium ${phaseColor(p.phase)}`}>
-              {phaseLabel(p.phase)}
-            </span>
+          <li key={p.selected.id} className="flex flex-col gap-0.5 px-4 py-2.5 text-[14px]">
+            <div className="flex items-center justify-between gap-3">
+              <span className="truncate pr-3 text-ink">{p.selected.file.name}</span>
+              <span className={`shrink-0 font-medium ${phaseColor(p.phase)}`}>
+                {phaseLabel(p.phase, p.failedAt)}
+              </span>
+            </div>
+            {debug && p.phase === "failed" && p.error && (
+              <p className="break-all pr-3 font-mono text-[11px] leading-[1.4] text-status-danger">
+                {p.error}
+              </p>
+            )}
           </li>
         ))}
       </ul>
@@ -178,7 +189,7 @@ function overallLabel(p: OverallPhase): string {
   }
 }
 
-function phaseLabel(p: Phase): string {
+function phaseLabel(p: Phase, failedAt?: FailedAt): string {
   switch (p) {
     case "pending":
       return "待機";
@@ -193,6 +204,8 @@ function phaseLabel(p: Phase): string {
     case "completed":
       return "完了";
     case "failed":
+      if (failedAt === "convert") return "変換失敗";
+      if (failedAt === "upload") return "送信失敗";
       return "失敗";
   }
 }
@@ -245,8 +258,10 @@ async function runPipeline({
   onGlobalError,
   onDone,
 }: PipelineArgs) {
-  const updatePhase = (id: string, phase: Phase, error?: string) => {
-    onProgress((prev) => prev.map((p) => (p.selected.id === id ? { ...p, phase, error } : p)));
+  const updatePhase = (id: string, phase: Phase, error?: string, failedAt?: FailedAt) => {
+    onProgress((prev) =>
+      prev.map((p) => (p.selected.id === id ? { ...p, phase, error, failedAt } : p)),
+    );
   };
   const setPhotoId = (id: string, photoId: string) => {
     onProgress((prev) => prev.map((p) => (p.selected.id === id ? { ...p, photoId } : p)));
@@ -304,7 +319,8 @@ async function runPipeline({
           height,
         };
       } catch (err) {
-        updatePhase(f.id, "failed", describeError(err));
+        // HEIC変換, PNG→JPEG変換, 透かし合成, EXIF埋込, GPS除去, サムネイル生成 — 一括して "convert"
+        updatePhase(f.id, "failed", describeError(err), "convert");
         throw err;
       }
     },
@@ -376,7 +392,8 @@ async function runPipeline({
       });
       updatePhase(p.id, "completed");
     } catch (err) {
-      updatePhase(p.id, "failed", describeError(err));
+      // putBlob (R2 PUT) または confirmPhoto (Workers PATCH) の失敗を "upload" に集約
+      updatePhase(p.id, "failed", describeError(err), "upload");
     }
   });
 
