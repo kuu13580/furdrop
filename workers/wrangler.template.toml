@@ -20,6 +20,21 @@ bucket_name = "furdrop-originals"
 binding = "R2_THUMBS"
 bucket_name = "furdrop-thumbs"
 
+# Rate limiting (X05): 送信者IPベースで POST 系エンドポイントを保護
+# 60秒窓のみサポートのため、原案 30/h は 5/60s に圧縮（バースト対策で実効十分）
+[[unsafe.bindings]]
+name = "RATE_LIMITER_SESSION"
+type = "ratelimit"
+namespace_id = "1001"
+simple = { limit = 5, period = 60 }
+
+# 写真バッチPOSTは 1セッション=最大100枚なので余裕を持たせる
+[[unsafe.bindings]]
+name = "RATE_LIMITER_PHOTOS"
+type = "ratelimit"
+namespace_id = "1002"
+simple = { limit = 30, period = 60 }
+
 [vars]
 ENVIRONMENT = "production"
 FIREBASE_PROJECT_ID = "furdrop"

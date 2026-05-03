@@ -212,7 +212,26 @@ Content-Type: application/json
     "message": "ストレージ容量を超過しています"
   }
 }
+
+セキュリティヘッダ（全レスポンス共通）:
+  X-Frame-Options: DENY
+  Content-Security-Policy: frame-ancestors 'none'
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Content-Type-Options: nosniff
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
 ```
+
+### レート制限 (X05)
+
+匿名送信フローを濫用から保護するため、Cloudflare Workers Rate Limiting binding で送信者IP単位の制限を適用する。
+
+| エンドポイント | 制限 | 超過時 |
+|---|---|---|
+| `POST /send/:handle/sessions` | 5 / 60秒 / IP | 429 + `Retry-After: 60` |
+| `POST /send/:handle/sessions/:id/photos` | 30 / 60秒 / IP | 429 + `Retry-After: 60` |
+| その他 GET 系 | 制限なし | — |
+
+キーは `CF-Connecting-IP` を使用。Cloudflare Rate Limiting binding は 10秒/60秒窓のみ対応のため、原案の「30/h・300/h」は 60秒窓に圧縮して実装。
 
 ### 4.2 エラーコード
 

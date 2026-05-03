@@ -114,6 +114,10 @@ const createSessionRoute = createRoute({
       content: { "application/json": { schema: ErrorSchema } },
       description: "User not found",
     },
+    429: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "レート制限",
+    },
     507: {
       content: { "application/json": { schema: ErrorSchema } },
       description: "クォータ超過",
@@ -124,6 +128,22 @@ const createSessionRoute = createRoute({
 sender.openapi(createSessionRoute, async (c) => {
   const { handle } = c.req.valid("param");
   const body = c.req.valid("json");
+
+  // X05: 送信者IP単位のレート制限（5回 / 60秒）
+  const senderIp = c.req.header("CF-Connecting-IP") ?? "unknown";
+  const { success: rateLimitOk } = await c.env.RATE_LIMITER_SESSION.limit({ key: senderIp });
+  if (!rateLimitOk) {
+    c.header("Retry-After", "60");
+    return c.json(
+      {
+        error: {
+          code: "RATE_LIMITED",
+          message: "Too many session creations, please try again later",
+        },
+      },
+      429,
+    );
+  }
 
   const user = await c.env.DB.prepare(
     "SELECT id, is_active, storage_used, storage_quota FROM users WHERE handle = ?",
@@ -154,14 +174,24 @@ sender.openapi(createSessionRoute, async (c) => {
   const expiresAt = now + 3600;
 
   // 発信者情報開示請求対応のため、送信時のIPとUAを記録（保存期間は Cron で90日に制限）
-  const senderIp = c.req.header("CF-Connecting-IP") ?? null;
+  // 上の rate limit 用 senderIp を再利用（"unknown" はそのまま記録される — DB保存上は意味のある値）
+  const senderIpForLog = senderIp === "unknown" ? null : senderIp;
   const senderUa = c.req.header("User-Agent") ?? null;
 
   await c.env.DB.prepare(
     `INSERT INTO upload_sessions (id, receiver_id, sender_name, photo_count, status, expires_at, sender_ip, sender_ua, created_at, updated_at)
      VALUES (?, ?, ?, 0, 'active', ?, ?, ?, ?, ?)`,
   )
-    .bind(sessionId, user.id, body.sender_name ?? null, expiresAt, senderIp, senderUa, now, now)
+    .bind(
+      sessionId,
+      user.id,
+      body.sender_name ?? null,
+      expiresAt,
+      senderIpForLog,
+      senderUa,
+      now,
+      now,
+    )
     .run();
 
   return c.json({ session_id: sessionId, expires_at: expiresAt }, 201);
@@ -226,6 +256,10 @@ const createPhotosRoute = createRoute({
       content: { "application/json": { schema: ErrorSchema } },
       description: "Session not found",
     },
+    429: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "レート制限",
+    },
     507: {
       content: { "application/json": { schema: ErrorSchema } },
       description: "クォータ超過",
@@ -236,6 +270,22 @@ const createPhotosRoute = createRoute({
 sender.openapi(createPhotosRoute, async (c) => {
   const { handle, sessionId } = c.req.valid("param");
   const { photos } = c.req.valid("json");
+
+  // X05: 送信者IP単位のレート制限（30回 / 60秒）
+  const senderIp = c.req.header("CF-Connecting-IP") ?? "unknown";
+  const { success: rateLimitOk } = await c.env.RATE_LIMITER_PHOTOS.limit({ key: senderIp });
+  if (!rateLimitOk) {
+    c.header("Retry-After", "60");
+    return c.json(
+      {
+        error: {
+          code: "RATE_LIMITED",
+          message: "Too many photo upload requests, please try again later",
+        },
+      },
+      429,
+    );
+  }
 
   const session = await c.env.DB.prepare(
     `SELECT s.id, s.receiver_id, s.sender_name, s.status, s.expires_at, s.photo_count, u.handle, u.storage_used, u.storage_quota

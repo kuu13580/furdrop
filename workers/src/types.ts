@@ -25,4 +25,8 @@ export interface Env {
   R2_ENDPOINT: string;
   R2_BUCKET_ORIGINALS: string;
   R2_BUCKET_THUMBS: string;
+
+  // Rate limiting (X05) — wrangler.toml の [[unsafe.bindings]] で宣言
+  RATE_LIMITER_SESSION: RateLimit;
+  RATE_LIMITER_PHOTOS: RateLimit;
 }

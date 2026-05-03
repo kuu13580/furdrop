@@ -1,0 +1,11 @@
+# Cloudflare Pages security headers
+# クリックジャック対策、Referer漏えい対策、HTTPS強制、MIMEスニッフィング対策。
+# CSP の script-src/style-src 系は Firebase Auth との調整工数があるため別 PR で対応。
+
+/*
+  X-Frame-Options: DENY
+  Content-Security-Policy: frame-ancestors 'none'
+  Referrer-Policy: strict-origin-when-cross-origin
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  X-Content-Type-Options: nosniff
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
