@@ -173,7 +173,7 @@ sender.openapi(createSessionRoute, async (c) => {
   const now = Math.floor(Date.now() / 1000);
   const expiresAt = now + 3600;
 
-  // 発信者情報開示請求対応のため、送信時のIPとUAを記録（保存期間は Cron で90日に制限）
+  // 発信者情報開示請求対応のため、送信時のIPとUAを記録（保存期間は Cron で最低3か月=100日に制限）
   // 上の rate limit 用 senderIp を再利用（"unknown" はそのまま記録される — DB保存上は意味のある値）
   const senderIpForLog = senderIp === "unknown" ? null : senderIp;
   const senderUa = c.req.header("User-Agent") ?? null;

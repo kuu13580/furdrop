@@ -3,7 +3,9 @@ import type { Env } from "../types";
 
 const ONE_HOUR = 3600;
 const THIRTY_DAYS = 30 * 24 * 3600;
-const NINETY_DAYS = 90 * 24 * 3600;
+// 利用規約 第13条 / プライバシーポリシー 第11項で「最低3か月」と定めるため、
+// 暦上最短の3か月 (Feb-Apr=89日) を確実に上回る100日を採用
+const SESSION_LOG_RETENTION = 100 * 24 * 3600;
 const BATCH_SIZE = 50;
 
 export async function runCleanup(env: Env): Promise<void> {
@@ -80,9 +82,9 @@ async function cleanupExpiredPhotos(env: Env, now: number): Promise<void> {
   }
 }
 
-/** 5. 90日経過したセッションの IP / UA を消去 (発信者情報開示対応のための合理的保存期間) */
+/** 5. 保存期間 (最低3か月=100日) を経過したセッションの IP / UA を消去 (発信者情報開示対応のための合理的保存期間) */
 async function pruneOldSessionLogs(env: Env, now: number): Promise<void> {
-  const cutoff = now - NINETY_DAYS;
+  const cutoff = now - SESSION_LOG_RETENTION;
   await env.DB.prepare(
     `UPDATE upload_sessions SET sender_ip = NULL, sender_ua = NULL, updated_at = ?
      WHERE created_at < ? AND (sender_ip IS NOT NULL OR sender_ua IS NOT NULL)`,
