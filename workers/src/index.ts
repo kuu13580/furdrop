@@ -12,6 +12,16 @@ const app = new OpenAPIHono<{ Bindings: Env }>();
 
 app.use("*", cors());
 
+// セキュリティヘッダ: API レスポンスにも防御を多層化
+app.use("*", async (c, next) => {
+  await next();
+  c.res.headers.set("X-Frame-Options", "DENY");
+  c.res.headers.set("Content-Security-Policy", "frame-ancestors 'none'");
+  c.res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  c.res.headers.set("X-Content-Type-Options", "nosniff");
+  c.res.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+});
+
 app.get("/health", (c) => {
   return c.json({ status: "ok" });
 });

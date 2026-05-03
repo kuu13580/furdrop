@@ -330,7 +330,7 @@ async function runPipeline({
     });
     sessionId = res.session_id;
   } catch (err) {
-    onGlobalError(`セッション作成に失敗: ${describeError(err)}`);
+    onGlobalError(rateLimitOrFallback(err, "セッション作成に失敗"));
     onOverall("failed");
     return;
   }
@@ -351,7 +351,7 @@ async function runPipeline({
     });
     uploads = res.uploads;
   } catch (err) {
-    onGlobalError(`URL取得に失敗: ${describeError(err)}`);
+    onGlobalError(rateLimitOrFallback(err, "URL取得に失敗"));
     onOverall("failed");
     return;
   }
@@ -401,4 +401,15 @@ function describeError(err: unknown): string {
   if (err instanceof ApiError) return err.message || err.code;
   if (err instanceof Error) return err.message;
   return String(err);
+}
+
+/**
+ * 429（レート制限）のときはユーザー向けに「制限と原因と再試行案内」を返す。
+ * それ以外のエラーは prefix を付けてそのまま返す。
+ */
+function rateLimitOrFallback(err: unknown, prefix: string): string {
+  if (err instanceof ApiError && err.status === 429) {
+    return "短時間に多くのリクエストが集中したため、不正利用（bot 等）対策により一時的に送信を制限しています。1〜2分ほど時間をおいてからもう一度お試しください。";
+  }
+  return `${prefix}: ${describeError(err)}`;
 }
