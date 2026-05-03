@@ -1156,7 +1156,7 @@ function useNoindex() {
 export default function DesignPreviewPage() {
   useNoindex();
   return (
-    <div className="min-h-screen bg-surface-canvas text-ink antialiased">
+    <div className="min-h-dvh bg-surface-canvas text-ink antialiased">
       <PreviewBanner />
 
       <header className="mx-auto max-w-6xl px-4 pt-16 pb-8 sm:px-6 lg:px-8">

@@ -26,7 +26,7 @@ const LegalPage = lazy(() => import("./pages/LegalPage"));
 
 function LegalFallback() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-surface-canvas">
+    <div className="flex min-h-dvh items-center justify-center bg-surface-canvas">
       <LoadingSpinner size="lg" />
     </div>
   );

@@ -40,7 +40,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-surface-canvas px-4 text-ink antialiased">
+    <div className="flex min-h-dvh items-center justify-center bg-surface-canvas px-4 text-ink antialiased">
       <div className="w-full max-w-sm space-y-6 text-center">
         <Link to="/" aria-label="トップへ" className="inline-block">
           <img src={logoUrl} alt="FurDrop" className="mx-auto h-20" />
