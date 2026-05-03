@@ -1,5 +1,6 @@
-import { lazy, Suspense } from "react";
-import { BrowserRouter, Route, Routes } from "react-router";
+import { useSetAtom } from "jotai";
+import { lazy, Suspense, useEffect } from "react";
+import { BrowserRouter, Route, Routes, useSearchParams } from "react-router";
 import AuthGuard from "./components/AuthGuard";
 import AppLayout from "./components/layout/AppLayout";
 import SenderLayout from "./components/layout/SenderLayout";
@@ -17,6 +18,7 @@ import DonePage from "./pages/send/DonePage";
 import SendLandingPage from "./pages/send/LandingPage";
 import UploadingPage from "./pages/send/UploadingPage";
 import UploadPage from "./pages/send/UploadPage";
+import { debugAtom } from "./stores/debug";
 
 // 法務ページは表示頻度が低く、Markdown レンダラ (react-markdown + remark-gfm) を含むため
 // メインバンドルから切り離して訪問時のみフェッチする
@@ -30,11 +32,27 @@ function LegalFallback() {
   );
 }
 
+/**
+ * URL の `?debug=true` / `?debug=false` を検知して debugAtom に同期する。
+ * クエリ不在では値を変更しないため、一度 ON にすれば遷移後も維持される（sticky）。
+ */
+function DebugUrlSync() {
+  const [searchParams] = useSearchParams();
+  const setDebug = useSetAtom(debugAtom);
+  useEffect(() => {
+    const v = searchParams.get("debug");
+    if (v === "true") setDebug(true);
+    else if (v === "false") setDebug(false);
+  }, [searchParams, setDebug]);
+  return null;
+}
+
 export default function App() {
   useAuthInit();
 
   return (
     <BrowserRouter>
+      <DebugUrlSync />
       <Routes>
         {/* 送信者フロー（認証不要） */}
         <Route element={<SenderLayout />}>
