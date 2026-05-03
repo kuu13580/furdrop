@@ -66,6 +66,17 @@ export default function LoginPage() {
         >
           {loading ? "ログイン中..." : "Twitterでログイン"}
         </button>
+        <p className="text-[12px] text-ink-muted">
+          ログインすると
+          <Link to="/terms" className="mx-1 text-brand underline-offset-2 hover:underline">
+            利用規約
+          </Link>
+          および
+          <Link to="/privacy" className="mx-1 text-brand underline-offset-2 hover:underline">
+            プライバシーポリシー
+          </Link>
+          に同意したものとみなされます。
+        </p>
       </div>
     </div>
   );

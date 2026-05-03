@@ -1,6 +1,6 @@
 import { useAtom, useAtomValue } from "jotai";
 import { useCallback, useState } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import Alert from "../components/ui/Alert";
 import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
@@ -28,6 +28,7 @@ function RegisterForm() {
   const [handleError, setHandleError] = useState<string | null>(null);
   const [allowExifEmbed, setAllowExifEmbed] = useState(true);
   const [allowWatermark, setAllowWatermark] = useState(true);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const validateHandle = useCallback((value: string) => {
     if (!value) return "ハンドルを入力してください";
@@ -46,6 +47,10 @@ function RegisterForm() {
       }
       if (!displayName.trim()) {
         setError("表示名を入力してください");
+        return;
+      }
+      if (!agreedToTerms) {
+        setError("利用規約とプライバシーポリシーへの同意が必要です");
         return;
       }
 
@@ -85,6 +90,7 @@ function RegisterForm() {
       displayName,
       allowExifEmbed,
       allowWatermark,
+      agreedToTerms,
       validateHandle,
       authState,
       setAuth,
@@ -161,7 +167,39 @@ function RegisterForm() {
               </span>
             </label>
           </div>
-          <Button type="submit" loading={loading} className="w-full" size="lg">
+          <label className="flex items-start gap-2.5 border-t border-surface-sand-deep pt-4 text-[13px]">
+            <input
+              type="checkbox"
+              checked={agreedToTerms}
+              onChange={(e) => setAgreedToTerms(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
+            />
+            <span className="text-ink">
+              <Link
+                to="/terms"
+                target="_blank"
+                className="text-brand underline-offset-2 hover:underline"
+              >
+                利用規約
+              </Link>
+              および
+              <Link
+                to="/privacy"
+                target="_blank"
+                className="ml-1 text-brand underline-offset-2 hover:underline"
+              >
+                プライバシーポリシー
+              </Link>
+              に同意します。
+            </span>
+          </label>
+          <Button
+            type="submit"
+            loading={loading}
+            disabled={!agreedToTerms}
+            className="w-full"
+            size="lg"
+          >
             登録する
           </Button>
         </form>

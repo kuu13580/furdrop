@@ -77,6 +77,10 @@ CREATE TABLE upload_sessions (
     status        TEXT NOT NULL DEFAULT 'active',
         -- 'active' | 'completed' | 'expired'
     expires_at    INTEGER NOT NULL,           -- UNIX秒 (作成+1時間)
+    -- 発信者情報開示請求対応用の通信記録 (情プラ法5条)。
+    -- Cron Trigger で created_at から90日経過後に NULL クリアされる。
+    sender_ip     TEXT,                       -- CF-Connecting-IP
+    sender_ua     TEXT,                       -- User-Agent
     created_at    INTEGER NOT NULL,
     updated_at    INTEGER NOT NULL
 );
@@ -599,6 +603,7 @@ crons = ["0 * * * *"]
 2. `expires_at < now` の `upload_sessions` → `'expired'` に更新
 3. `'failed'` 写真のR2オブジェクトが存在すれば削除（ゴミ回収）
 4. **DL期限切れ写真の自動削除 (X11/R13)**: `expires_at < now`（またはデフォルト `created_at + 30日 < now`）の `completed` 写真 → R2オブジェクト削除 + D1レコード削除 + `storage_used` 減算
+5. **送信者通信記録の保存期間制限**: `created_at < now - 90日` の `upload_sessions` について `sender_ip` / `sender_ua` を NULL に更新（プロバイダ責任制限法に基づく合理的保存期間。プライバシーポリシー第11項参照）
 
 ---
 
