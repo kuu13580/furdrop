@@ -13,6 +13,8 @@
 | S07 | フォトギャラリー | `/gallery` | 必要 | サムネイルグリッド + 選択・フィルタ |
 | S08 | フォト詳細 | `/gallery/:photoId` | 必要 | 拡大表示 + メタデータ + DL・削除 |
 | S10 | 設定 | `/settings` | 必要 | プロフィール・ストレージ管理・受信オプション・通知設定 |
+| S11 | 利用規約 | `/terms` | 不要 | `frontend/src/content/legal/terms.md` を react-markdown でレンダリング |
+| S12 | プライバシーポリシー | `/privacy` | 不要 | `frontend/src/content/legal/privacy.md` を react-markdown でレンダリング |
 
 ---
 

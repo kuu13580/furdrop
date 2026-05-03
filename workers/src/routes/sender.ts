@@ -153,11 +153,15 @@ sender.openapi(createSessionRoute, async (c) => {
   const now = Math.floor(Date.now() / 1000);
   const expiresAt = now + 3600;
 
+  // 発信者情報開示請求対応のため、送信時のIPとUAを記録（保存期間は Cron で90日に制限）
+  const senderIp = c.req.header("CF-Connecting-IP") ?? null;
+  const senderUa = c.req.header("User-Agent") ?? null;
+
   await c.env.DB.prepare(
-    `INSERT INTO upload_sessions (id, receiver_id, sender_name, photo_count, status, expires_at, created_at, updated_at)
-     VALUES (?, ?, ?, 0, 'active', ?, ?, ?)`,
+    `INSERT INTO upload_sessions (id, receiver_id, sender_name, photo_count, status, expires_at, sender_ip, sender_ua, created_at, updated_at)
+     VALUES (?, ?, ?, 0, 'active', ?, ?, ?, ?, ?)`,
   )
-    .bind(sessionId, user.id, body.sender_name ?? null, expiresAt, now, now)
+    .bind(sessionId, user.id, body.sender_name ?? null, expiresAt, senderIp, senderUa, now, now)
     .run();
 
   return c.json({ session_id: sessionId, expires_at: expiresAt }, 201);

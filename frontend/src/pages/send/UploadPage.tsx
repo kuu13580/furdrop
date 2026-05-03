@@ -47,6 +47,7 @@ export default function UploadPage() {
   const [error, setError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [noCreditConsent, setNoCreditConsent] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [watermarkDialogOpen, setWatermarkDialogOpen] = useState(false);
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [receiverOptions, setReceiverOptions] = useState<{
@@ -127,7 +128,7 @@ export default function UploadPage() {
   };
 
   const hasSenderName = form.senderName.trim().length > 0;
-  const canSubmit = files.length > 0 && (hasSenderName || noCreditConsent);
+  const canSubmit = files.length > 0 && (hasSenderName || noCreditConsent) && agreedToTerms;
 
   const handleSubmit = () => {
     if (!canSubmit) return;
@@ -315,6 +316,35 @@ export default function UploadPage() {
           />
           <span className="text-ink">
             送信者名を記載しない場合、写真のクレジット表記なしでの編集・共有が行われる可能性があることに同意します
+          </span>
+        </label>
+      )}
+
+      {files.length > 0 && (
+        <label className="flex items-start gap-2.5 rounded-2xl bg-surface-sand/50 p-4 text-[13px]">
+          <input
+            type="checkbox"
+            checked={agreedToTerms}
+            onChange={(e) => setAgreedToTerms(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
+          />
+          <span className="text-ink">
+            <Link
+              to="/terms"
+              target="_blank"
+              className="text-brand underline-offset-2 hover:underline"
+            >
+              利用規約
+            </Link>
+            および
+            <Link
+              to="/privacy"
+              target="_blank"
+              className="ml-1 text-brand underline-offset-2 hover:underline"
+            >
+              プライバシーポリシー
+            </Link>
+            に同意し、送信する写真について必要な権利処理を完了していることを表明します。
           </span>
         </label>
       )}

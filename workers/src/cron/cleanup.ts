@@ -3,6 +3,7 @@ import type { Env } from "../types";
 
 const ONE_HOUR = 3600;
 const THIRTY_DAYS = 30 * 24 * 3600;
+const NINETY_DAYS = 90 * 24 * 3600;
 const BATCH_SIZE = 50;
 
 export async function runCleanup(env: Env): Promise<void> {
@@ -12,6 +13,7 @@ export async function runCleanup(env: Env): Promise<void> {
   await expireSessions(env, now);
   await cleanupFailedPhotos(env);
   await cleanupExpiredPhotos(env, now);
+  await pruneOldSessionLogs(env, now);
 }
 
 /** 1. pending写真のタイムアウト (1時間経過 → failed) */
@@ -76,4 +78,15 @@ async function cleanupExpiredPhotos(env: Env, now: number): Promise<void> {
     await subtractStorageUsage(env.DB, row.receiver_id as string, totalSize);
     await env.DB.prepare("DELETE FROM photos WHERE id = ?").bind(row.id).run();
   }
+}
+
+/** 5. 90日経過したセッションの IP / UA を消去 (発信者情報開示対応のための合理的保存期間) */
+async function pruneOldSessionLogs(env: Env, now: number): Promise<void> {
+  const cutoff = now - NINETY_DAYS;
+  await env.DB.prepare(
+    `UPDATE upload_sessions SET sender_ip = NULL, sender_ua = NULL, updated_at = ?
+     WHERE created_at < ? AND (sender_ip IS NOT NULL OR sender_ua IS NOT NULL)`,
+  )
+    .bind(now, cutoff)
+    .run();
 }

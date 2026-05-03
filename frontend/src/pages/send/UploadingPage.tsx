@@ -12,6 +12,7 @@ import {
   generateThumbnail,
   getImageDimensions,
   normalizeToJpeg,
+  stripExifGps,
 } from "../../lib/image-processing";
 import { type SelectedFile, selectedFilesAtom, uploadFormAtom } from "../../stores/sender";
 
@@ -283,9 +284,12 @@ async function runPipeline({
         }
 
         // EXIF埋め込みは最後（Canvas再エンコードで剥がれるため）
-        const finalBlob = exifText
+        const withSender = exifText
           ? await embedSenderInfoInExif(afterWatermark, exifText)
           : afterWatermark;
+
+        // プライバシー保護のため EXIF GPS を既定で除去（プラポリ第2.2.3項）
+        const finalBlob = await stripExifGps(withSender);
 
         const thumb = await generateThumbnail(finalBlob);
 

@@ -114,6 +114,32 @@ export async function embedSenderInfoInExif(jpegBlob: Blob, senderText: string):
 }
 
 /**
+ * EXIFのGPS（位置情報）を除去する。プライバシーポリシー第2.2.3項に基づく既定処理。
+ * EXIFセグメント自体がない場合や読み取れない場合はそのまま返す。
+ */
+export async function stripExifGps(jpegBlob: Blob): Promise<Blob> {
+  let dataUrl: string;
+  try {
+    dataUrl = await blobToDataUrl(jpegBlob);
+  } catch {
+    return jpegBlob;
+  }
+  let exifObj: piexif.ExifDict;
+  try {
+    exifObj = piexif.load(dataUrl);
+  } catch {
+    return jpegBlob;
+  }
+  if (!exifObj.GPS || Object.keys(exifObj.GPS).length === 0) {
+    return jpegBlob;
+  }
+  exifObj.GPS = {};
+  const exifBytes = piexif.dump(exifObj);
+  const newDataUrl = piexif.insert(exifBytes, dataUrl);
+  return dataUrlToBlob(newDataUrl);
+}
+
+/**
  * Canvas 2D APIで透かしを描画した加工済みJPEGを返す。
  * 副産物として寸法も返す（サーバー側に送るため）
  */
