@@ -95,6 +95,9 @@ export default function GalleryPage() {
   // ドラッグ後のクリック抑制（実際に移動が発生した場合のみ）
   const suppressClickRef = useRef(false);
   const didMoveRef = useRef(false);
+  // ドラッグ中の最新ポインタ位置 (画面端オートスクロール用)
+  const lastPointerRef = useRef<{ x: number; y: number } | null>(null);
+  const autoScrollRafRef = useRef<number | null>(null);
 
   const fetchPhotos = useCallback(async (nextCursor?: string) => {
     if (loadingRef.current) return null;
@@ -196,28 +199,12 @@ export default function GalleryPage() {
   );
 
   // --- ドラッグ選択 (iPhone 式: 開始〜現在位置をグリッド順に全選択/解除) ---
-  const handlePointerDown = useCallback(
-    (e: React.PointerEvent) => {
-      if (!selectMode) return;
-      const idx = getIndexFromPoint(e.clientX, e.clientY);
+  /** 現在のポインタ位置から選択範囲を再計算 (オートスクロール時の再評価にも使う) */
+  const updateSelectionFromPointer = useCallback(
+    (clientX: number, clientY: number) => {
+      if (dragStartIndexRef.current === null) return;
+      const idx = getIndexFromPoint(clientX, clientY);
       if (idx === null) return;
-      isDraggingRef.current = true;
-      didMoveRef.current = false;
-      dragStartIndexRef.current = idx;
-      preSelectRef.current = new Set(selected);
-      // 開始地点が選択済み → 解除モード、未選択 → 選択モード
-      dragModeRef.current = selected.has(photos[idx].id) ? "deselect" : "select";
-      (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
-    },
-    [selectMode, selected, photos, getIndexFromPoint],
-  );
-
-  const handlePointerMove = useCallback(
-    (e: React.PointerEvent) => {
-      if (!isDraggingRef.current || dragStartIndexRef.current === null) return;
-      const idx = getIndexFromPoint(e.clientX, e.clientY);
-      if (idx === null) return;
-      didMoveRef.current = true;
       const drag = rangeIds(dragStartIndexRef.current, idx);
       const next = new Set(preSelectRef.current);
       if (dragModeRef.current === "select") {
@@ -230,17 +217,83 @@ export default function GalleryPage() {
     [getIndexFromPoint, rangeIds],
   );
 
+  /** 画面端でのオートスクロールループ。端から80px以内で距離に応じて加速 */
+  const autoScrollTick = useCallback(() => {
+    autoScrollRafRef.current = null;
+    if (!isDraggingRef.current || !lastPointerRef.current) return;
+    const { x, y } = lastPointerRef.current;
+    const vh = window.innerHeight;
+    const EDGE = 80;
+    const MAX_SPEED = 18;
+    let dy = 0;
+    if (y < EDGE) {
+      dy = -Math.ceil(((EDGE - y) / EDGE) * MAX_SPEED);
+    } else if (y > vh - EDGE) {
+      dy = Math.ceil(((y - (vh - EDGE)) / EDGE) * MAX_SPEED);
+    }
+    if (dy !== 0) {
+      window.scrollBy(0, dy);
+      // スクロール後の同じ clientY 位置で選択範囲を更新
+      updateSelectionFromPointer(x, y);
+    }
+    if (isDraggingRef.current) {
+      autoScrollRafRef.current = requestAnimationFrame(autoScrollTick);
+    }
+  }, [updateSelectionFromPointer]);
+
+  const startAutoScrollLoop = useCallback(() => {
+    if (autoScrollRafRef.current !== null) return;
+    autoScrollRafRef.current = requestAnimationFrame(autoScrollTick);
+  }, [autoScrollTick]);
+
+  const stopAutoScrollLoop = useCallback(() => {
+    if (autoScrollRafRef.current !== null) {
+      cancelAnimationFrame(autoScrollRafRef.current);
+      autoScrollRafRef.current = null;
+    }
+  }, []);
+
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      if (!selectMode) return;
+      const idx = getIndexFromPoint(e.clientX, e.clientY);
+      if (idx === null) return;
+      isDraggingRef.current = true;
+      didMoveRef.current = false;
+      dragStartIndexRef.current = idx;
+      preSelectRef.current = new Set(selected);
+      lastPointerRef.current = { x: e.clientX, y: e.clientY };
+      // 開始地点が選択済み → 解除モード、未選択 → 選択モード
+      dragModeRef.current = selected.has(photos[idx].id) ? "deselect" : "select";
+      (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+      startAutoScrollLoop();
+    },
+    [selectMode, selected, photos, getIndexFromPoint, startAutoScrollLoop],
+  );
+
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!isDraggingRef.current || dragStartIndexRef.current === null) return;
+      lastPointerRef.current = { x: e.clientX, y: e.clientY };
+      didMoveRef.current = true;
+      updateSelectionFromPointer(e.clientX, e.clientY);
+    },
+    [updateSelectionFromPointer],
+  );
+
   const handlePointerUp = useCallback(() => {
     if (isDraggingRef.current) {
       isDraggingRef.current = false;
       dragStartIndexRef.current = null;
+      lastPointerRef.current = null;
+      stopAutoScrollLoop();
       // 実際に移動が発生した場合のみ click を抑制
       if (didMoveRef.current) {
         suppressClickRef.current = true;
       }
       didMoveRef.current = false;
     }
-  }, []);
+  }, [stopAutoScrollLoop]);
 
   const toggleSelectAll = useCallback(() => {
     setSelected((prev) =>
