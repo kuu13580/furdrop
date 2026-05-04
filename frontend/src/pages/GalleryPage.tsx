@@ -12,6 +12,8 @@ import { userAtom } from "../stores/user";
 import type { Photo } from "../types/photo";
 
 const PAGE_SIZE = 50;
+/** ドラッグ意図 (横支配=選択 / 縦支配=スクロール) を判定する移動量しきい値 (px) */
+const DRAG_INTENT_THRESHOLD = 8;
 
 type GroupMode = "none" | "date" | "sender";
 
@@ -98,6 +100,9 @@ export default function GalleryPage() {
   // ドラッグ中の最新ポインタ位置 (画面端オートスクロール用)
   const lastPointerRef = useRef<{ x: number; y: number } | null>(null);
   const autoScrollRafRef = useRef<number | null>(null);
+  // ドラッグ意図判定 (touch-pan-y で縦スワイプ=スクロール、横が支配的=選択)
+  const startPointerRef = useRef<{ x: number; y: number } | null>(null);
+  const dragIntentRef = useRef<"pending" | "select" | "scroll">("pending");
 
   const fetchPhotos = useCallback(async (nextCursor?: string) => {
     if (loadingRef.current) return null;
@@ -263,36 +268,64 @@ export default function GalleryPage() {
       dragStartIndexRef.current = idx;
       preSelectRef.current = new Set(selected);
       lastPointerRef.current = { x: e.clientX, y: e.clientY };
+      startPointerRef.current = { x: e.clientX, y: e.clientY };
+      // 縦スワイプ=スクロール / 横支配=選択 を初動で判定する
+      dragIntentRef.current = "pending";
       // 開始地点が選択済み → 解除モード、未選択 → 選択モード
       dragModeRef.current = selected.has(photos[idx].id) ? "deselect" : "select";
-      (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
-      startAutoScrollLoop();
+      // 意図が "select" 確定までは pointer capture もオートスクロールも開始しない
+      // (capture すると touch-pan-y のブラウザスクロールが阻害される)
     },
-    [selectMode, selected, photos, getIndexFromPoint, startAutoScrollLoop],
+    [selectMode, selected, photos, getIndexFromPoint],
   );
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent) => {
       if (!isDraggingRef.current || dragStartIndexRef.current === null) return;
+      if (dragIntentRef.current === "scroll") return;
+
+      if (dragIntentRef.current === "pending") {
+        const start = startPointerRef.current;
+        if (!start) return;
+        const dx = e.clientX - start.x;
+        const dy = e.clientY - start.y;
+        const adx = Math.abs(dx);
+        const ady = Math.abs(dy);
+        if (adx < DRAG_INTENT_THRESHOLD && ady < DRAG_INTENT_THRESHOLD) return;
+        if (ady > adx) {
+          // 縦移動が支配的 → ブラウザのスクロールに委ねる (選択しない)
+          dragIntentRef.current = "scroll";
+          isDraggingRef.current = false;
+          dragStartIndexRef.current = null;
+          startPointerRef.current = null;
+          lastPointerRef.current = null;
+          return;
+        }
+        // 横支配 → ドラッグ選択に確定
+        dragIntentRef.current = "select";
+        (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+        startAutoScrollLoop();
+      }
+
       lastPointerRef.current = { x: e.clientX, y: e.clientY };
       didMoveRef.current = true;
       updateSelectionFromPointer(e.clientX, e.clientY);
     },
-    [updateSelectionFromPointer],
+    [updateSelectionFromPointer, startAutoScrollLoop],
   );
 
   const handlePointerUp = useCallback(() => {
-    if (isDraggingRef.current) {
-      isDraggingRef.current = false;
-      dragStartIndexRef.current = null;
-      lastPointerRef.current = null;
-      stopAutoScrollLoop();
-      // 実際に移動が発生した場合のみ click を抑制
-      if (didMoveRef.current) {
-        suppressClickRef.current = true;
-      }
-      didMoveRef.current = false;
+    // 実際に選択ドラッグした場合のみ click を抑制 (スクロール判定や no-op は通常クリック扱い)
+    if (didMoveRef.current && dragIntentRef.current === "select") {
+      suppressClickRef.current = true;
     }
+    isDraggingRef.current = false;
+    dragStartIndexRef.current = null;
+    lastPointerRef.current = null;
+    startPointerRef.current = null;
+    dragIntentRef.current = "pending";
+    didMoveRef.current = false;
+    stopAutoScrollLoop();
   }, [stopAutoScrollLoop]);
 
   const toggleSelectAll = useCallback(() => {
