@@ -161,7 +161,7 @@ function RegisterForm() {
   );
 
   return (
-    <div className="mx-auto max-w-md space-y-6">
+    <div className="mx-auto max-w-md space-y-6 sm:max-w-xl">
       <div className="text-center">
         <h1 className="text-[22px] font-bold tracking-[-0.015em] text-ink sm:text-[28px]">
           アカウント設定
