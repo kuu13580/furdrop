@@ -172,6 +172,9 @@ export const authApi = {
         watermark_mode: EmbedMode;
       };
     }>("/auth/options", { method: "PATCH", body: JSON.stringify(body) }, true),
+
+  deleteAccount: (body: { confirm_handle: string }) =>
+    request<void>("/auth/account", { method: "DELETE", body: JSON.stringify(body) }, true),
 };
 
 // ========== 受信者 API ==========

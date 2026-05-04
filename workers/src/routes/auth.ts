@@ -260,4 +260,93 @@ auth.openapi(updateOptionsRoute, async (c) => {
   );
 });
 
+// ========== DELETE /auth/account ==========
+
+const deleteAccountRoute = createRoute({
+  method: "delete",
+  path: "/account",
+  tags: ["Auth"],
+  summary: "受信者アカウント削除",
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          // ハンドル誤操作防止: 自分のハンドルを再入力させる (UI側で同等チェック済みだがサーバ側でも検証)
+          schema: z.object({ confirm_handle: z.string() }),
+        },
+      },
+    },
+  },
+  responses: {
+    204: { description: "削除成功" },
+    400: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "確認用ハンドル不一致",
+    },
+    404: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "未登録ユーザー",
+    },
+  },
+});
+
+auth.openapi(deleteAccountRoute, async (c) => {
+  const uid = c.get("uid");
+  const { confirm_handle } = c.req.valid("json");
+
+  const user = await c.env.DB.prepare("SELECT handle FROM users WHERE id = ?")
+    .bind(uid)
+    .first<{ handle: string }>();
+
+  if (!user) {
+    return c.json({ error: { code: "NOT_FOUND", message: "User not registered" } }, 404);
+  }
+
+  if (confirm_handle !== user.handle) {
+    return c.json(
+      { error: { code: "INVALID_REQUEST", message: "確認用ハンドルが一致しません" } },
+      400,
+    );
+  }
+
+  // R2 削除のため、先に全 photos の R2 key を取得
+  const photos = await c.env.DB.prepare(
+    "SELECT r2_key_original, r2_key_thumb FROM photos WHERE receiver_id = ?",
+  )
+    .bind(uid)
+    .all<{ r2_key_original: string; r2_key_thumb: string }>();
+
+  // 利用規約第13条 / プライバシーポリシーで「送信者の通信記録 (sender_ip/sender_ua) は
+  // 当該送信から最低3か月保存」を保証している。Cron pruneOldSessionLogs が 100日経過後に
+  // 該当フィールドを NULL クリアするため、ここでも 100日経過済みのセッションのみ物理削除する。
+  // 残ったセッション (receiver は削除済み = 孤児) は cleanup.ts の cleanupOrphanedSessions が
+  // 100日経過後に物理削除する。
+  const sessionRetentionThreshold = Math.floor(Date.now() / 1000) - 100 * 24 * 60 * 60;
+
+  // DB を batch で削除 (photos → upload_sessions → users)
+  // D1 はトランザクション分離はないが、batch は順序を保証
+  await c.env.DB.batch([
+    c.env.DB.prepare("DELETE FROM photos WHERE receiver_id = ?").bind(uid),
+    c.env.DB.prepare("DELETE FROM upload_sessions WHERE receiver_id = ? AND created_at < ?").bind(
+      uid,
+      sessionRetentionThreshold,
+    ),
+    c.env.DB.prepare("DELETE FROM users WHERE id = ?").bind(uid),
+  ]);
+
+  // R2 削除はレスポンスを早く返すため背景実行。失敗しても D1 は整合 (孤立オブジェクトのみ残る)。
+  // サブリクエスト上限 (Paid plan: 1000/invocation) を超える場合は残分が orphan になるが、
+  // ユーザー削除は頻度が低く、一人あたり通常数百枚以下のため許容する。
+  if (photos.results.length > 0) {
+    c.executionCtx.waitUntil(
+      Promise.allSettled([
+        ...photos.results.map((p) => c.env.R2_ORIGINALS.delete(p.r2_key_original)),
+        ...photos.results.map((p) => c.env.R2_THUMBS.delete(p.r2_key_thumb)),
+      ]).then(() => undefined),
+    );
+  }
+
+  return c.body(null, 204);
+});
+
 export default auth;

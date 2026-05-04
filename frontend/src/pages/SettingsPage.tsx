@@ -1,12 +1,15 @@
-import { useAtom, useAtomValue } from "jotai";
+import { deleteUser, signOut } from "firebase/auth";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { type SyntheticEvent, useCallback, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import Alert from "../components/ui/Alert";
 import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
+import Dialog from "../components/ui/Dialog";
 import FormField from "../components/ui/FormField";
 import StorageQuotaBar from "../components/ui/StorageQuotaBar";
 import { ApiError, authApi, type EmbedMode } from "../lib/api";
+import { auth } from "../lib/firebase";
 import { authAtom } from "../stores/auth";
 import { suggestedHandleAtom } from "../stores/signup";
 import { type UserProfile, userAtom } from "../stores/user";
@@ -322,6 +325,117 @@ function ReceiveOptionsCard({
   );
 }
 
+function AccountDeletionCard({ user }: { user: UserProfile }) {
+  const navigate = useNavigate();
+  const setUser = useSetAtom(userAtom);
+  const [open, setOpen] = useState(false);
+  const [confirmHandle, setConfirmHandle] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleClose = useCallback(() => {
+    if (loading) return;
+    setOpen(false);
+    setConfirmHandle("");
+    setError(null);
+  }, [loading]);
+
+  const handleDelete = useCallback(async () => {
+    if (confirmHandle !== user.handle) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      // 1. Workers 側でアカウント関連データ (photos / sessions / users / R2) を削除
+      await authApi.deleteAccount({ confirm_handle: confirmHandle });
+
+      // 2. Firebase Auth ユーザー削除は best-effort。requires-recent-login で失敗しても
+      //    Workers データは既に消えており、次回ログイン時 GET /auth/me が 404 になり
+      //    登録画面に流れるので「未登録の Firebase ユーザー」と同等扱いになる
+      const fbUser = auth.currentUser;
+      if (fbUser) {
+        await deleteUser(fbUser).catch(() => undefined);
+      }
+
+      // 3. ローカル状態クリア + ログアウト
+      setUser(null);
+      await signOut(auth);
+
+      navigate("/login", { replace: true });
+    } catch (err) {
+      if (err instanceof ApiError && err.code === "INVALID_REQUEST") {
+        setError("確認用ハンドルが一致しません");
+      } else {
+        setError(err instanceof Error ? err.message : "削除に失敗しました");
+      }
+      setLoading(false);
+    }
+  }, [confirmHandle, user.handle, setUser, navigate]);
+
+  return (
+    <>
+      <Card title="アカウント削除">
+        <p className="mb-4 text-[13px] leading-[1.7] text-ink-soft">
+          アカウントと、受信した全ての写真・送信セッション履歴を完全に削除します。
+          <br />
+          この操作は取り消せません。
+        </p>
+        <Button variant="danger" onClick={() => setOpen(true)}>
+          アカウントを削除
+        </Button>
+      </Card>
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        title="アカウントを削除しますか？"
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={handleClose} disabled={loading}>
+              キャンセル
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleDelete}
+              loading={loading}
+              disabled={confirmHandle !== user.handle}
+            >
+              削除する
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-4 text-[14px] leading-[1.7] text-ink">
+          <p>以下のデータが完全に削除されます。この操作は取り消せません。</p>
+          <ul className="list-disc space-y-1 pl-5 text-[13px] text-ink-soft">
+            <li>受信した全ての写真とサムネイル</li>
+            <li>プロフィール・受信オプション設定</li>
+            <li>公開URL ({user.handle}) の所有権</li>
+          </ul>
+          <p className="text-[12px] leading-[1.6] text-ink-soft">
+            ※ 法令遵守 (情プラ法第5条等) のため、送信者の通信記録 (IPアドレス・User-Agent)
+            は当該送信から最低3か月の保存期間を経過するまで残ります (利用規約第13条)。
+          </p>
+          <p className="text-[13px] text-ink-soft">
+            続行するには、ご自身のハンドル <code className="font-mono text-ink">{user.handle}</code>{" "}
+            を入力してください。
+          </p>
+          {error && <Alert variant="error">{error}</Alert>}
+          <FormField
+            label="確認用ハンドル"
+            id="confirm-handle"
+            value={confirmHandle}
+            onChange={(e) => setConfirmHandle(e.target.value)}
+            placeholder={user.handle}
+            autoComplete="off"
+            disabled={loading}
+          />
+        </div>
+      </Dialog>
+    </>
+  );
+}
+
 function ProfileSettings() {
   const [user, setUser] = useAtom(userAtom);
 
@@ -346,6 +460,7 @@ function ProfileSettings() {
       <Card title="ストレージ">
         <StorageQuotaBar used={user.storage_used} quota={user.storage_quota} />
       </Card>
+      <AccountDeletionCard user={user} />
     </div>
   );
 }

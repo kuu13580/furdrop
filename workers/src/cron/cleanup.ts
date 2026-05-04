@@ -16,6 +16,7 @@ export async function runCleanup(env: Env): Promise<void> {
   await cleanupFailedPhotos(env);
   await cleanupExpiredPhotos(env, now);
   await pruneOldSessionLogs(env, now);
+  await cleanupOrphanedSessions(env, now);
 }
 
 /** 1. pending写真のタイムアウト (1時間経過 → failed) */
@@ -90,5 +91,22 @@ async function pruneOldSessionLogs(env: Env, now: number): Promise<void> {
      WHERE created_at < ? AND (sender_ip IS NOT NULL OR sender_ua IS NOT NULL)`,
   )
     .bind(now, cutoff)
+    .run();
+}
+
+/**
+ * 6. アカウント削除時に保存期間 (100日) を満たすため残された孤児セッション
+ *    (receiver_id が users に存在しない、かつ 100日経過済み) を物理削除。
+ *    DELETE /auth/account は保存期間中の sender_ip/ua を保護するため
+ *    100日未満のセッションを残す。それらの保存期間が経過した時点でこの Cron が回収する。
+ */
+async function cleanupOrphanedSessions(env: Env, now: number): Promise<void> {
+  const cutoff = now - SESSION_LOG_RETENTION;
+  await env.DB.prepare(
+    `DELETE FROM upload_sessions
+       WHERE created_at < ?
+         AND receiver_id NOT IN (SELECT id FROM users)`,
+  )
+    .bind(cutoff)
     .run();
 }
