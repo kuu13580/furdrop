@@ -147,7 +147,7 @@ export default function UploadPage() {
   const previewFile = findPreviewFile(files);
 
   return (
-    <div className="mx-auto max-w-lg space-y-6 px-4 py-6">
+    <div className="mx-auto max-w-5xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
       <div className="flex items-center justify-between gap-2">
         <Link
           to={`/send/${handle}`}
@@ -169,7 +169,7 @@ export default function UploadPage() {
         }}
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
-        className={`block cursor-pointer rounded-[20px] border-2 border-dashed p-10 text-center transition-colors ${
+        className={`block cursor-pointer rounded-[20px] border-2 border-dashed p-10 text-center transition-colors sm:p-14 lg:p-16 ${
           dragOver
             ? "border-brand bg-brand-tint"
             : "border-surface-sand-deep bg-surface-canvas hover:bg-surface-sand"
@@ -213,7 +213,7 @@ export default function UploadPage() {
               すべてクリア
             </button>
           </div>
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
             {files.map((f) => (
               <PreviewTile key={f.id} file={f} onRemove={() => removeFile(f.id)} />
             ))}
@@ -222,91 +222,93 @@ export default function UploadPage() {
       )}
 
       {files.length > 0 && (
-        <Card>
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <label htmlFor="senderName" className="block text-[14px] font-medium text-ink">
-                送信者名 / TwitterID
-              </label>
-              <input
-                id="senderName"
-                type="text"
-                value={form.senderName}
-                onChange={(e) => setForm({ ...form, senderName: e.target.value })}
-                placeholder="@your_name"
-                className="block w-full rounded-xl border border-surface-sand-deep bg-surface px-4 py-3 text-[14px] text-ink placeholder:text-ink-muted transition-all focus:border-brand focus:outline-none focus:ring-3 focus:ring-brand/15"
-              />
-              <p className="text-[13px] text-ink-soft">
-                受信者に表示されます。EXIF・透かしには
-                <code className="mx-0.5 rounded bg-surface-sand px-1.5 py-0.5 font-mono text-[0.95em] text-ink">
-                  撮影：{form.senderName.trim() || "〜"}
-                </code>
-                の形式で埋め込まれます
-              </p>
-            </div>
+        <div className="mx-auto w-full max-w-3xl">
+          <Card>
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label htmlFor="senderName" className="block text-[14px] font-medium text-ink">
+                  送信者名 / TwitterID
+                </label>
+                <input
+                  id="senderName"
+                  type="text"
+                  value={form.senderName}
+                  onChange={(e) => setForm({ ...form, senderName: e.target.value })}
+                  placeholder="@your_name"
+                  className="block w-full rounded-xl border border-surface-sand-deep bg-surface px-4 py-3 text-[14px] text-ink placeholder:text-ink-muted transition-all focus:border-brand focus:outline-none focus:ring-3 focus:ring-brand/15"
+                />
+                <p className="text-[13px] text-ink-soft">
+                  受信者に表示されます。EXIF・透かしには
+                  <code className="mx-0.5 rounded bg-surface-sand px-1.5 py-0.5 font-mono text-[0.95em] text-ink">
+                    撮影：{form.senderName.trim() || "〜"}
+                  </code>
+                  の形式で埋め込まれます
+                </p>
+              </div>
 
-            {(receiverOptions?.allow_exif_embed || receiverOptions?.allow_watermark) && (
-              <div className="space-y-3 border-t border-surface-sand-deep pt-4">
-                {receiverOptions.allow_exif_embed && (
-                  <label
-                    className={`flex items-start gap-2.5 text-[14px] ${hasSenderName ? "" : "opacity-50"}`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={form.exifEnabled}
-                      disabled={!hasSenderName}
-                      onChange={(e) => setForm({ ...form, exifEnabled: e.target.checked })}
-                      className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
-                    />
-                    <span>
-                      <span className="font-medium text-ink">EXIFカメラモデル欄に埋め込む</span>
-                      <span className="mt-0.5 block text-[13px] text-ink-soft">
-                        メタデータに「撮影：〜」を書き込みます（元のカメラ情報は上書き）
-                      </span>
-                    </span>
-                  </label>
-                )}
-
-                {receiverOptions.allow_watermark && (
-                  <div>
+              {(receiverOptions?.allow_exif_embed || receiverOptions?.allow_watermark) && (
+                <div className="space-y-3 border-t border-surface-sand-deep pt-4">
+                  {receiverOptions.allow_exif_embed && (
                     <label
                       className={`flex items-start gap-2.5 text-[14px] ${hasSenderName ? "" : "opacity-50"}`}
                     >
                       <input
                         type="checkbox"
-                        checked={form.watermarkEnabled}
+                        checked={form.exifEnabled}
                         disabled={!hasSenderName}
-                        onChange={(e) => setForm({ ...form, watermarkEnabled: e.target.checked })}
+                        onChange={(e) => setForm({ ...form, exifEnabled: e.target.checked })}
                         className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
                       />
                       <span>
-                        <span className="font-medium text-ink">透かしを入れる</span>
+                        <span className="font-medium text-ink">EXIFカメラモデル欄に埋め込む</span>
                         <span className="mt-0.5 block text-[13px] text-ink-soft">
-                          画像に「撮影：〜」を描き込みます（不可逆）
+                          メタデータに「撮影：〜」を書き込みます（元のカメラ情報は上書き）
                         </span>
                       </span>
                     </label>
-                    {form.watermarkEnabled && hasSenderName && (
-                      <div className="mt-2 pl-6">
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => setWatermarkDialogOpen(true)}
-                        >
-                          透かしを編集
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </Card>
+                  )}
+
+                  {receiverOptions.allow_watermark && (
+                    <div>
+                      <label
+                        className={`flex items-start gap-2.5 text-[14px] ${hasSenderName ? "" : "opacity-50"}`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={form.watermarkEnabled}
+                          disabled={!hasSenderName}
+                          onChange={(e) => setForm({ ...form, watermarkEnabled: e.target.checked })}
+                          className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
+                        />
+                        <span>
+                          <span className="font-medium text-ink">透かしを入れる</span>
+                          <span className="mt-0.5 block text-[13px] text-ink-soft">
+                            画像に「撮影：〜」を描き込みます（不可逆）
+                          </span>
+                        </span>
+                      </label>
+                      {form.watermarkEnabled && hasSenderName && (
+                        <div className="mt-2 pl-6">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => setWatermarkDialogOpen(true)}
+                          >
+                            透かしを編集
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </Card>
+        </div>
       )}
 
       {files.length > 0 && !hasSenderName && (
-        <label className="flex items-start gap-2.5 rounded-2xl border border-status-warn/30 bg-status-warn/10 p-4 text-[13px]">
+        <label className="mx-auto flex w-full max-w-3xl items-start gap-2.5 rounded-2xl border border-status-warn/30 bg-status-warn/10 p-4 text-[13px]">
           <input
             type="checkbox"
             checked={noCreditConsent}
@@ -319,18 +321,20 @@ export default function UploadPage() {
         </label>
       )}
 
-      <Button
-        variant="primary"
-        size="lg"
-        className="w-full"
-        disabled={!canSubmit}
-        onClick={handleSubmit}
-      >
-        送信する{files.length > 0 ? ` (${files.length}枚)` : ""}
-      </Button>
+      <div className="mx-auto w-full max-w-3xl">
+        <Button
+          variant="primary"
+          size="lg"
+          className="w-full"
+          disabled={!canSubmit}
+          onClick={handleSubmit}
+        >
+          送信する{files.length > 0 ? ` (${files.length}枚)` : ""}
+        </Button>
+      </div>
 
       {files.length > 0 && (
-        <p className="text-center text-[12px] leading-relaxed text-ink-soft">
+        <p className="mx-auto max-w-3xl text-center text-[12px] leading-relaxed text-ink-soft">
           送信ボタンを押すと、
           <Link
             to="/terms"
