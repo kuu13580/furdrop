@@ -640,7 +640,9 @@ export default function GalleryPage() {
                       <div
                         key={photo.id}
                         data-photo-index={index}
-                        className={`relative ${selectMode ? "touch-none" : ""}`}
+                        // 選択モード中も縦スクロールを残すため pan-y を許可
+                        // (ドラッグ選択は横方向の動きから開始すれば成立する)
+                        className={`relative ${selectMode ? "touch-pan-y" : ""}`}
                       >
                         {selectMode ? (
                           <button
