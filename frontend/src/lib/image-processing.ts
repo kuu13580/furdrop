@@ -107,10 +107,19 @@ export async function embedSenderInfoInExif(jpegBlob: Blob, senderText: string):
     exifObj = { "0th": {}, Exif: {}, GPS: {} };
   }
   exifObj["0th"] ??= {};
-  exifObj["0th"][piexif.ImageIFD.Model] = senderText;
+  exifObj["0th"][piexif.ImageIFD.Model] = utf8ToBinaryString(senderText);
   const exifBytes = piexif.dump(exifObj);
   const newDataUrl = piexif.insert(exifBytes, dataUrl);
   return dataUrlToBlob(newDataUrl);
+}
+
+/**
+ * 文字列を UTF-8 バイト列を Latin1 文字列として表現したものに変換する。
+ * piexifjs は最終的に btoa で base64 化するため、コードポイントが 0-255 に収まる必要がある。
+ * 日本語など非 Latin1 文字をそのまま渡すと btoa が例外を投げるので、UTF-8 バイト列に展開する。
+ */
+function utf8ToBinaryString(text: string): string {
+  return Array.from(new TextEncoder().encode(text), (b) => String.fromCharCode(b)).join("");
 }
 
 /**

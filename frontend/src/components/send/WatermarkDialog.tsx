@@ -139,7 +139,7 @@ export default function WatermarkDialog({
             <>
               <canvas
                 ref={canvasRef}
-                className="max-h-full max-w-full select-none"
+                className="h-full w-full select-none object-contain"
                 style={{
                   transform: zoomed ? `scale(${ZOOM_SCALE})` : undefined,
                   transformOrigin: zoomed
