@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router";
+import SenderAtmosphere from "../../components/send/SenderAtmosphere";
 import Alert from "../../components/ui/Alert";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import { ApiError, senderApi } from "../../lib/api";
@@ -50,12 +51,13 @@ export default function DonePage() {
   const failed = photos?.filter((p) => p.status !== "completed") ?? [];
 
   return (
-    <div className="flex flex-1 items-center justify-center px-4">
-      <div className="w-full max-w-md space-y-6 py-6 text-center">
+    <div className="relative flex flex-1 items-center justify-center overflow-hidden px-4 py-10 sm:py-16">
+      <SenderAtmosphere tone="celebrate" />
+      <div className="relative z-10 w-full max-w-2xl space-y-6 py-6 text-center">
         {photos ? (
           <>
             <div
-              className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-status-success-tint text-[28px] text-status-success"
+              className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-status-success-tint text-[28px] text-status-success shadow-card"
               aria-hidden="true"
             >
               ✓
@@ -71,11 +73,11 @@ export default function DonePage() {
             )}
 
             {completed.length > 0 && (
-              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
                 {completed.map((p) => (
                   <div
                     key={p.photo_id}
-                    className="flex aspect-square items-center justify-center overflow-hidden rounded-2xl bg-surface-canvas"
+                    className="flex aspect-square items-center justify-center overflow-hidden rounded-2xl bg-surface shadow-card"
                   >
                     {p.thumb_url ? (
                       <img
@@ -100,7 +102,7 @@ export default function DonePage() {
 
         <Link
           to={`/send/${handle}/upload`}
-          className="block rounded-xl bg-brand px-4 py-3 text-[16px] font-medium text-white transition-all hover:bg-brand-deep active:scale-[0.98]"
+          className="mx-auto block max-w-sm rounded-xl bg-brand px-4 py-3 text-[16px] font-medium text-white transition-all hover:bg-brand-deep active:scale-[0.98]"
         >
           別の写真を送る
         </Link>

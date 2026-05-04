@@ -1,6 +1,7 @@
 import { useAtom, useAtomValue } from "jotai";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
+import SenderAtmosphere from "../../components/send/SenderAtmosphere";
 import Alert from "../../components/ui/Alert";
 import Button from "../../components/ui/Button";
 import { ApiError, senderApi } from "../../lib/api";
@@ -115,59 +116,62 @@ export default function UploadingPage() {
   const percent = total === 0 ? 0 : Math.round((current / total) * 100);
 
   return (
-    <div className="mx-auto max-w-lg space-y-6 px-4 py-6">
-      <div className="text-center">
-        <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink">送信中...</h1>
-        <p className="mt-1 text-[13px] text-ink-soft">ページを閉じないでください</p>
-      </div>
-
-      <div className="space-y-2">
-        <div className="flex justify-between text-[14px]">
-          <span className="font-medium text-ink">{overallLabel(overall)}</span>
-          <span className="font-mono text-ink-soft">
-            {current}/{total}枚 · {percent}%
-          </span>
+    <div className="relative overflow-hidden px-4 py-6 sm:py-8">
+      <SenderAtmosphere tone="calm" />
+      <div className="relative z-10 mx-auto max-w-3xl space-y-6">
+        <div className="text-center">
+          <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink">送信中...</h1>
+          <p className="mt-1 text-[13px] text-ink-soft">ページを閉じないでください</p>
         </div>
-        <div className="h-2 overflow-hidden rounded-full bg-surface-sand">
-          <div
-            className="h-full rounded-full bg-brand transition-[width] duration-300 ease-out"
-            style={{ width: `${percent}%` }}
-          />
-        </div>
-      </div>
 
-      {globalError && <Alert variant="error">{globalError}</Alert>}
-
-      <ul className="divide-y divide-surface-sand-deep overflow-hidden rounded-2xl bg-surface shadow-card">
-        {progress.map((p) => (
-          <li key={p.selected.id} className="flex flex-col gap-0.5 px-4 py-2.5 text-[14px]">
-            <div className="flex items-center justify-between gap-3">
-              <span className="truncate pr-3 text-ink">{p.selected.file.name}</span>
-              <span className={`shrink-0 font-medium ${phaseColor(p.phase)}`}>
-                {phaseLabel(p.phase, p.failedAt)}
-              </span>
-            </div>
-            {debug && p.phase === "failed" && p.error && (
-              <p className="break-all pr-3 font-mono text-[11px] leading-[1.4] text-status-danger">
-                {p.error}
-              </p>
-            )}
-          </li>
-        ))}
-      </ul>
-
-      {overall === "failed" && (
         <div className="space-y-2">
-          <Button
-            variant="secondary"
-            size="lg"
-            className="w-full"
-            onClick={() => navigate(`/send/${handle}/upload`)}
-          >
-            アップロード画面に戻る
-          </Button>
+          <div className="flex justify-between text-[14px]">
+            <span className="font-medium text-ink">{overallLabel(overall)}</span>
+            <span className="font-mono text-ink-soft">
+              {current}/{total}枚 · {percent}%
+            </span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-surface-sand">
+            <div
+              className="h-full rounded-full bg-brand transition-[width] duration-300 ease-out"
+              style={{ width: `${percent}%` }}
+            />
+          </div>
         </div>
-      )}
+
+        {globalError && <Alert variant="error">{globalError}</Alert>}
+
+        <ul className="divide-y divide-surface-sand-deep overflow-hidden rounded-2xl bg-surface shadow-card">
+          {progress.map((p) => (
+            <li key={p.selected.id} className="flex flex-col gap-0.5 px-4 py-2.5 text-[14px]">
+              <div className="flex items-center justify-between gap-3">
+                <span className="truncate pr-3 text-ink">{p.selected.file.name}</span>
+                <span className={`shrink-0 font-medium ${phaseColor(p.phase)}`}>
+                  {phaseLabel(p.phase, p.failedAt)}
+                </span>
+              </div>
+              {debug && p.phase === "failed" && p.error && (
+                <p className="break-all pr-3 font-mono text-[11px] leading-[1.4] text-status-danger">
+                  {p.error}
+                </p>
+              )}
+            </li>
+          ))}
+        </ul>
+
+        {overall === "failed" && (
+          <div className="space-y-2">
+            <Button
+              variant="secondary"
+              size="lg"
+              className="w-full"
+              onClick={() => navigate(`/send/${handle}/upload`)}
+            >
+              アップロード画面に戻る
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

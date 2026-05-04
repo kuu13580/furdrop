@@ -1,6 +1,7 @@
 import { useAtom } from "jotai";
 import { type ChangeEvent, type DragEvent, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
+import SenderAtmosphere from "../../components/send/SenderAtmosphere";
 import WatermarkDialog from "../../components/send/WatermarkDialog";
 import Alert from "../../components/ui/Alert";
 import Button from "../../components/ui/Button";
@@ -147,218 +148,242 @@ export default function UploadPage() {
   const previewFile = findPreviewFile(files);
 
   return (
-    <div className="mx-auto max-w-lg space-y-6 px-4 py-6">
-      <div className="flex items-center justify-between gap-2">
-        <Link
-          to={`/send/${handle}`}
-          className="rounded-lg px-2 py-1 text-[14px] text-ink-soft transition-colors hover:bg-surface-sand hover:text-ink"
-        >
-          &lt; 戻る
-        </Link>
-        <h1 className="truncate text-[16px] font-semibold text-ink">
-          {displayName ?? handle}さんへ送信
-        </h1>
-        <div className="w-12" />
-      </div>
-
-      <label
-        htmlFor="file-input"
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDragOver(true);
-        }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={handleDrop}
-        className={`block cursor-pointer rounded-[20px] border-2 border-dashed p-10 text-center transition-colors ${
-          dragOver
-            ? "border-brand bg-brand-tint"
-            : "border-surface-sand-deep bg-surface-canvas hover:bg-surface-sand"
-        }`}
-      >
-        <p className="text-[14px] font-medium text-ink">
-          ここにドラッグ&ドロップ
-          <br />
-          またはタップして選択
-        </p>
-        <p className="mt-2 text-[12px] text-ink-soft">JPEG / PNG / HEIC、最大20MB/枚</p>
-        <input
-          id="file-input"
-          ref={fileInputRef}
-          type="file"
-          accept={ACCEPT}
-          multiple
-          className="hidden"
-          onChange={handleFileInputChange}
-        />
-      </label>
-
-      {error && (
-        <Alert variant="error">
-          <div className="whitespace-pre-line">{error}</div>
-        </Alert>
-      )}
-
-      {files.length > 0 && (
-        <div>
-          <div className="mb-2 flex items-center justify-between text-[14px]">
-            <span className="font-medium text-ink">{files.length}枚選択中</span>
-            <button
-              type="button"
-              className="rounded-lg px-2 py-1 text-ink-soft transition-colors hover:bg-surface-sand hover:text-ink"
-              onClick={() => {
-                for (const f of files) if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
-                setFiles([]);
-              }}
-            >
-              すべてクリア
-            </button>
-          </div>
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-            {files.map((f) => (
-              <PreviewTile key={f.id} file={f} onRemove={() => removeFile(f.id)} />
-            ))}
-          </div>
+    <div className="relative overflow-hidden px-4 py-6 sm:px-6 sm:py-8">
+      <SenderAtmosphere tone="warm" />
+      <div className="relative z-10 mx-auto max-w-5xl space-y-6">
+        <div className="flex items-center justify-between gap-2">
+          <Link
+            to={`/send/${handle}`}
+            className="rounded-lg px-2 py-1 text-[14px] text-ink-soft transition-colors hover:bg-surface-sand hover:text-ink"
+          >
+            &lt; 戻る
+          </Link>
+          <h1 className="truncate text-[16px] font-semibold text-ink">
+            {displayName ?? handle}さんへ送信
+          </h1>
+          <div className="w-12" />
         </div>
-      )}
 
-      {files.length > 0 && (
-        <Card>
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <label htmlFor="senderName" className="block text-[14px] font-medium text-ink">
-                送信者名 / TwitterID
-              </label>
-              <input
-                id="senderName"
-                type="text"
-                value={form.senderName}
-                onChange={(e) => setForm({ ...form, senderName: e.target.value })}
-                placeholder="@your_name"
-                className="block w-full rounded-xl border border-surface-sand-deep bg-surface px-4 py-3 text-[14px] text-ink placeholder:text-ink-muted transition-all focus:border-brand focus:outline-none focus:ring-3 focus:ring-brand/15"
-              />
-              <p className="text-[13px] text-ink-soft">
-                受信者に表示されます。EXIF・透かしには
-                <code className="mx-0.5 rounded bg-surface-sand px-1.5 py-0.5 font-mono text-[0.95em] text-ink">
-                  撮影：{form.senderName.trim() || "〜"}
-                </code>
-                の形式で埋め込まれます
-              </p>
+        <label
+          htmlFor="file-input"
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragOver(true);
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={handleDrop}
+          className={`block cursor-pointer rounded-[24px] border-2 border-dashed bg-surface/60 p-10 text-center backdrop-blur-sm transition-all sm:p-16 lg:p-20 ${
+            dragOver
+              ? "border-brand bg-brand-tint"
+              : "border-surface-sand-deep hover:border-brand/60 hover:bg-surface/80"
+          }`}
+        >
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand-tint text-brand sm:h-16 sm:w-16">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-7 w-7 sm:h-8 sm:w-8"
+              aria-hidden="true"
+            >
+              <path d="M12 19V5M5 12l7-7 7 7" />
+            </svg>
+          </div>
+          <p className="mt-4 text-[18px] font-semibold tracking-[-0.01em] text-ink sm:text-[22px]">
+            写真をここにドロップ
+          </p>
+          <p className="mt-1 text-[14px] text-ink-soft">またはタップしてファイルを選択</p>
+          <p className="mt-3 font-mono text-[11px] text-ink-muted">
+            JPEG / PNG / HEIC ・ 最大 20MB / 枚 ・ 100 枚まで
+          </p>
+          <input
+            id="file-input"
+            ref={fileInputRef}
+            type="file"
+            accept={ACCEPT}
+            multiple
+            className="hidden"
+            onChange={handleFileInputChange}
+          />
+        </label>
+
+        {error && (
+          <Alert variant="error">
+            <div className="whitespace-pre-line">{error}</div>
+          </Alert>
+        )}
+
+        {files.length > 0 && (
+          <div>
+            <div className="mb-2 flex items-center justify-between text-[14px]">
+              <span className="font-medium text-ink">{files.length}枚選択中</span>
+              <button
+                type="button"
+                className="rounded-lg px-2 py-1 text-ink-soft transition-colors hover:bg-surface-sand hover:text-ink"
+                onClick={() => {
+                  for (const f of files) if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
+                  setFiles([]);
+                }}
+              >
+                すべてクリア
+              </button>
             </div>
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+              {files.map((f) => (
+                <PreviewTile key={f.id} file={f} onRemove={() => removeFile(f.id)} />
+              ))}
+            </div>
+          </div>
+        )}
 
-            {(receiverOptions?.allow_exif_embed || receiverOptions?.allow_watermark) && (
-              <div className="space-y-3 border-t border-surface-sand-deep pt-4">
-                {receiverOptions.allow_exif_embed && (
-                  <label
-                    className={`flex items-start gap-2.5 text-[14px] ${hasSenderName ? "" : "opacity-50"}`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={form.exifEnabled}
-                      disabled={!hasSenderName}
-                      onChange={(e) => setForm({ ...form, exifEnabled: e.target.checked })}
-                      className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
-                    />
-                    <span>
-                      <span className="font-medium text-ink">EXIFカメラモデル欄に埋め込む</span>
-                      <span className="mt-0.5 block text-[13px] text-ink-soft">
-                        メタデータに「撮影：〜」を書き込みます（元のカメラ情報は上書き）
-                      </span>
-                    </span>
+        {files.length > 0 && (
+          <div className="mx-auto w-full max-w-3xl">
+            <Card>
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label htmlFor="senderName" className="block text-[14px] font-medium text-ink">
+                    送信者名 / TwitterID
                   </label>
-                )}
+                  <input
+                    id="senderName"
+                    type="text"
+                    value={form.senderName}
+                    onChange={(e) => setForm({ ...form, senderName: e.target.value })}
+                    placeholder="@your_name"
+                    className="block w-full rounded-xl border border-surface-sand-deep bg-surface px-4 py-3 text-[14px] text-ink placeholder:text-ink-muted transition-all focus:border-brand focus:outline-none focus:ring-3 focus:ring-brand/15"
+                  />
+                  <p className="text-[13px] text-ink-soft">
+                    受信者に表示されます。EXIF・透かしには
+                    <code className="mx-0.5 rounded bg-surface-sand px-1.5 py-0.5 font-mono text-[0.95em] text-ink">
+                      撮影：{form.senderName.trim() || "〜"}
+                    </code>
+                    の形式で埋め込まれます
+                  </p>
+                </div>
 
-                {receiverOptions.allow_watermark && (
-                  <div>
-                    <label
-                      className={`flex items-start gap-2.5 text-[14px] ${hasSenderName ? "" : "opacity-50"}`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={form.watermarkEnabled}
-                        disabled={!hasSenderName}
-                        onChange={(e) => setForm({ ...form, watermarkEnabled: e.target.checked })}
-                        className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
-                      />
-                      <span>
-                        <span className="font-medium text-ink">透かしを入れる</span>
-                        <span className="mt-0.5 block text-[13px] text-ink-soft">
-                          画像に「撮影：〜」を描き込みます（不可逆）
+                {(receiverOptions?.allow_exif_embed || receiverOptions?.allow_watermark) && (
+                  <div className="space-y-3 border-t border-surface-sand-deep pt-4">
+                    {receiverOptions.allow_exif_embed && (
+                      <label
+                        className={`flex items-start gap-2.5 text-[14px] ${hasSenderName ? "" : "opacity-50"}`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={form.exifEnabled}
+                          disabled={!hasSenderName}
+                          onChange={(e) => setForm({ ...form, exifEnabled: e.target.checked })}
+                          className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
+                        />
+                        <span>
+                          <span className="font-medium text-ink">EXIFカメラモデル欄に埋め込む</span>
+                          <span className="mt-0.5 block text-[13px] text-ink-soft">
+                            メタデータに「撮影：〜」を書き込みます（元のカメラ情報は上書き）
+                          </span>
                         </span>
-                      </span>
-                    </label>
-                    {form.watermarkEnabled && hasSenderName && (
-                      <div className="mt-2 pl-6">
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => setWatermarkDialogOpen(true)}
+                      </label>
+                    )}
+
+                    {receiverOptions.allow_watermark && (
+                      <div>
+                        <label
+                          className={`flex items-start gap-2.5 text-[14px] ${hasSenderName ? "" : "opacity-50"}`}
                         >
-                          透かしを編集
-                        </Button>
+                          <input
+                            type="checkbox"
+                            checked={form.watermarkEnabled}
+                            disabled={!hasSenderName}
+                            onChange={(e) =>
+                              setForm({ ...form, watermarkEnabled: e.target.checked })
+                            }
+                            className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
+                          />
+                          <span>
+                            <span className="font-medium text-ink">透かしを入れる</span>
+                            <span className="mt-0.5 block text-[13px] text-ink-soft">
+                              画像に「撮影：〜」を描き込みます（不可逆）
+                            </span>
+                          </span>
+                        </label>
+                        {form.watermarkEnabled && hasSenderName && (
+                          <div className="mt-2 pl-6">
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => setWatermarkDialogOpen(true)}
+                            >
+                              透かしを編集
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
                 )}
               </div>
-            )}
+            </Card>
           </div>
-        </Card>
-      )}
+        )}
 
-      {files.length > 0 && !hasSenderName && (
-        <label className="flex items-start gap-2.5 rounded-2xl border border-status-warn/30 bg-status-warn/10 p-4 text-[13px]">
-          <input
-            type="checkbox"
-            checked={noCreditConsent}
-            onChange={(e) => setNoCreditConsent(e.target.checked)}
-            className="mt-0.5 h-4 w-4 shrink-0 accent-status-warn"
-          />
-          <span className="text-ink">
-            送信者名を記載しない場合、写真のクレジット表記なしでの編集・共有が行われる可能性があることに同意します
-          </span>
-        </label>
-      )}
+        {files.length > 0 && !hasSenderName && (
+          <label className="mx-auto flex w-full max-w-3xl items-start gap-2.5 rounded-2xl border border-status-warn/30 bg-status-warn/10 p-4 text-[13px]">
+            <input
+              type="checkbox"
+              checked={noCreditConsent}
+              onChange={(e) => setNoCreditConsent(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-status-warn"
+            />
+            <span className="text-ink">
+              送信者名を記載しない場合、写真のクレジット表記なしでの編集・共有が行われる可能性があることに同意します
+            </span>
+          </label>
+        )}
 
-      <Button
-        variant="primary"
-        size="lg"
-        className="w-full"
-        disabled={!canSubmit}
-        onClick={handleSubmit}
-      >
-        送信する{files.length > 0 ? ` (${files.length}枚)` : ""}
-      </Button>
-
-      {files.length > 0 && (
-        <p className="text-center text-[12px] leading-relaxed text-ink-soft">
-          送信ボタンを押すと、
-          <Link
-            to="/terms"
-            target="_blank"
-            className="text-brand underline-offset-2 hover:underline"
+        <div className="mx-auto w-full max-w-3xl">
+          <Button
+            variant="primary"
+            size="lg"
+            className="w-full"
+            disabled={!canSubmit}
+            onClick={handleSubmit}
           >
-            利用規約
-          </Link>
-          および
-          <Link
-            to="/privacy"
-            target="_blank"
-            className="mx-0.5 text-brand underline-offset-2 hover:underline"
-          >
-            プライバシーポリシー
-          </Link>
-          に同意したものとみなされます。
-        </p>
-      )}
+            送信する{files.length > 0 ? ` (${files.length}枚)` : ""}
+          </Button>
+        </div>
 
-      <WatermarkDialog
-        open={watermarkDialogOpen}
-        onClose={() => setWatermarkDialogOpen(false)}
-        options={form.watermark}
-        onChange={(w) => setForm({ ...form, watermark: w })}
-        text={formatCredit(form.senderName)}
-        previewFile={previewFile}
-      />
+        {files.length > 0 && (
+          <p className="mx-auto max-w-3xl text-center text-[12px] leading-relaxed text-ink-soft">
+            送信ボタンを押すと、
+            <Link
+              to="/terms"
+              target="_blank"
+              className="text-brand underline-offset-2 hover:underline"
+            >
+              利用規約
+            </Link>
+            および
+            <Link
+              to="/privacy"
+              target="_blank"
+              className="mx-0.5 text-brand underline-offset-2 hover:underline"
+            >
+              プライバシーポリシー
+            </Link>
+            に同意したものとみなされます。
+          </p>
+        )}
+
+        <WatermarkDialog
+          open={watermarkDialogOpen}
+          onClose={() => setWatermarkDialogOpen(false)}
+          options={form.watermark}
+          onChange={(w) => setForm({ ...form, watermark: w })}
+          text={formatCredit(form.senderName)}
+          previewFile={previewFile}
+        />
+      </div>
     </div>
   );
 }
