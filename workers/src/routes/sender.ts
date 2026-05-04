@@ -9,6 +9,13 @@ const MAX_PHOTOS_PER_SESSION = 100;
 
 const sender = new OpenAPIHono<{ Bindings: Env }>();
 
+const EmbedModeSchema = z.enum(["disabled", "optional", "required"]);
+type EmbedMode = z.infer<typeof EmbedModeSchema>;
+
+function asMode(v: unknown): EmbedMode {
+  return v === "required" || v === "optional" ? v : "disabled";
+}
+
 // ========== GET /send/:handle ==========
 
 const getReceiverRoute = createRoute({
@@ -28,8 +35,8 @@ const getReceiverRoute = createRoute({
               avatar_url: z.string().nullable(),
               is_accepting: z.boolean(),
               options: z.object({
-                allow_exif_embed: z.boolean(),
-                allow_watermark: z.boolean(),
+                exif_embed_mode: EmbedModeSchema,
+                watermark_mode: EmbedModeSchema,
               }),
             }),
           }),
@@ -48,7 +55,7 @@ sender.openapi(getReceiverRoute, async (c) => {
   const { handle } = c.req.valid("param");
 
   const user = await c.env.DB.prepare(
-    "SELECT handle, display_name, avatar_url, is_active, storage_used, storage_quota, allow_exif_embed, allow_watermark FROM users WHERE handle = ?",
+    "SELECT handle, display_name, avatar_url, is_active, storage_used, storage_quota, exif_embed_mode, watermark_mode FROM users WHERE handle = ?",
   )
     .bind(handle)
     .first();
@@ -68,8 +75,8 @@ sender.openapi(getReceiverRoute, async (c) => {
         avatar_url: user.avatar_url as string | null,
         is_accepting: isAccepting,
         options: {
-          allow_exif_embed: user.allow_exif_embed === 1,
-          allow_watermark: user.allow_watermark === 1,
+          exif_embed_mode: asMode(user.exif_embed_mode),
+          watermark_mode: asMode(user.watermark_mode),
         },
       },
     },
@@ -288,7 +295,8 @@ sender.openapi(createPhotosRoute, async (c) => {
   }
 
   const session = await c.env.DB.prepare(
-    `SELECT s.id, s.receiver_id, s.sender_name, s.status, s.expires_at, s.photo_count, u.handle, u.storage_used, u.storage_quota
+    `SELECT s.id, s.receiver_id, s.sender_name, s.status, s.expires_at, s.photo_count,
+            u.handle, u.storage_used, u.storage_quota, u.exif_embed_mode, u.watermark_mode
      FROM upload_sessions s
      JOIN users u ON u.id = s.receiver_id
      WHERE s.id = ? AND u.handle = ?`,
@@ -329,6 +337,37 @@ sender.openapi(createPhotosRoute, async (c) => {
     );
   }
 
+  // R14: 受信者の埋め込みモードに応じてサーバ側で必須/拒否を強制
+  // - 'required'  : 該当フィールドが空ならエラー (UIバイパス防止)
+  // - 'disabled'  : 受信者の意向を尊重してサーバ側でフィールドを無視
+  // - 'optional'  : 送信者の入力をそのまま採用
+  const exifMode = asMode(session.exif_embed_mode);
+  const watermarkMode = asMode(session.watermark_mode);
+  for (const p of photos) {
+    if (exifMode === "required" && !p.camera_model?.trim()) {
+      return c.json(
+        {
+          error: {
+            code: "INVALID_REQUEST",
+            message: "EXIF sender info is required by this receiver",
+          },
+        },
+        400,
+      );
+    }
+    if (watermarkMode === "required" && !p.watermark_text?.trim()) {
+      return c.json(
+        {
+          error: {
+            code: "INVALID_REQUEST",
+            message: "Watermark is required by this receiver",
+          },
+        },
+        400,
+      );
+    }
+  }
+
   // 既存のセッション内写真枚数を取得 (複数バッチでも連番になるよう batch_index を累積)
   const baseBatchIndex = currentCount;
 
@@ -339,6 +378,9 @@ sender.openapi(createPhotosRoute, async (c) => {
       const r2KeyOriginal = buildR2Key(handle, photoId, "original");
       const r2KeyThumb = buildR2Key(handle, photoId, "thumb");
       const batchIndex = baseBatchIndex + i;
+
+      const cameraModel = exifMode === "disabled" ? null : (photo.camera_model ?? null);
+      const watermarkText = watermarkMode === "disabled" ? null : (photo.watermark_text ?? null);
 
       await c.env.DB.prepare(
         `INSERT INTO photos (id, receiver_id, session_id, r2_key_original, r2_key_thumb,
@@ -353,8 +395,8 @@ sender.openapi(createPhotosRoute, async (c) => {
           r2KeyOriginal,
           r2KeyThumb,
           (session.sender_name as string | null) ?? null,
-          photo.camera_model ?? null,
-          photo.watermark_text ?? null,
+          cameraModel,
+          watermarkText,
           photo.filename,
           photo.file_size,
           photo.width ?? null,

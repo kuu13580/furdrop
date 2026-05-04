@@ -49,8 +49,10 @@ CREATE TABLE users (
     storage_quota     INTEGER NOT NULL DEFAULT 10737418240, -- デフォルト10GB
     is_active         INTEGER NOT NULL DEFAULT 1,  -- 0=受付停止, 1=受付中
     -- 受信オプション設定 (R14: 送信者に提示するオプションを制御)
-    allow_exif_embed  INTEGER NOT NULL DEFAULT 0,  -- EXIF送信者情報埋め込み許可
-    allow_watermark   INTEGER NOT NULL DEFAULT 0,  -- 透かし許可 (不可逆のため慎重に)
+    -- 'disabled' | 'optional' | 'required' の3値。
+    -- 'required' は送信者に必ず埋め込みを行わせる(サーバ側でも必須検証)
+    exif_embed_mode   TEXT NOT NULL DEFAULT 'disabled',
+    watermark_mode    TEXT NOT NULL DEFAULT 'disabled',  -- 透かしは不可逆のため慎重に
     -- プッシュ通知 (R09)
     fcm_token         TEXT,                        -- FCMデバイストークン
     push_enabled      INTEGER NOT NULL DEFAULT 1,  -- 通知ON/OFF
@@ -372,15 +374,18 @@ Response: 200
     "avatar_url": "https://...",
     "is_accepting": true,
     "options": {
-      "allow_exif_embed": false,
-      "allow_watermark": false
+      "exif_embed_mode": "optional",
+      "watermark_mode": "disabled"
     }
   }
 }
 ```
 
 - `is_accepting` が false、またはクォータ超過時はアップロードUI非表示
-- `options`: 受信者が許可した送信者オプション（R14）。送信者UIはこれに基づいて表示を切替
+- `options`: 受信者の埋め込み制御モード（R14）。`'disabled' | 'optional' | 'required'` の3値。
+  - `disabled`: 送信者UIに表示しない
+  - `optional`: 送信者が任意で選択
+  - `required`: 送信者は必ず埋め込み (UIで強制ON、サーバ側でも未指定時は400)
 
 #### POST /send/:handle/sessions
 
