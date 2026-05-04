@@ -80,6 +80,7 @@ pnpm cors:prod
 - `bugfix/*`: 不具合修正
 - mainへのマージは必ずPRを作成する
 - スカッシュマージで履歴をきれいに保つ
+- **既存ブランチに追加 push する前に、対応する PR がすでに merge されていないかを `gh pr view <番号> --json state,mergedAt` 等で必ず確認する**。merge 済みの PR のブランチに追加 push しても新しいコミットは PR に含まれず main にも入らない。新しい変更は main から切った別ブランチで別 PR にする
 
 ## コードスタイル
 
