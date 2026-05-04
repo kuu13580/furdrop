@@ -1,4 +1,5 @@
 import { atom } from "jotai";
+import type { EmbedMode } from "../lib/api";
 
 export type UserProfile = {
   id: string;
@@ -10,8 +11,8 @@ export type UserProfile = {
   storage_used: number;
   storage_quota: number;
   receive_url: string;
-  allow_exif_embed: boolean;
-  allow_watermark: boolean;
+  exif_embed_mode: EmbedMode;
+  watermark_mode: EmbedMode;
 };
 
 export const userAtom = atom<UserProfile | null>(null);

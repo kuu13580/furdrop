@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router";
 import SenderAtmosphere from "../../components/send/SenderAtmosphere";
 import Alert from "../../components/ui/Alert";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
-import { ApiError, senderApi } from "../../lib/api";
+import { ApiError, type EmbedMode, senderApi } from "../../lib/api";
 
 type Receiver = {
   handle: string;
@@ -11,8 +11,8 @@ type Receiver = {
   avatar_url: string | null;
   is_accepting: boolean;
   options: {
-    allow_exif_embed: boolean;
-    allow_watermark: boolean;
+    exif_embed_mode: EmbedMode;
+    watermark_mode: EmbedMode;
   };
 };
 

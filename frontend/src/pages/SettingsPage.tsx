@@ -6,12 +6,72 @@ import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
 import FormField from "../components/ui/FormField";
 import StorageQuotaBar from "../components/ui/StorageQuotaBar";
-import { ApiError, authApi } from "../lib/api";
+import { ApiError, authApi, type EmbedMode } from "../lib/api";
 import { authAtom } from "../stores/auth";
 import { suggestedHandleAtom } from "../stores/signup";
 import { type UserProfile, userAtom } from "../stores/user";
 
 const HANDLE_REGEX = /^[a-z0-9_]{3,32}$/;
+
+const EMBED_MODE_OPTIONS: { value: EmbedMode; label: string; hint: string }[] = [
+  { value: "disabled", label: "無効", hint: "送信者の画面に表示しない" },
+  { value: "optional", label: "任意", hint: "送信者が選択できる" },
+  { value: "required", label: "必須", hint: "送信者は必ず埋め込む" },
+];
+
+function EmbedModeRadioGroup({
+  name,
+  title,
+  description,
+  value,
+  onChange,
+  disabled,
+}: {
+  name: string;
+  title: string;
+  description: string;
+  value: EmbedMode;
+  onChange: (next: EmbedMode) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div className="space-y-2">
+      <div>
+        <p className="text-[14px] font-medium text-ink">{title}</p>
+        <p className="mt-0.5 text-[13px] text-ink-soft">{description}</p>
+      </div>
+      <div
+        role="radiogroup"
+        aria-label={title}
+        className="grid grid-cols-3 gap-1.5 rounded-xl bg-surface-sand p-1"
+      >
+        {EMBED_MODE_OPTIONS.map((opt) => {
+          const checked = value === opt.value;
+          return (
+            <label
+              key={opt.value}
+              className={`flex cursor-pointer flex-col items-center rounded-lg px-2 py-2 text-center text-[13px] transition-colors ${
+                checked ? "bg-surface text-ink shadow-card" : "text-ink-soft hover:text-ink"
+              } ${disabled ? "cursor-not-allowed opacity-60" : ""}`}
+            >
+              <input
+                type="radio"
+                name={name}
+                value={opt.value}
+                checked={checked}
+                disabled={disabled}
+                onChange={() => onChange(opt.value)}
+                className="sr-only"
+              />
+              <span className="font-medium">{opt.label}</span>
+              <span className="mt-0.5 text-[11px] text-ink-soft">{opt.hint}</span>
+            </label>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 function RegisterForm() {
   const [authState, setAuth] = useAtom(authAtom);
@@ -26,8 +86,8 @@ function RegisterForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [handleError, setHandleError] = useState<string | null>(null);
-  const [allowExifEmbed, setAllowExifEmbed] = useState(true);
-  const [allowWatermark, setAllowWatermark] = useState(true);
+  const [exifEmbedMode, setExifEmbedMode] = useState<EmbedMode>("optional");
+  const [watermarkMode, setWatermarkMode] = useState<EmbedMode>("disabled");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const validateHandle = useCallback((value: string) => {
@@ -62,8 +122,8 @@ function RegisterForm() {
         await authApi.register({
           handle,
           display_name: displayName.trim(),
-          allow_exif_embed: allowExifEmbed,
-          allow_watermark: allowWatermark,
+          exif_embed_mode: exifEmbedMode,
+          watermark_mode: watermarkMode,
         });
         // registerのレスポンスはUserProfileの全フィールドを含まないのでgetMeで取得
         const { user: profile } = await authApi.getMe();
@@ -88,8 +148,8 @@ function RegisterForm() {
     [
       handle,
       displayName,
-      allowExifEmbed,
-      allowWatermark,
+      exifEmbedMode,
+      watermarkMode,
       agreedToTerms,
       validateHandle,
       authState,
@@ -133,39 +193,25 @@ function RegisterForm() {
             placeholder="太郎カメラ"
             maxLength={50}
           />
-          <div className="space-y-3 border-t border-surface-sand-deep pt-4">
+          <div className="space-y-4 border-t border-surface-sand-deep pt-4">
             <p className="text-[14px] font-medium text-ink">受信オプション</p>
             <p className="text-[13px] text-ink-soft">
               送信者に提示するオプションを設定します。あとから設定ページで変更できます。
             </p>
-            <label className="flex items-start gap-2.5 text-[14px]">
-              <input
-                type="checkbox"
-                checked={allowExifEmbed}
-                onChange={(e) => setAllowExifEmbed(e.target.checked)}
-                className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
-              />
-              <span>
-                <span className="font-medium text-ink">EXIF埋め込みを許可</span>
-                <span className="mt-0.5 block text-[13px] text-ink-soft">
-                  送信者がカメラモデル欄に名前を書き込めます（メタデータのみ、除去可能）
-                </span>
-              </span>
-            </label>
-            <label className="flex items-start gap-2.5 text-[14px]">
-              <input
-                type="checkbox"
-                checked={allowWatermark}
-                onChange={(e) => setAllowWatermark(e.target.checked)}
-                className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
-              />
-              <span>
-                <span className="font-medium text-ink">透かしを許可</span>
-                <span className="mt-0.5 block text-[13px] text-ink-soft">
-                  送信者が画像にクレジットテキストを描き込めます（不可逆）
-                </span>
-              </span>
-            </label>
+            <EmbedModeRadioGroup
+              name="register-exif"
+              title="EXIF埋め込み"
+              description="送信者がカメラモデル欄に名前を書き込みます（メタデータのみ、除去可能）"
+              value={exifEmbedMode}
+              onChange={setExifEmbedMode}
+            />
+            <EmbedModeRadioGroup
+              name="register-watermark"
+              title="透かし"
+              description="送信者が画像にクレジットテキストを描き込みます（不可逆）"
+              value={watermarkMode}
+              onChange={setWatermarkMode}
+            />
           </div>
           <label className="flex items-start gap-2.5 border-t border-surface-sand-deep pt-4 text-[13px]">
             <input
@@ -218,8 +264,8 @@ function ReceiveOptionsCard({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const toggle = useCallback(
-    async (field: "allow_exif_embed" | "allow_watermark", value: boolean) => {
+  const updateMode = useCallback(
+    async (field: "exif_embed_mode" | "watermark_mode", value: EmbedMode) => {
       setSaving(true);
       setError(null);
       try {
@@ -237,44 +283,30 @@ function ReceiveOptionsCard({
   return (
     <Card title="受信オプション">
       <p className="mb-4 text-[13px] text-ink-soft">
-        送信者に提示するオプションを設定します。許可したオプションのみ送信者の画面に表示されます。
+        送信者に提示するオプションを設定します。「必須」にすると送信者は必ず埋め込みます。
       </p>
       {error && (
         <Alert variant="error" className="mb-4">
           {error}
         </Alert>
       )}
-      <div className="space-y-4">
-        <label className="flex items-start gap-3">
-          <input
-            type="checkbox"
-            checked={user.allow_exif_embed}
-            disabled={saving}
-            onChange={(e) => toggle("allow_exif_embed", e.target.checked)}
-            className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
-          />
-          <span>
-            <span className="text-[14px] font-medium text-ink">EXIF埋め込みを許可</span>
-            <span className="mt-0.5 block text-[13px] text-ink-soft">
-              送信者がカメラモデル欄に名前を書き込めます（メタデータのみ、除去可能）
-            </span>
-          </span>
-        </label>
-        <label className="flex items-start gap-3">
-          <input
-            type="checkbox"
-            checked={user.allow_watermark}
-            disabled={saving}
-            onChange={(e) => toggle("allow_watermark", e.target.checked)}
-            className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
-          />
-          <span>
-            <span className="text-[14px] font-medium text-ink">透かしを許可</span>
-            <span className="mt-0.5 block text-[13px] text-ink-soft">
-              送信者が画像にクレジットテキストを描き込めます（不可逆）
-            </span>
-          </span>
-        </label>
+      <div className="space-y-5">
+        <EmbedModeRadioGroup
+          name="settings-exif"
+          title="EXIF埋め込み"
+          description="送信者がカメラモデル欄に名前を書き込みます（メタデータのみ、除去可能）"
+          value={user.exif_embed_mode}
+          onChange={(v) => updateMode("exif_embed_mode", v)}
+          disabled={saving}
+        />
+        <EmbedModeRadioGroup
+          name="settings-watermark"
+          title="透かし"
+          description="送信者が画像にクレジットテキストを描き込みます（不可逆）"
+          value={user.watermark_mode}
+          onChange={(v) => updateMode("watermark_mode", v)}
+          disabled={saving}
+        />
       </div>
     </Card>
   );

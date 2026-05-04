@@ -6,7 +6,7 @@ import WatermarkDialog from "../../components/send/WatermarkDialog";
 import Alert from "../../components/ui/Alert";
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
-import { senderApi } from "../../lib/api";
+import { type EmbedMode, senderApi } from "../../lib/api";
 import { runConcurrent } from "../../lib/concurrency";
 import { formatCredit, generateThumbnail, MAX_FILE_SIZE } from "../../lib/image-processing";
 import { type SelectedFile, selectedFilesAtom, uploadFormAtom } from "../../stores/sender";
@@ -51,8 +51,8 @@ export default function UploadPage() {
   const [watermarkDialogOpen, setWatermarkDialogOpen] = useState(false);
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [receiverOptions, setReceiverOptions] = useState<{
-    allow_exif_embed: boolean;
-    allow_watermark: boolean;
+    exif_embed_mode: EmbedMode;
+    watermark_mode: EmbedMode;
   } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -128,22 +128,36 @@ export default function UploadPage() {
   };
 
   const hasSenderName = form.senderName.trim().length > 0;
-  const canSubmit = files.length > 0 && (hasSenderName || noCreditConsent);
+  const exifMode: EmbedMode = receiverOptions?.exif_embed_mode ?? "disabled";
+  const watermarkMode: EmbedMode = receiverOptions?.watermark_mode ?? "disabled";
+  const anyRequired = exifMode === "required" || watermarkMode === "required";
+  // 必須モードがある場合は senderName が必須。そうでなければ送信者名なし同意で代替可
+  const canSubmit =
+    files.length > 0 && (anyRequired ? hasSenderName : hasSenderName || noCreditConsent);
 
   const handleSubmit = () => {
     if (!canSubmit) return;
     navigate(`/send/${handle}/uploading`, { replace: true });
   };
 
-  // 送信者名が消えたら、または受信者が許可していないオプションの有効フラグを落とす
+  // フォームと受信者モードの整合を取る
+  // - mode='disabled' or senderName 空: フラグを落とす
+  // - mode='required' で senderName あり: フラグを強制 ON
+  // - mode='optional': 送信者の選択を尊重
   useEffect(() => {
-    if (form.exifEnabled && (!hasSenderName || !receiverOptions?.allow_exif_embed)) {
-      setForm((prev) => ({ ...prev, exifEnabled: false }));
-    }
-    if (form.watermarkEnabled && (!hasSenderName || !receiverOptions?.allow_watermark)) {
-      setForm((prev) => ({ ...prev, watermarkEnabled: false }));
-    }
-  }, [form.exifEnabled, form.watermarkEnabled, hasSenderName, receiverOptions, setForm]);
+    setForm((prev) => {
+      let exifEnabled = prev.exifEnabled;
+      let watermarkEnabled = prev.watermarkEnabled;
+      if (!hasSenderName || exifMode === "disabled") exifEnabled = false;
+      else if (exifMode === "required") exifEnabled = true;
+      if (!hasSenderName || watermarkMode === "disabled") watermarkEnabled = false;
+      else if (watermarkMode === "required") watermarkEnabled = true;
+      if (exifEnabled === prev.exifEnabled && watermarkEnabled === prev.watermarkEnabled) {
+        return prev;
+      }
+      return { ...prev, exifEnabled, watermarkEnabled };
+    });
+  }, [hasSenderName, exifMode, watermarkMode, setForm]);
 
   const previewFile = findPreviewFile(files);
 
@@ -264,21 +278,24 @@ export default function UploadPage() {
                   </p>
                 </div>
 
-                {(receiverOptions?.allow_exif_embed || receiverOptions?.allow_watermark) && (
+                {(exifMode !== "disabled" || watermarkMode !== "disabled") && (
                   <div className="space-y-3 border-t border-surface-sand-deep pt-4">
-                    {receiverOptions.allow_exif_embed && (
+                    {exifMode !== "disabled" && (
                       <label
                         className={`flex items-start gap-2.5 text-[14px] ${hasSenderName ? "" : "opacity-50"}`}
                       >
                         <input
                           type="checkbox"
                           checked={form.exifEnabled}
-                          disabled={!hasSenderName}
+                          disabled={!hasSenderName || exifMode === "required"}
                           onChange={(e) => setForm({ ...form, exifEnabled: e.target.checked })}
                           className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
                         />
                         <span>
-                          <span className="font-medium text-ink">EXIFカメラモデル欄に埋め込む</span>
+                          <span className="flex items-center gap-1.5 font-medium text-ink">
+                            EXIFカメラモデル欄に埋め込む
+                            {exifMode === "required" && <RequiredBadge />}
+                          </span>
                           <span className="mt-0.5 block text-[13px] text-ink-soft">
                             メタデータに「撮影：〜」を書き込みます（元のカメラ情報は上書き）
                           </span>
@@ -286,7 +303,7 @@ export default function UploadPage() {
                       </label>
                     )}
 
-                    {receiverOptions.allow_watermark && (
+                    {watermarkMode !== "disabled" && (
                       <div>
                         <label
                           className={`flex items-start gap-2.5 text-[14px] ${hasSenderName ? "" : "opacity-50"}`}
@@ -294,14 +311,17 @@ export default function UploadPage() {
                           <input
                             type="checkbox"
                             checked={form.watermarkEnabled}
-                            disabled={!hasSenderName}
+                            disabled={!hasSenderName || watermarkMode === "required"}
                             onChange={(e) =>
                               setForm({ ...form, watermarkEnabled: e.target.checked })
                             }
                             className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
                           />
                           <span>
-                            <span className="font-medium text-ink">透かしを入れる</span>
+                            <span className="flex items-center gap-1.5 font-medium text-ink">
+                              透かしを入れる
+                              {watermarkMode === "required" && <RequiredBadge />}
+                            </span>
                             <span className="mt-0.5 block text-[13px] text-ink-soft">
                               画像に「撮影：〜」を描き込みます（不可逆）
                             </span>
@@ -320,6 +340,12 @@ export default function UploadPage() {
                         )}
                       </div>
                     )}
+
+                    {anyRequired && !hasSenderName && (
+                      <p className="text-[13px] text-status-warn">
+                        この受信者は埋め込みを必須に設定しています。送信者名を入力してください。
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
@@ -327,7 +353,7 @@ export default function UploadPage() {
           </div>
         )}
 
-        {files.length > 0 && !hasSenderName && (
+        {files.length > 0 && !hasSenderName && !anyRequired && (
           <label className="mx-auto flex w-full max-w-3xl items-start gap-2.5 rounded-2xl border border-status-warn/30 bg-status-warn/10 p-4 text-[13px]">
             <input
               type="checkbox"
@@ -385,6 +411,14 @@ export default function UploadPage() {
         />
       </div>
     </div>
+  );
+}
+
+function RequiredBadge() {
+  return (
+    <span className="rounded-md bg-status-warn/15 px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wide text-status-warn">
+      必須
+    </span>
   );
 }
 

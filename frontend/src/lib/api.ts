@@ -2,6 +2,8 @@ import { auth } from "./firebase";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 
+export type EmbedMode = "disabled" | "optional" | "required";
+
 class ApiError extends Error {
   status: number;
   code: string;
@@ -56,8 +58,8 @@ export const senderApi = {
         avatar_url: string | null;
         is_accepting: boolean;
         options: {
-          allow_exif_embed: boolean;
-          allow_watermark: boolean;
+          exif_embed_mode: EmbedMode;
+          watermark_mode: EmbedMode;
         };
       };
     }>(`/send/${handle}`),
@@ -124,8 +126,8 @@ export const authApi = {
   register: (body: {
     handle: string;
     display_name: string;
-    allow_exif_embed?: boolean;
-    allow_watermark?: boolean;
+    exif_embed_mode?: EmbedMode;
+    watermark_mode?: EmbedMode;
   }) =>
     request<{
       user: {
@@ -135,8 +137,8 @@ export const authApi = {
         storage_used: number;
         storage_quota: number;
         receive_url: string;
-        allow_exif_embed: boolean;
-        allow_watermark: boolean;
+        exif_embed_mode: EmbedMode;
+        watermark_mode: EmbedMode;
       };
     }>("/auth/register", { method: "POST", body: JSON.stringify(body) }, true),
 
@@ -152,12 +154,12 @@ export const authApi = {
         storage_quota: number;
         is_active: number;
         receive_url: string;
-        allow_exif_embed: boolean;
-        allow_watermark: boolean;
+        exif_embed_mode: EmbedMode;
+        watermark_mode: EmbedMode;
       };
     }>("/auth/me", {}, true),
 
-  updateOptions: (body: { allow_exif_embed?: boolean; allow_watermark?: boolean }) =>
+  updateOptions: (body: { exif_embed_mode?: EmbedMode; watermark_mode?: EmbedMode }) =>
     request<{
       user: {
         id: string;
@@ -166,8 +168,8 @@ export const authApi = {
         storage_used: number;
         storage_quota: number;
         receive_url: string;
-        allow_exif_embed: boolean;
-        allow_watermark: boolean;
+        exif_embed_mode: EmbedMode;
+        watermark_mode: EmbedMode;
       };
     }>("/auth/options", { method: "PATCH", body: JSON.stringify(body) }, true),
 };
