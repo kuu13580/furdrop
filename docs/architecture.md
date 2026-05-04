@@ -286,6 +286,33 @@ Response: 200
 }
 ```
 
+#### DELETE /auth/account
+
+受信者アカウント削除（R15）。自身の `photos` / `upload_sessions` / `users` レコードを D1 から削除し、R2 のオリジナル/サムネイルオブジェクトを背景タスクで削除する。
+
+クライアントは API 呼び出し成功後に Firebase Web SDK の `deleteUser()` を best-effort で実行する。Workers 側では Firebase Admin SDK が利用できないため Firebase Auth ユーザーの削除はサーバから実行できない。
+
+```
+Request:
+{ "confirm_handle": "taro_camera" }   // 自身のハンドルを再入力（誤操作防止）
+
+Response: 204 No Content
+
+エラー:
+- 400 INVALID_REQUEST: confirm_handle が一致しない
+- 404 NOT_FOUND: ユーザー未登録
+```
+
+実装上のポイント:
+- 削除前に `photos.r2_key_original` / `r2_key_thumb` を全件 SELECT
+- D1 は `batch()` で 順序保証して以下を実行:
+  - `DELETE FROM photos WHERE receiver_id = ?` — 全件
+  - `DELETE FROM upload_sessions WHERE receiver_id = ? AND created_at < (now - 100日)` — **保存期間 (利用規約第13条 = 最低3か月) 経過済みのみ**。保存期間中のセッションは `sender_ip` / `sender_ua` を保護するため保持する
+  - `DELETE FROM users WHERE id = ?`
+- R2 削除は `ctx.waitUntil(Promise.allSettled(...))` で背景実行し、レスポンスを早く返す
+- Workers のサブリクエスト上限（Paid plan: 1000/invocation）を超える場合は残分が孤立オブジェクトとして残るが、ユーザー削除は頻度が低く許容する
+- 保存期間中の理由で残された「孤児セッション」(`receiver_id` が users に存在しない) は Cron `cleanupOrphanedSessions` が 100日経過後に物理削除する
+
 #### GET /receiver/photos
 
 受信写真一覧（カーソルベースページネーション）。
@@ -563,6 +590,8 @@ flowchart TD
 | PATCH .../confirm | 不要 | photoがそのsessionに属する |
 | POST /auth/register | Firebase必須 | UID未登録 |
 | GET /auth/me | Firebase必須 | - |
+| PATCH /auth/options | Firebase必須 | UID登録済み |
+| DELETE /auth/account | Firebase必須 | UID登録済み + confirm_handle 一致 |
 | GET /receiver/* | Firebase必須 | receiver_id == 認証UID |
 | DELETE /receiver/* | Firebase必須 | receiver_id == 認証UID |
 
@@ -628,6 +657,7 @@ crons = ["0 * * * *"]
 3. `'failed'` 写真のR2オブジェクトが存在すれば削除（ゴミ回収）
 4. **DL期限切れ写真の自動削除 (X11/R13)**: `expires_at < now`（またはデフォルト `created_at + 30日 < now`）の `completed` 写真 → R2オブジェクト削除 + D1レコード削除 + `storage_used` 減算
 5. **送信者通信記録の保存期間制限**: `created_at < now - 100日` の `upload_sessions` について `sender_ip` / `sender_ua` を NULL に更新（利用規約・プライバシーポリシーで「最低3か月」を保証するため、暦上最短の3か月=89日を確実に上回る100日を採用。プライバシーポリシー第11項参照）
+6. **孤児セッションの物理削除**: `created_at < now - 100日` かつ `receiver_id` が `users` に存在しない `upload_sessions` を削除（R15 アカウント削除時に保存期間中の sender_ip/ua を保護するために残された孤児セッションを、保存期間経過後に回収する）
 
 ---
 
