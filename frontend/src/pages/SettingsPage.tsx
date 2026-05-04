@@ -1,5 +1,5 @@
 import { useAtom, useAtomValue } from "jotai";
-import { useCallback, useState } from "react";
+import { type SyntheticEvent, useCallback, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import Alert from "../components/ui/Alert";
 import Button from "../components/ui/Button";
@@ -13,10 +13,16 @@ import { type UserProfile, userAtom } from "../stores/user";
 
 const HANDLE_REGEX = /^[a-z0-9_]{3,32}$/;
 
-const EMBED_MODE_OPTIONS: { value: EmbedMode; label: string; hint: string }[] = [
-  { value: "disabled", label: "無効", hint: "送信者の画面に表示しない" },
-  { value: "optional", label: "任意", hint: "送信者が選択できる" },
-  { value: "required", label: "必須", hint: "送信者は必ず埋め込む" },
+// hintHead と hintTail はモバイルで改行して 2 行表示し、デスクトップでは 1 行に詰める
+const EMBED_MODE_OPTIONS: {
+  value: EmbedMode;
+  label: string;
+  hintHead: string;
+  hintTail: string;
+}[] = [
+  { value: "disabled", label: "無効", hintHead: "送信者の", hintTail: "画面に表示しない" },
+  { value: "optional", label: "任意", hintHead: "送信者が", hintTail: "選択できる" },
+  { value: "required", label: "必須", hintHead: "送信者は", hintTail: "必ず埋め込む" },
 ];
 
 function EmbedModeRadioGroup({
@@ -64,7 +70,11 @@ function EmbedModeRadioGroup({
                 className="sr-only"
               />
               <span className="font-medium">{opt.label}</span>
-              <span className="mt-0.5 text-[11px] text-ink-soft">{opt.hint}</span>
+              <span className="mt-0.5 text-[11px] text-ink-soft">
+                {opt.hintHead}
+                <br className="sm:hidden" />
+                {opt.hintTail}
+              </span>
             </label>
           );
         })}
@@ -97,7 +107,7 @@ function RegisterForm() {
   }, []);
 
   const handleSubmit = useCallback(
-    async (e: React.FormEvent) => {
+    async (e: SyntheticEvent) => {
       e.preventDefault();
 
       const hErr = validateHandle(handle);
