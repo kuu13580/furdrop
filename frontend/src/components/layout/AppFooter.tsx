@@ -4,7 +4,7 @@ const FEEDBACK_URL = import.meta.env.VITE_FEEDBACK_URL ?? "";
 
 export default function AppFooter() {
   return (
-    <footer className="fixed inset-x-0 bottom-0 z-10 border-t border-surface-sand-deep bg-surface/95 backdrop-blur">
+    <footer className="sticky bottom-0 z-10 mt-auto border-t border-surface-sand-deep bg-surface/95 backdrop-blur">
       <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 text-[12px] text-ink-muted">
         <span>FurDrop</span>
         <nav className="flex flex-wrap items-center gap-x-4 gap-y-1">

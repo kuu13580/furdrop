@@ -56,7 +56,7 @@ export default function AppLayout() {
   }, [menuOpen]);
 
   return (
-    <div className="min-h-dvh bg-surface-canvas pb-12 text-ink antialiased">
+    <div className="flex min-h-dvh flex-col bg-surface-canvas text-ink antialiased">
       <header className="sticky top-0 z-30 border-b border-surface-sand-deep bg-surface/85 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-3 px-4 sm:h-16 sm:px-6">
           <Link to="/dashboard" className="flex shrink-0 items-center">
@@ -159,7 +159,7 @@ export default function AppLayout() {
         </>
       )}
 
-      <main className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
         <Outlet />
       </main>
       <AppFooter />

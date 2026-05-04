@@ -16,6 +16,11 @@ paths:
 - 理由: iOS Safari の `vh` は最大ビューポート (URL バー非表示時) 基準で固定されるため、URL バー表示時に画像やダイアログがはみ出る・スクロール時に下部に余白が出るなどの不具合が発生する。`dvh` は動的ビューポートに追従する
 - JSの `window.innerHeight` は iOS でも動的なのでそのままで可
 
+## モバイル向けレイアウト
+- 画面下部に常時表示するフッター等の要素には `position: fixed; bottom: 0` を使わない。代わりに `position: sticky; bottom: 0` を使う
+- 理由: iOS / iPadOS Safari は URL バー出し入れ時に fixed 要素を視覚 viewport から浮かせる挙動を持つ (バー高さ分だけ上に張り付いてしまう)。sticky は document scroll を追従するためこの不具合が起きない
+- 構成: 親を `flex min-h-dvh flex-col`、コンテンツに `flex-1`、フッターに `sticky bottom-0 mt-auto` を当てる。これで短いページでは viewport 下端、長いページでは PC でもスクロール時に下端に張り付く挙動が両立する。fixed 用の `pb-12` 等のスペーサは不要
+
 ## 画像処理（クライアントサイド）
 - 画像処理は全てブラウザで行う。サーバーには送らない
 - サムネイル生成: Canvas API (OffscreenCanvas、非対応時はフォールバック)
