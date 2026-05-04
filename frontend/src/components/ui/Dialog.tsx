@@ -37,7 +37,7 @@ export default function Dialog({ open, onClose, title, children, footer }: Props
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? "dialog-title" : undefined}
-        className="relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-[20px] bg-surface text-ink shadow-modal"
+        className="relative z-10 flex max-h-[90dvh] w-full max-w-lg flex-col overflow-hidden rounded-[20px] bg-surface text-ink shadow-modal"
       >
         {title && (
           <div className="flex shrink-0 items-center justify-between border-b border-surface-sand-deep px-5 py-3.5">

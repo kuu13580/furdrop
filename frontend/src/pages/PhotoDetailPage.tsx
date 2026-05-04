@@ -168,7 +168,7 @@ export default function PhotoDetailPage() {
                 className="relative mx-auto overflow-hidden rounded-2xl bg-surface-canvas"
                 style={{
                   aspectRatio,
-                  width: `min(100%, calc(70vh * ${ratioNum}))`,
+                  width: `min(100%, calc(70dvh * ${ratioNum}))`,
                 }}
               >
                 {photo.thumb_url && (

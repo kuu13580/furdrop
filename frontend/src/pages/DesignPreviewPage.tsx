@@ -904,7 +904,7 @@ function DetailViewerSection() {
     <SectionShell
       id="11"
       title="詳細画像ビューア (アスペクト比保持)"
-      caption="S08 詳細画像は width: min(100%, 70vh * ratio) + aspect-ratio で縦辺を 70vh 以下に抑えつつアスペクト比を必ず保持する。固定 height + aspect-ratio + max-width の併用は禁止 (モバイル幅 clamp でアスペクト比が崩れるため)。"
+      caption="S08 詳細画像は width: min(100%, 70dvh * ratio) + aspect-ratio で縦辺を 70dvh 以下に抑えつつアスペクト比を必ず保持する。固定 height + aspect-ratio + max-width の併用は禁止 (モバイル幅 clamp でアスペクト比が崩れるため)。dvh は iOS Safari の URL バー出し入れに追従させるため必須。"
     >
       <div className="grid gap-6 sm:grid-cols-2">
         {samples.map((s) => {
@@ -925,7 +925,7 @@ function DetailViewerSection() {
                   className="relative overflow-hidden rounded-2xl bg-surface-canvas"
                   style={{
                     aspectRatio: `${s.w} / ${s.h}`,
-                    width: `min(100%, calc(40vh * ${ratio}))`,
+                    width: `min(100%, calc(40dvh * ${ratio}))`,
                   }}
                 >
                   <img
@@ -939,16 +939,16 @@ function DetailViewerSection() {
               <div className="mt-3 font-mono text-[11px] leading-[1.5] text-ink-muted">
                 aspectRatio: {s.w} / {s.h}
                 <br />
-                width: min(100%, calc(40vh * {ratio.toFixed(2)}))
+                width: min(100%, calc(40dvh * {ratio.toFixed(2)}))
               </div>
             </div>
           );
         })}
       </div>
       <p className="mt-4 text-[13px] text-ink-soft">
-        ※ プレビューは 40vh で縮小表示。本番 (S08) では 70vh
+        ※ プレビューは 40dvh で縮小表示。本番 (S08) では 70dvh
         を上限に。横長・パノラマはコンテナ幅が親幅に clamp され、縦長はコンテナ幅が計算値に clamp
-        されて縦辺が 70vh を超えない。
+        されて縦辺が 70dvh を超えない。
       </p>
     </SectionShell>
   );
