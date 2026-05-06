@@ -66,13 +66,13 @@ export default function WatermarkDialog({
   const bitmapRef = useRef<ImageBitmap | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [previewReady, setPreviewReady] = useState(false);
-  /** 透かし位置を中心にズームするトグル */
-  const [zoomed, setZoomed] = useState(false);
+  /** 透かし位置を中心にズームするトグル。開いた直後は実寸感を確認しやすいよう拡大状態 */
+  const [zoomed, setZoomed] = useState(true);
 
   // ダイアログopen時に1枚目をビットマップ化してキャッシュ
   useEffect(() => {
     if (!open) {
-      setZoomed(false);
+      setZoomed(true);
     }
     if (!open || !previewFile) {
       setPreviewReady(false);
@@ -133,6 +133,7 @@ export default function WatermarkDialog({
       open={open}
       onClose={onClose}
       title="透かしの設定"
+      size="md"
       footer={
         <div className="flex justify-end">
           <Button variant="primary" onClick={onClose}>
@@ -235,41 +236,6 @@ export default function WatermarkDialog({
         </div>
 
         <div>
-          <p className="mb-1 block text-[13px] font-medium text-ink-soft">色</p>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => onChange({ ...options, color: "#ffffff" })}
-              className={`h-7 w-12 rounded-md border-2 bg-white text-[13px] text-ink transition-colors ${
-                options.color === "#ffffff" ? "border-brand" : "border-surface-sand-deep"
-              }`}
-            >
-              白
-            </button>
-            <button
-              type="button"
-              onClick={() => onChange({ ...options, color: "#000000" })}
-              className={`h-7 w-12 rounded-md border-2 bg-ink text-[13px] text-white transition-colors ${
-                options.color === "#000000" ? "border-brand" : "border-ink-soft"
-              }`}
-            >
-              黒
-            </button>
-            <button
-              type="button"
-              onClick={() => onChange({ ...options, color: "auto" })}
-              className={`h-7 rounded-md border-2 bg-gradient-to-r from-ink from-50% to-white to-50% px-3 text-[12px] font-medium transition-colors ${
-                options.color === "auto" ? "border-brand" : "border-surface-sand-deep"
-              }`}
-              title="描画領域の明るさから白/黒を自動選択"
-            >
-              <span className="text-white">自</span>
-              <span className="text-ink">動</span>
-            </button>
-          </div>
-        </div>
-
-        <div>
           <p className="mb-1 block text-[13px] font-medium text-ink-soft">フォント</p>
           <div role="radiogroup" aria-label="フォント" className="grid grid-cols-3 gap-1.5">
             {FONT_FAMILIES.map((f) => {
@@ -299,15 +265,60 @@ export default function WatermarkDialog({
           </div>
         </div>
 
-        <label className="flex items-center gap-2 text-[13px] font-medium text-ink-soft">
-          <input
-            type="checkbox"
-            checked={options.stroke}
-            onChange={(e) => onChange({ ...options, stroke: e.target.checked })}
-            className="h-4 w-4 accent-brand"
-          />
-          <span>縁取り（反対色のアウトラインで視認性UP）</span>
-        </label>
+        <details className="group rounded-xl border border-surface-sand-deep bg-surface-canvas/40">
+          <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-2 text-[13px] font-medium text-ink-soft">
+            <span>詳細設定（色・縁取り）</span>
+            <span className="text-ink-muted transition-transform group-open:rotate-180" aria-hidden>
+              ▾
+            </span>
+          </summary>
+          <div className="space-y-3 px-3 pb-3 pt-1">
+            <div>
+              <p className="mb-1 block text-[13px] font-medium text-ink-soft">色</p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => onChange({ ...options, color: "#ffffff" })}
+                  className={`h-7 w-12 rounded-md border-2 bg-white text-[13px] text-ink transition-colors ${
+                    options.color === "#ffffff" ? "border-brand" : "border-surface-sand-deep"
+                  }`}
+                >
+                  白
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onChange({ ...options, color: "#000000" })}
+                  className={`h-7 w-12 rounded-md border-2 bg-ink text-[13px] text-white transition-colors ${
+                    options.color === "#000000" ? "border-brand" : "border-ink-soft"
+                  }`}
+                >
+                  黒
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onChange({ ...options, color: "auto" })}
+                  className={`h-7 rounded-md border-2 bg-gradient-to-r from-ink from-50% to-white to-50% px-3 text-[12px] font-medium transition-colors ${
+                    options.color === "auto" ? "border-brand" : "border-surface-sand-deep"
+                  }`}
+                  title="描画領域の明るさから白/黒を自動選択"
+                >
+                  <span className="text-white">自</span>
+                  <span className="text-ink">動</span>
+                </button>
+              </div>
+            </div>
+
+            <label className="flex items-center gap-2 text-[13px] font-medium text-ink-soft">
+              <input
+                type="checkbox"
+                checked={options.stroke}
+                onChange={(e) => onChange({ ...options, stroke: e.target.checked })}
+                className="h-4 w-4 accent-brand"
+              />
+              <span>縁取り（反対色のアウトラインで視認性UP）</span>
+            </label>
+          </div>
+        </details>
       </div>
     </Dialog>
   );
