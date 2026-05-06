@@ -8,8 +8,21 @@ import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
 import { type EmbedMode, senderApi } from "../../lib/api";
 import { runConcurrent } from "../../lib/concurrency";
-import { formatCredit, generateThumbnail, MAX_FILE_SIZE } from "../../lib/image-processing";
+import {
+  CREDIT_FORMATS,
+  type CreditFormat,
+  formatCredit,
+  generateThumbnail,
+  MAX_FILE_SIZE,
+} from "../../lib/image-processing";
 import { type SelectedFile, selectedFilesAtom, uploadFormAtom } from "../../stores/sender";
+
+const CREDIT_FORMAT_OPTIONS: { value: CreditFormat; label: string }[] = [
+  { value: "shot_by", label: CREDIT_FORMATS.shot_by.label },
+  { value: "photo_by", label: CREDIT_FORMATS.photo_by.label },
+  { value: "copyright", label: CREDIT_FORMATS.copyright.label },
+  { value: "name_only", label: CREDIT_FORMATS.name_only.label },
+];
 
 const ACCEPT = "image/jpeg,image/png,image/heic,image/heif,.heic,.heif";
 const MAX_PHOTOS_PER_SESSION = 100;
@@ -272,10 +285,44 @@ export default function UploadPage() {
                   <p className="text-[13px] text-ink-soft">
                     受信者に表示されます。EXIF・透かしには
                     <code className="mx-0.5 rounded bg-surface-sand px-1.5 py-0.5 font-mono text-[0.95em] text-ink">
-                      撮影：{form.senderName.trim() || "〜"}
+                      {formatCredit(form.senderName, form.creditFormat) ||
+                        CREDIT_FORMATS[form.creditFormat].preview}
                     </code>
                     の形式で埋め込まれます
                   </p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <p className="block text-[13px] font-medium text-ink-soft">クレジット表記</p>
+                  <div
+                    role="radiogroup"
+                    aria-label="クレジット表記"
+                    className="grid grid-cols-2 gap-1.5 sm:grid-cols-4"
+                  >
+                    {CREDIT_FORMAT_OPTIONS.map((opt) => {
+                      const active = form.creditFormat === opt.value;
+                      return (
+                        <label
+                          key={opt.value}
+                          className={`flex cursor-pointer items-center justify-center rounded-md border-2 px-2 py-1.5 text-[13px] transition-colors ${
+                            active
+                              ? "border-brand bg-brand-tint text-ink"
+                              : "border-surface-sand-deep bg-surface text-ink-soft hover:bg-surface-sand"
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="credit-format"
+                            value={opt.value}
+                            checked={active}
+                            onChange={() => setForm({ ...form, creditFormat: opt.value })}
+                            className="sr-only"
+                          />
+                          {opt.label}
+                        </label>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 {(exifMode !== "disabled" || watermarkMode !== "disabled") && (
@@ -406,7 +453,7 @@ export default function UploadPage() {
           onClose={() => setWatermarkDialogOpen(false)}
           options={form.watermark}
           onChange={(w) => setForm({ ...form, watermark: w })}
-          text={formatCredit(form.senderName)}
+          text={formatCredit(form.senderName, form.creditFormat)}
           previewFile={previewFile}
         />
       </div>

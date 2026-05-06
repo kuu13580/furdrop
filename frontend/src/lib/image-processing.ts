@@ -23,6 +23,19 @@ export type WatermarkPosition =
 /** 白固定 / 黒固定 / 描画領域の明るさから自動選択 */
 export type WatermarkColor = "#ffffff" | "#000000" | "auto";
 
+/** ゴシック / 明朝 / 等幅。日本語環境を優先したフォントスタックを使用 */
+export type WatermarkFontFamily = "sans" | "serif" | "mono";
+
+/**
+ * Canvas の ctx.font に渡すフォントスタック。
+ * 端末ごとに見え方が変わらないよう、和文/欧文ともに OS 共通のシステムフォントを優先指定する。
+ */
+export const WATERMARK_FONT_STACKS: Record<WatermarkFontFamily, string> = {
+  sans: '"Hiragino Sans", "Yu Gothic", "Noto Sans JP", system-ui, sans-serif',
+  serif: '"Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", "Times New Roman", serif',
+  mono: '"SF Mono", Menlo, Consolas, "Courier New", monospace',
+};
+
 export type WatermarkOptions = {
   position: WatermarkPosition;
   /** 画像長辺に対するフォントサイズ比 (0.01 〜 0.05) */
@@ -30,6 +43,7 @@ export type WatermarkOptions = {
   /** 透明度 (0.1 〜 1.0) */
   opacity: number;
   color: WatermarkColor;
+  fontFamily: WatermarkFontFamily;
   /** 縁取り (反対色のアウトライン)。視認性は上がるが主張が強くなる */
   stroke: boolean;
 };
@@ -37,20 +51,44 @@ export type WatermarkOptions = {
 export const DEFAULT_WATERMARK: WatermarkOptions = {
   position: "bottom-right",
   fontSizeRatio: 0.02,
-  opacity: 0.5,
+  opacity: 0.8,
   color: "auto",
+  fontFamily: "sans",
   stroke: false,
 };
 
 type AnyCanvas = OffscreenCanvas | HTMLCanvasElement;
 
+/** EXIF / 透かしに埋め込むクレジット文字列のフォーマット種別 */
+export type CreditFormat = "shot_by" | "photo_by" | "copyright" | "name_only";
+
 /**
- * EXIF/透かしに埋め込む「撮影：〜」形式のクレジット文字列を生成する。
+ * 各フォーマットの表示用ラベルと、senderName を受け取って実際の文字列を返すフォーマッタ。
+ * UI のラベル/プレビュー表示と実際の埋め込み文字列の整合を一箇所で保つためにここに集約する。
+ */
+export const CREDIT_FORMATS: Record<
+  CreditFormat,
+  { label: string; preview: string; format: (name: string) => string }
+> = {
+  shot_by: { label: "撮影：〜", preview: "撮影：〜", format: (n) => `撮影：${n}` },
+  photo_by: { label: "Photo by 〜", preview: "Photo by 〜", format: (n) => `Photo by ${n}` },
+  copyright: { label: "© 〜", preview: "© 〜", format: (n) => `© ${n}` },
+  name_only: { label: "〜 (名前のみ)", preview: "〜", format: (n) => n },
+};
+
+export const DEFAULT_CREDIT_FORMAT: CreditFormat = "shot_by";
+
+/**
+ * EXIF/透かしに埋め込むクレジット文字列を生成する。
  * senderName が空の場合は空文字を返す。
  */
-export function formatCredit(senderName: string): string {
+export function formatCredit(
+  senderName: string,
+  format: CreditFormat = DEFAULT_CREDIT_FORMAT,
+): string {
   const trimmed = senderName.trim();
-  return trimmed ? `撮影：${trimmed}` : "";
+  if (!trimmed) return "";
+  return CREDIT_FORMATS[format].format(trimmed);
 }
 
 /** 入力がHEIC系か判定 (MIME / 拡張子) */
@@ -211,12 +249,12 @@ export function drawWatermark(
   options: WatermarkOptions,
 ) {
   if (!text) return;
-  const { position, fontSizeRatio, opacity, color, stroke } = options;
+  const { position, fontSizeRatio, opacity, color, fontFamily, stroke } = options;
   const fontSize = Math.max(12, Math.round(Math.max(w, h) * fontSizeRatio));
   const pad = Math.round(fontSize * 0.6);
 
   ctx.save();
-  ctx.font = `bold ${fontSize}px sans-serif`;
+  ctx.font = `bold ${fontSize}px ${WATERMARK_FONT_STACKS[fontFamily]}`;
   ctx.textBaseline = "middle";
 
   const [vertical, horizontal] = position.split("-") as [

@@ -273,7 +273,7 @@ async function runPipeline({
 
   // --- 画像加工フェーズ ---
   onOverall("processing");
-  const credit = formatCredit(form.senderName);
+  const credit = formatCredit(form.senderName, form.creditFormat);
   const exifText = form.exifEnabled && credit ? credit : "";
   const watermarkText = form.watermarkEnabled && credit ? credit : "";
   const processedResults = await runConcurrent(

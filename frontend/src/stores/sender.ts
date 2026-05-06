@@ -1,5 +1,10 @@
 import { atom } from "jotai";
-import { DEFAULT_WATERMARK, type WatermarkOptions } from "../lib/image-processing";
+import {
+  type CreditFormat,
+  DEFAULT_CREDIT_FORMAT,
+  DEFAULT_WATERMARK,
+  type WatermarkOptions,
+} from "../lib/image-processing";
 
 export type SelectedFile = {
   id: string;
@@ -12,6 +17,8 @@ export type SelectedFile = {
 
 export type UploadFormState = {
   senderName: string;
+  /** クレジット文字列のフォーマット（EXIF / 透かしの両方に適用） */
+  creditFormat: CreditFormat;
   /** EXIFカメラモデル欄に senderName を埋め込む */
   exifEnabled: boolean;
   /** 透かしを入れる。テキストは senderName を使う */
@@ -23,6 +30,7 @@ export const selectedFilesAtom = atom<SelectedFile[]>([]);
 
 export const uploadFormAtom = atom<UploadFormState>({
   senderName: "",
+  creditFormat: DEFAULT_CREDIT_FORMAT,
   exifEnabled: false,
   watermarkEnabled: false,
   watermark: { ...DEFAULT_WATERMARK },

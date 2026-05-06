@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import {
   drawWatermark,
+  WATERMARK_FONT_STACKS,
+  type WatermarkFontFamily,
   type WatermarkOptions,
   type WatermarkPosition,
 } from "../../lib/image-processing";
@@ -17,6 +19,12 @@ const POSITIONS: WatermarkPosition[] = [
   "bottom-left",
   "bottom-center",
   "bottom-right",
+];
+
+const FONT_FAMILIES: { value: WatermarkFontFamily; label: string }[] = [
+  { value: "sans", label: "ゴシック" },
+  { value: "serif", label: "明朝" },
+  { value: "mono", label: "等幅" },
 ];
 
 /** 透かし位置 → ズーム時の transform-origin (% x, % y) */
@@ -258,6 +266,36 @@ export default function WatermarkDialog({
               <span className="text-white">自</span>
               <span className="text-ink">動</span>
             </button>
+          </div>
+        </div>
+
+        <div>
+          <p className="mb-1 block text-[13px] font-medium text-ink-soft">フォント</p>
+          <div role="radiogroup" aria-label="フォント" className="grid grid-cols-3 gap-1.5">
+            {FONT_FAMILIES.map((f) => {
+              const active = options.fontFamily === f.value;
+              return (
+                <label
+                  key={f.value}
+                  className={`flex cursor-pointer items-center justify-center rounded-md border-2 px-2 py-1.5 text-[13px] transition-colors ${
+                    active
+                      ? "border-brand bg-brand-tint text-ink"
+                      : "border-surface-sand-deep bg-surface text-ink-soft hover:bg-surface-sand"
+                  }`}
+                  style={{ fontFamily: WATERMARK_FONT_STACKS[f.value] }}
+                >
+                  <input
+                    type="radio"
+                    name="watermark-font"
+                    value={f.value}
+                    checked={active}
+                    onChange={() => onChange({ ...options, fontFamily: f.value })}
+                    className="sr-only"
+                  />
+                  {f.label}
+                </label>
+              );
+            })}
           </div>
         </div>
 
