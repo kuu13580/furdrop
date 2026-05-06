@@ -144,6 +144,9 @@ export default function UploadPage() {
   const exifMode: EmbedMode = receiverOptions?.exif_embed_mode ?? "disabled";
   const watermarkMode: EmbedMode = receiverOptions?.watermark_mode ?? "disabled";
   const anyRequired = exifMode === "required" || watermarkMode === "required";
+  // ヘルパーテキストとチェックボックス説明で同じプレビュー文字列を使う
+  const creditPreview =
+    formatCredit(form.senderName, form.creditFormat) || CREDIT_FORMATS[form.creditFormat].preview;
   // 必須モードがある場合は senderName が必須。そうでなければ送信者名なし同意で代替可
   const canSubmit =
     files.length > 0 && (anyRequired ? hasSenderName : hasSenderName || noCreditConsent);
@@ -285,8 +288,7 @@ export default function UploadPage() {
                   <p className="text-[13px] text-ink-soft">
                     受信者に表示されます。EXIF・透かしには
                     <code className="mx-0.5 rounded bg-surface-sand px-1.5 py-0.5 font-mono text-[0.95em] text-ink">
-                      {formatCredit(form.senderName, form.creditFormat) ||
-                        CREDIT_FORMATS[form.creditFormat].preview}
+                      {creditPreview}
                     </code>
                     の形式で埋め込まれます
                   </p>
@@ -344,7 +346,7 @@ export default function UploadPage() {
                             {exifMode === "required" && <RequiredBadge />}
                           </span>
                           <span className="mt-0.5 block text-[13px] text-ink-soft">
-                            メタデータに「撮影：〜」を書き込みます（元のカメラ情報は上書き）
+                            メタデータに「{creditPreview}」を書き込みます（元のカメラ情報は上書き）
                           </span>
                         </span>
                       </label>
@@ -370,7 +372,7 @@ export default function UploadPage() {
                               {watermarkMode === "required" && <RequiredBadge />}
                             </span>
                             <span className="mt-0.5 block text-[13px] text-ink-soft">
-                              画像に「撮影：〜」を描き込みます（不可逆）
+                              画像に「{creditPreview}」を描き込みます（不可逆）
                             </span>
                           </span>
                         </label>

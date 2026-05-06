@@ -25,6 +25,9 @@ const FONT_FAMILIES: { value: WatermarkFontFamily; label: string }[] = [
   { value: "sans", label: "ゴシック" },
   { value: "serif", label: "明朝" },
   { value: "mono", label: "等幅" },
+  { value: "handwriting", label: "手書き" },
+  { value: "pop", label: "ポップ" },
+  { value: "pixel", label: "ドット" },
 ];
 
 /** 透かし位置 → ズーム時の transform-origin (% x, % y) */
@@ -208,9 +211,9 @@ export default function WatermarkDialog({
           <input
             id="wmSize"
             type="range"
-            min="0.01"
-            max="0.05"
-            step="0.005"
+            min="0.005"
+            max="0.08"
+            step="0.002"
             value={options.fontSizeRatio}
             onChange={(e) =>
               onChange({ ...options, fontSizeRatio: Number.parseFloat(e.target.value) })

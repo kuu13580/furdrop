@@ -23,17 +23,21 @@ export type WatermarkPosition =
 /** 白固定 / 黒固定 / 描画領域の明るさから自動選択 */
 export type WatermarkColor = "#ffffff" | "#000000" | "auto";
 
-/** ゴシック / 明朝 / 等幅。日本語環境を優先したフォントスタックを使用 */
-export type WatermarkFontFamily = "sans" | "serif" | "mono";
-
 /**
- * Canvas の ctx.font に渡すフォントスタック。
- * 端末ごとに見え方が変わらないよう、和文/欧文ともに OS 共通のシステムフォントを優先指定する。
+ * 透かしのフォント種別。
+ * sans/serif/mono は OS 共通のシステムフォント。
+ * handwriting/pop/pixel は Google Fonts (index.html で読み込み済) を使い、未ロード時はシステムフォントにフォールバックする。
  */
+export type WatermarkFontFamily = "sans" | "serif" | "mono" | "handwriting" | "pop" | "pixel";
+
+/** Canvas の ctx.font に渡すフォントスタック */
 export const WATERMARK_FONT_STACKS: Record<WatermarkFontFamily, string> = {
   sans: '"Hiragino Sans", "Yu Gothic", "Noto Sans JP", system-ui, sans-serif',
   serif: '"Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", "Times New Roman", serif',
   mono: '"SF Mono", Menlo, Consolas, "Courier New", monospace',
+  handwriting: '"Klee One", "Hiragino Mincho ProN", "Yu Mincho", serif',
+  pop: '"Reggae One", "Hiragino Sans", "Yu Gothic", sans-serif',
+  pixel: '"DotGothic16", "Hiragino Sans", monospace',
 };
 
 export type WatermarkOptions = {
