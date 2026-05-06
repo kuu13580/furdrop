@@ -237,16 +237,18 @@ export default function WatermarkDialog({
 
         <div>
           <p className="mb-1 block text-[13px] font-medium text-ink-soft">フォント</p>
-          <div role="radiogroup" aria-label="フォント" className="grid grid-cols-3 gap-1.5">
+          <div
+            role="radiogroup"
+            aria-label="フォント"
+            className="grid grid-cols-3 gap-1 rounded-xl bg-surface-sand p-1"
+          >
             {FONT_FAMILIES.map((f) => {
               const active = options.fontFamily === f.value;
               return (
                 <label
                   key={f.value}
-                  className={`flex cursor-pointer items-center justify-center rounded-md border-2 px-2 py-1.5 text-[13px] transition-colors ${
-                    active
-                      ? "border-brand bg-brand-tint text-ink"
-                      : "border-surface-sand-deep bg-surface text-ink-soft hover:bg-surface-sand"
+                  className={`flex cursor-pointer items-center justify-center rounded-lg px-2 py-1.5 text-[13px] transition-colors ${
+                    active ? "bg-surface text-ink shadow-card" : "text-ink-soft hover:text-ink"
                   }`}
                   style={{ fontFamily: WATERMARK_FONT_STACKS[f.value] }}
                 >
@@ -266,11 +268,9 @@ export default function WatermarkDialog({
         </div>
 
         <details className="group rounded-xl border border-surface-sand-deep bg-surface-canvas/40">
-          <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-2 text-[13px] font-medium text-ink-soft">
+          <summary className="flex cursor-pointer list-none items-center justify-between rounded-xl px-3 py-2 text-[13px] font-medium text-ink-soft transition-colors hover:bg-surface-sand">
             <span>詳細設定（色・縁取り）</span>
-            <span className="text-ink-muted transition-transform group-open:rotate-180" aria-hidden>
-              ▾
-            </span>
+            <ChevronIcon />
           </summary>
           <div className="space-y-3 px-3 pb-3 pt-1">
             <div>
@@ -321,6 +321,27 @@ export default function WatermarkDialog({
         </details>
       </div>
     </Dialog>
+  );
+}
+
+function ChevronIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      role="img"
+      aria-label="開閉"
+      className="text-ink-muted transition-transform group-open:rotate-180"
+    >
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
   );
 }
 

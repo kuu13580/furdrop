@@ -2,6 +2,7 @@ import { type ReactNode, useEffect } from "react";
 
 type DialogSize = "sm" | "md" | "lg";
 
+/** size はダイアログの最大幅のみを制御する。縦の制限は親ラッパーの padding に任せる */
 const SIZE_CLASS: Record<DialogSize, string> = {
   sm: "max-w-sm",
   md: "max-w-md",
@@ -36,7 +37,7 @@ export default function Dialog({ open, onClose, title, children, footer, size = 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 px-4 py-20 backdrop-blur-sm">
       <button
         type="button"
         aria-label="閉じる"
@@ -47,7 +48,7 @@ export default function Dialog({ open, onClose, title, children, footer, size = 
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? "dialog-title" : undefined}
-        className={`relative z-10 flex max-h-[90dvh] w-full ${SIZE_CLASS[size]} flex-col overflow-hidden rounded-[20px] bg-surface text-ink shadow-modal`}
+        className={`relative z-10 flex max-h-full w-full ${SIZE_CLASS[size]} flex-col overflow-hidden rounded-3xl bg-surface text-ink shadow-modal`}
       >
         {title && (
           <div className="flex shrink-0 items-center justify-between border-b border-surface-sand-deep px-5 py-3.5">

@@ -73,7 +73,7 @@ export const CREDIT_FORMATS: Record<
   shot_by: { label: "撮影：〜", preview: "撮影：〜", format: (n) => `撮影：${n}` },
   photo_by: { label: "Photo by 〜", preview: "Photo by 〜", format: (n) => `Photo by ${n}` },
   copyright: { label: "© 〜", preview: "© 〜", format: (n) => `© ${n}` },
-  name_only: { label: "〜 (名前のみ)", preview: "〜", format: (n) => n },
+  name_only: { label: "名前のみ", preview: "〜", format: (n) => n },
 };
 
 export const DEFAULT_CREDIT_FORMAT: CreditFormat = "shot_by";

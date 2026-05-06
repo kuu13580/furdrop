@@ -297,17 +297,17 @@ export default function UploadPage() {
                   <div
                     role="radiogroup"
                     aria-label="クレジット表記"
-                    className="grid grid-cols-2 gap-1.5 sm:grid-cols-4"
+                    className="grid grid-cols-2 gap-1 rounded-xl bg-surface-sand p-1 sm:grid-cols-4"
                   >
                     {CREDIT_FORMAT_OPTIONS.map((opt) => {
                       const active = form.creditFormat === opt.value;
                       return (
                         <label
                           key={opt.value}
-                          className={`flex cursor-pointer items-center justify-center rounded-md border-2 px-2 py-1.5 text-[13px] transition-colors ${
+                          className={`flex cursor-pointer items-center justify-center rounded-lg px-2 py-1.5 text-center text-[13px] transition-colors ${
                             active
-                              ? "border-brand bg-brand-tint text-ink"
-                              : "border-surface-sand-deep bg-surface text-ink-soft hover:bg-surface-sand"
+                              ? "bg-surface text-ink shadow-card"
+                              : "text-ink-soft hover:text-ink"
                           }`}
                         >
                           <input
