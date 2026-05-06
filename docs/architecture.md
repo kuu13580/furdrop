@@ -4,7 +4,7 @@
 
 ```mermaid
 graph TD
-    Browser[ブラウザ / PWA]
+    Browser[ブラウザ]
     Browser --> Pages[Cloudflare Pages<br/>静的ホスティング]
     Browser --> Workers[Cloudflare Workers<br/>API / ビジネスロジック]
     Workers --> Firebase[Firebase Auth<br/>JWT検証]
@@ -17,7 +17,7 @@ graph TD
 
 | レイヤー | 技術 | 理由 |
 |---|---|---|
-| フロントエンド | React + TypeScript + Vite | PWA対応、開発体験 |
+| フロントエンド | React + TypeScript + Vite | 開発体験（PWA 化は Phase 2） |
 | ホスティング | Cloudflare Pages | 無料、エッジ配信 |
 | API | Cloudflare Workers (Hono) | 軽量、R2/D1とネイティブ連携 |
 | DB | Cloudflare D1 (SQLite) | 無料枠5GB、エッジ |
@@ -26,8 +26,8 @@ graph TD
 | 状態管理 | Jotai | アトム単位で軽量・シンプル |
 | CSS | Tailwind CSS | ユーティリティファースト、最小UIから段階的に改善 |
 | E2Eテスト | Playwright | 主要フローの動作検証 |
-| PWA | vite-plugin-pwa (Workbox) | Service Worker自動生成 |
-| プッシュ通知 | Firebase Cloud Messaging (FCM) | Firebase Auth と統合、PWA対応 |
+| PWA | vite-plugin-pwa (Workbox)（**Phase 2**） | Service Worker 自動生成。MVP では未導入 |
+| プッシュ通知 | Firebase Cloud Messaging (FCM)（**Phase 2**） | Firebase Auth と統合、PWA対応。MVP では未導入 |
 | インフラ管理 | wrangler.toml + CLI | この規模ではIaC(Terraform等)不要 |
 
 ---
@@ -53,9 +53,9 @@ CREATE TABLE users (
     -- 'required' は送信者に必ず埋め込みを行わせる(サーバ側でも必須検証)
     exif_embed_mode   TEXT NOT NULL DEFAULT 'disabled',
     watermark_mode    TEXT NOT NULL DEFAULT 'disabled',  -- 透かしは不可逆のため慎重に
-    -- プッシュ通知 (R09)
-    fcm_token         TEXT,                        -- FCMデバイストークン
-    push_enabled      INTEGER NOT NULL DEFAULT 1,  -- 通知ON/OFF
+    -- プッシュ通知 (R09): Phase 2 で導入予定。MVP の DB スキーマには含めない
+    -- fcm_token         TEXT,
+    -- push_enabled      INTEGER NOT NULL DEFAULT 1,
     created_at        INTEGER NOT NULL,            -- UNIX秒
     updated_at        INTEGER NOT NULL             -- UNIX秒
 );
