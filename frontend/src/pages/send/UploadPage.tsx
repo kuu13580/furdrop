@@ -8,8 +8,21 @@ import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
 import { type EmbedMode, senderApi } from "../../lib/api";
 import { runConcurrent } from "../../lib/concurrency";
-import { formatCredit, generateThumbnail, MAX_FILE_SIZE } from "../../lib/image-processing";
+import {
+  CREDIT_FORMATS,
+  type CreditFormat,
+  formatCredit,
+  generateThumbnail,
+  MAX_FILE_SIZE,
+} from "../../lib/image-processing";
 import { type SelectedFile, selectedFilesAtom, uploadFormAtom } from "../../stores/sender";
+
+const CREDIT_FORMAT_OPTIONS: { value: CreditFormat; label: string }[] = [
+  { value: "shot_by", label: CREDIT_FORMATS.shot_by.label },
+  { value: "photo_by", label: CREDIT_FORMATS.photo_by.label },
+  { value: "copyright", label: CREDIT_FORMATS.copyright.label },
+  { value: "name_only", label: CREDIT_FORMATS.name_only.label },
+];
 
 const ACCEPT = "image/jpeg,image/png,image/heic,image/heif,.heic,.heif";
 const MAX_PHOTOS_PER_SESSION = 100;
@@ -131,6 +144,9 @@ export default function UploadPage() {
   const exifMode: EmbedMode = receiverOptions?.exif_embed_mode ?? "disabled";
   const watermarkMode: EmbedMode = receiverOptions?.watermark_mode ?? "disabled";
   const anyRequired = exifMode === "required" || watermarkMode === "required";
+  // ヘルパーテキストとチェックボックス説明で同じプレビュー文字列を使う
+  const creditPreview =
+    formatCredit(form.senderName, form.creditFormat) || CREDIT_FORMATS[form.creditFormat].preview;
   // 必須モードがある場合は senderName が必須。そうでなければ送信者名なし同意で代替可
   const canSubmit =
     files.length > 0 && (anyRequired ? hasSenderName : hasSenderName || noCreditConsent);
@@ -272,10 +288,43 @@ export default function UploadPage() {
                   <p className="text-[13px] text-ink-soft">
                     受信者に表示されます。EXIF・透かしには
                     <code className="mx-0.5 rounded bg-surface-sand px-1.5 py-0.5 font-mono text-[0.95em] text-ink">
-                      撮影：{form.senderName.trim() || "〜"}
+                      {creditPreview}
                     </code>
                     の形式で埋め込まれます
                   </p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <p className="block text-[13px] font-medium text-ink-soft">クレジット表記</p>
+                  <div
+                    role="radiogroup"
+                    aria-label="クレジット表記"
+                    className="grid grid-cols-2 gap-1 rounded-xl bg-surface-sand p-1 sm:grid-cols-4"
+                  >
+                    {CREDIT_FORMAT_OPTIONS.map((opt) => {
+                      const active = form.creditFormat === opt.value;
+                      return (
+                        <label
+                          key={opt.value}
+                          className={`flex cursor-pointer items-center justify-center rounded-lg px-2 py-1.5 text-center text-[13px] transition-colors ${
+                            active
+                              ? "bg-surface text-ink shadow-card"
+                              : "text-ink-soft hover:text-ink"
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="credit-format"
+                            value={opt.value}
+                            checked={active}
+                            onChange={() => setForm({ ...form, creditFormat: opt.value })}
+                            className="sr-only"
+                          />
+                          {opt.label}
+                        </label>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 {(exifMode !== "disabled" || watermarkMode !== "disabled") && (
@@ -297,7 +346,7 @@ export default function UploadPage() {
                             {exifMode === "required" && <RequiredBadge />}
                           </span>
                           <span className="mt-0.5 block text-[13px] text-ink-soft">
-                            メタデータに「撮影：〜」を書き込みます（元のカメラ情報は上書き）
+                            メタデータに「{creditPreview}」を書き込みます（元のカメラ情報は上書き）
                           </span>
                         </span>
                       </label>
@@ -323,7 +372,7 @@ export default function UploadPage() {
                               {watermarkMode === "required" && <RequiredBadge />}
                             </span>
                             <span className="mt-0.5 block text-[13px] text-ink-soft">
-                              画像に「撮影：〜」を描き込みます（不可逆）
+                              画像に「{creditPreview}」を描き込みます（不可逆）
                             </span>
                           </span>
                         </label>
@@ -406,7 +455,7 @@ export default function UploadPage() {
           onClose={() => setWatermarkDialogOpen(false)}
           options={form.watermark}
           onChange={(w) => setForm({ ...form, watermark: w })}
-          text={formatCredit(form.senderName)}
+          text={formatCredit(form.senderName, form.creditFormat)}
           previewFile={previewFile}
         />
       </div>

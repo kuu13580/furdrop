@@ -972,7 +972,7 @@ function ConfirmDialogSection() {
             例: 写真を削除
           </div>
           <div className="relative overflow-hidden rounded-[20px] bg-ink/40 p-6 backdrop-blur-sm">
-            <div className="mx-auto w-full max-w-lg overflow-hidden rounded-[20px] bg-surface shadow-modal">
+            <div className="mx-auto w-full max-w-lg overflow-hidden rounded-3xl bg-surface shadow-modal">
               <div className="flex items-center justify-between border-b border-surface-sand-deep px-5 py-3.5">
                 <div className="text-[16px] font-semibold text-ink">3枚の写真を削除しますか？</div>
                 <div className="text-[20px] leading-none text-ink-muted">×</div>
@@ -998,7 +998,7 @@ function ConfirmDialogSection() {
             例: ログアウト
           </div>
           <div className="relative overflow-hidden rounded-[20px] bg-ink/40 p-6 backdrop-blur-sm">
-            <div className="mx-auto w-full max-w-lg overflow-hidden rounded-[20px] bg-surface shadow-modal">
+            <div className="mx-auto w-full max-w-lg overflow-hidden rounded-3xl bg-surface shadow-modal">
               <div className="flex items-center justify-between border-b border-surface-sand-deep px-5 py-3.5">
                 <div className="text-[16px] font-semibold text-ink">ログアウトしますか？</div>
                 <div className="text-[20px] leading-none text-ink-muted">×</div>

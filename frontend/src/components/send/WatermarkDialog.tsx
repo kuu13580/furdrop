@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import {
   drawWatermark,
+  WATERMARK_FONT_STACKS,
+  type WatermarkFontFamily,
   type WatermarkOptions,
   type WatermarkPosition,
 } from "../../lib/image-processing";
@@ -17,6 +19,13 @@ const POSITIONS: WatermarkPosition[] = [
   "bottom-left",
   "bottom-center",
   "bottom-right",
+];
+
+const FONT_FAMILIES: { value: WatermarkFontFamily; label: string }[] = [
+  { value: "sans", label: "ゴシック" },
+  { value: "serif", label: "明朝" },
+  { value: "mono", label: "等幅" },
+  { value: "pop", label: "ポップ" },
 ];
 
 /** 透かし位置 → ズーム時の transform-origin (% x, % y) */
@@ -58,13 +67,13 @@ export default function WatermarkDialog({
   const bitmapRef = useRef<ImageBitmap | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [previewReady, setPreviewReady] = useState(false);
-  /** 透かし位置を中心にズームするトグル */
-  const [zoomed, setZoomed] = useState(false);
+  /** 透かし位置を中心にズームするトグル。開いた直後は実寸感を確認しやすいよう拡大状態 */
+  const [zoomed, setZoomed] = useState(true);
 
   // ダイアログopen時に1枚目をビットマップ化してキャッシュ
   useEffect(() => {
     if (!open) {
-      setZoomed(false);
+      setZoomed(true);
     }
     if (!open || !previewFile) {
       setPreviewReady(false);
@@ -125,6 +134,7 @@ export default function WatermarkDialog({
       open={open}
       onClose={onClose}
       title="透かしの設定"
+      size="md"
       footer={
         <div className="flex justify-end">
           <Button variant="primary" onClick={onClose}>
@@ -199,9 +209,9 @@ export default function WatermarkDialog({
           <input
             id="wmSize"
             type="range"
-            min="0.01"
-            max="0.05"
-            step="0.005"
+            min="0.005"
+            max="0.08"
+            step="0.002"
             value={options.fontSizeRatio}
             onChange={(e) =>
               onChange({ ...options, fontSizeRatio: Number.parseFloat(e.target.value) })
@@ -227,51 +237,112 @@ export default function WatermarkDialog({
         </div>
 
         <div>
-          <p className="mb-1 block text-[13px] font-medium text-ink-soft">色</p>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => onChange({ ...options, color: "#ffffff" })}
-              className={`h-7 w-12 rounded-md border-2 bg-white text-[13px] text-ink transition-colors ${
-                options.color === "#ffffff" ? "border-brand" : "border-surface-sand-deep"
-              }`}
-            >
-              白
-            </button>
-            <button
-              type="button"
-              onClick={() => onChange({ ...options, color: "#000000" })}
-              className={`h-7 w-12 rounded-md border-2 bg-ink text-[13px] text-white transition-colors ${
-                options.color === "#000000" ? "border-brand" : "border-ink-soft"
-              }`}
-            >
-              黒
-            </button>
-            <button
-              type="button"
-              onClick={() => onChange({ ...options, color: "auto" })}
-              className={`h-7 rounded-md border-2 bg-gradient-to-r from-ink from-50% to-white to-50% px-3 text-[12px] font-medium transition-colors ${
-                options.color === "auto" ? "border-brand" : "border-surface-sand-deep"
-              }`}
-              title="描画領域の明るさから白/黒を自動選択"
-            >
-              <span className="text-white">自</span>
-              <span className="text-ink">動</span>
-            </button>
+          <p className="mb-1 block text-[13px] font-medium text-ink-soft">フォント</p>
+          <div
+            role="radiogroup"
+            aria-label="フォント"
+            className="grid grid-cols-4 gap-1 rounded-xl bg-surface-sand p-1"
+          >
+            {FONT_FAMILIES.map((f) => {
+              const active = options.fontFamily === f.value;
+              return (
+                <label
+                  key={f.value}
+                  className={`flex cursor-pointer items-center justify-center rounded-lg px-2 py-1.5 text-[13px] transition-colors ${
+                    active ? "bg-surface text-ink shadow-card" : "text-ink-soft hover:text-ink"
+                  }`}
+                  style={{ fontFamily: WATERMARK_FONT_STACKS[f.value] }}
+                >
+                  <input
+                    type="radio"
+                    name="watermark-font"
+                    value={f.value}
+                    checked={active}
+                    onChange={() => onChange({ ...options, fontFamily: f.value })}
+                    className="sr-only"
+                  />
+                  {f.label}
+                </label>
+              );
+            })}
           </div>
         </div>
 
-        <label className="flex items-center gap-2 text-[13px] font-medium text-ink-soft">
-          <input
-            type="checkbox"
-            checked={options.stroke}
-            onChange={(e) => onChange({ ...options, stroke: e.target.checked })}
-            className="h-4 w-4 accent-brand"
-          />
-          <span>縁取り（反対色のアウトラインで視認性UP）</span>
-        </label>
+        <details className="group rounded-xl border border-surface-sand-deep bg-surface-canvas/40">
+          <summary className="flex cursor-pointer list-none items-center justify-between rounded-xl px-3 py-2 text-[13px] font-medium text-ink-soft transition-colors hover:bg-surface-sand">
+            <span>詳細設定（色・縁取り）</span>
+            <ChevronIcon />
+          </summary>
+          <div className="space-y-3 px-3 pb-3 pt-1">
+            <div>
+              <p className="mb-1 block text-[13px] font-medium text-ink-soft">色</p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => onChange({ ...options, color: "#ffffff" })}
+                  className={`h-7 w-12 rounded-md border-2 bg-white text-[13px] text-ink transition-colors ${
+                    options.color === "#ffffff" ? "border-brand" : "border-surface-sand-deep"
+                  }`}
+                >
+                  白
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onChange({ ...options, color: "#000000" })}
+                  className={`h-7 w-12 rounded-md border-2 bg-ink text-[13px] text-white transition-colors ${
+                    options.color === "#000000" ? "border-brand" : "border-ink-soft"
+                  }`}
+                >
+                  黒
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onChange({ ...options, color: "auto" })}
+                  className={`h-7 rounded-md border-2 bg-gradient-to-r from-ink from-50% to-white to-50% px-3 text-[12px] font-medium transition-colors ${
+                    options.color === "auto" ? "border-brand" : "border-surface-sand-deep"
+                  }`}
+                  title="描画領域の明るさから白/黒を自動選択"
+                >
+                  <span className="text-white">自</span>
+                  <span className="text-ink">動</span>
+                </button>
+              </div>
+            </div>
+
+            <label className="flex items-center gap-2 text-[13px] font-medium text-ink-soft">
+              <input
+                type="checkbox"
+                checked={options.stroke}
+                onChange={(e) => onChange({ ...options, stroke: e.target.checked })}
+                className="h-4 w-4 accent-brand"
+              />
+              <span>縁取り（反対色のアウトラインで視認性UP）</span>
+            </label>
+          </div>
+        </details>
       </div>
     </Dialog>
+  );
+}
+
+function ChevronIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      role="img"
+      aria-label="開閉"
+      className="text-ink-muted transition-transform group-open:rotate-180"
+    >
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
   );
 }
 
