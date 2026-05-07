@@ -25,9 +25,7 @@ const FONT_FAMILIES: { value: WatermarkFontFamily; label: string }[] = [
   { value: "sans", label: "ゴシック" },
   { value: "serif", label: "明朝" },
   { value: "mono", label: "等幅" },
-  { value: "handwriting", label: "手書き" },
   { value: "pop", label: "ポップ" },
-  { value: "pixel", label: "ドット" },
 ];
 
 /** 透かし位置 → ズーム時の transform-origin (% x, % y) */
@@ -243,7 +241,7 @@ export default function WatermarkDialog({
           <div
             role="radiogroup"
             aria-label="フォント"
-            className="grid grid-cols-3 gap-1 rounded-xl bg-surface-sand p-1"
+            className="grid grid-cols-4 gap-1 rounded-xl bg-surface-sand p-1"
           >
             {FONT_FAMILIES.map((f) => {
               const active = options.fontFamily === f.value;
