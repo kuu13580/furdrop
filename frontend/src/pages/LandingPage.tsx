@@ -314,9 +314,9 @@ export default function LandingPage() {
           </Link>
           <div className="flex items-center gap-3">
             <nav className="hidden items-center gap-[26px] text-[13px] text-ink-soft md:flex">
-              <a href="#how" className="cursor-pointer">
+              <Link to="/guide" className="cursor-pointer">
                 使い方
-              </a>
+              </Link>
               <a href="#features" className="cursor-pointer">
                 機能
               </a>
@@ -368,8 +368,16 @@ export default function LandingPage() {
         {menuOpen && (
           <nav className="border-t border-[#e0d6c5] bg-[rgba(250,246,240,0.96)] md:hidden">
             <ul className="flex flex-col text-[14px] text-ink-soft">
+              <li>
+                <Link
+                  to="/guide"
+                  onClick={() => setMenuOpen(false)}
+                  className="block px-5 py-3 text-inherit"
+                >
+                  使い方
+                </Link>
+              </li>
               {[
-                { href: "#how", label: "使い方" },
                 { href: "#features", label: "機能" },
                 { href: "#compare", label: "比較" },
               ].map((item) => (
@@ -658,6 +666,15 @@ export default function LandingPage() {
               title="写真が届く"
               body={"送る側はURLにドロップするだけ。\nアカウント不要、匿名のまま。"}
             />
+          </div>
+          <div className="mt-10 flex justify-center md:mt-14">
+            <Link
+              to="/guide"
+              className="inline-flex items-center gap-2 rounded-full border border-[#e0d6c5] bg-white px-5 py-3 text-[13px] font-semibold text-ink-soft transition-colors hover:border-brand/50 hover:text-brand"
+            >
+              詳しい使い方を見る
+              <span aria-hidden="true">→</span>
+            </Link>
           </div>
         </div>
       </section>

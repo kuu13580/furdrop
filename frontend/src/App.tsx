@@ -9,6 +9,7 @@ import { useAuthInit } from "./hooks/useAuthInit";
 import DashboardPage from "./pages/DashboardPage";
 import DesignPreviewPage from "./pages/DesignPreviewPage";
 import GalleryPage from "./pages/GalleryPage";
+import GuidePage from "./pages/GuidePage";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import NotFoundPage from "./pages/NotFoundPage";
@@ -19,6 +20,10 @@ import SendLandingPage from "./pages/send/LandingPage";
 import UploadingPage from "./pages/send/UploadingPage";
 import UploadPage from "./pages/send/UploadPage";
 import { debugAtom } from "./stores/debug";
+
+// 開発時のみ「使い方ガイド」用スクリーンショット撮影ページを bundle に含める
+// (本番ビルドでは import.meta.env.DEV が false で完全に除去される)
+const ShotsPage = import.meta.env.DEV ? lazy(() => import("./pages/__shots__/ShotsPage")) : null;
 
 // 法務ページは表示頻度が低く、Markdown レンダラ (react-markdown + remark-gfm) を含むため
 // メインバンドルから切り離して訪問時のみフェッチする
@@ -95,6 +100,31 @@ export default function App() {
 
         {/* ⚠️ 確認用プレビュー (削除予定): DesignPreviewPage + このルートを消せば削除完了 */}
         <Route path="/design-preview" element={<DesignPreviewPage />} />
+
+        {/* 使い方ガイド (認証不要) */}
+        <Route path="/guide" element={<GuidePage />} />
+
+        {/* 開発時のみ: 使い方ガイド用 UI スクリーンショット撮影ページ */}
+        {ShotsPage && (
+          <>
+            <Route
+              path="/__shots"
+              element={
+                <Suspense fallback={null}>
+                  <ShotsPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/__shots/:slug"
+              element={
+                <Suspense fallback={null}>
+                  <ShotsPage />
+                </Suspense>
+              }
+            />
+          </>
+        )}
 
         {/* ルート → ランディングページ (LP) */}
         <Route path="/" element={<LandingPage />} />

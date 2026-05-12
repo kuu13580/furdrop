@@ -1,0 +1,581 @@
+import { type ReactNode, useState } from "react";
+import { Link, useNavigate } from "react-router";
+import logoUrl from "../assets/logos/logo.png";
+
+const FEEDBACK_URL = import.meta.env.VITE_FEEDBACK_URL ?? "";
+const PUBLIC_HOST = import.meta.env.VITE_PUBLIC_HOST ?? "furdrop.pages.dev";
+
+const MONO = "'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace";
+
+type Audience = "sender" | "receiver";
+
+type Step = {
+  num: string;
+  title: string;
+  body: ReactNode;
+  /** スクリーンショットを差し込む領域。コメントで撮るべき画面を指示する */
+  image: { src: string; alt: string; caption: string };
+  highlight?: boolean;
+};
+
+/**
+ * 「使い方ガイド」ページ。
+ * 送信者・受信者をタブで切り替え、実際の画面に沿った手順を表示する。
+ * スクリーンショットは placehold.jp を仮置きし、各 caption に
+ * 差し替え用の指示コメントを残してある。
+ */
+export default function GuidePage() {
+  const navigate = useNavigate();
+  const [audience, setAudience] = useState<Audience>("sender");
+
+  const steps = audience === "sender" ? SENDER_STEPS : RECEIVER_STEPS;
+
+  return (
+    <div className="flex min-h-dvh flex-col bg-surface-canvas text-ink antialiased">
+      {/* Header — LegalPage と同じスタイルで統一感を保つ */}
+      <header className="sticky top-0 z-20 border-b border-surface-sand-deep bg-surface/85 backdrop-blur">
+        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-3 px-4 sm:h-16 sm:px-6">
+          <Link to="/" className="flex shrink-0 items-center" aria-label="FurDrop ホーム">
+            <img src={logoUrl} alt="FurDrop" className="h-9" />
+          </Link>
+          <button
+            type="button"
+            onClick={() => {
+              if (window.history.length > 1) navigate(-1);
+              else navigate("/");
+            }}
+            className="rounded-lg px-3 py-2 text-[14px] text-ink-soft transition-colors hover:bg-surface-sand hover:text-ink"
+          >
+            戻る
+          </button>
+        </div>
+      </header>
+
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 pb-16 pt-8 sm:px-6 sm:pt-12">
+        {/* Hero */}
+        <section className="mb-8 sm:mb-12">
+          <p
+            className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-brand"
+            style={{ fontFamily: MONO }}
+          >
+            How to use
+          </p>
+          <h1 className="text-[26px] font-bold leading-[1.25] tracking-[-0.02em] text-balance text-ink sm:text-[36px]">
+            FurDropの使い方
+          </h1>
+          <p className="mt-3 max-w-2xl text-[14px] leading-[1.85] text-ink-soft [overflow-wrap:anywhere] sm:text-[15px]">
+            写真を「送る人」と「受け取る人」、それぞれの立場で必要な手順をまとめました。
+            <br className="hidden sm:block" />
+            アカウント登録は受け取る人だけ。送る人はリンクを開くだけで使えます。
+          </p>
+        </section>
+
+        {/* タブ切替 — Sand 台座の pill。Settings の EmbedModeRadioGroup と同じ語彙 */}
+        <div
+          role="tablist"
+          aria-label="読みたい手順を選ぶ"
+          className="mb-8 grid grid-cols-2 gap-1.5 rounded-2xl bg-surface-sand p-1 sm:max-w-md sm:p-1.5"
+        >
+          <TabButton
+            active={audience === "sender"}
+            onClick={() => setAudience("sender")}
+            label="送る人へ"
+            sublabel="Sender"
+          />
+          <TabButton
+            active={audience === "receiver"}
+            onClick={() => setAudience("receiver")}
+            label="受け取る人へ"
+            sublabel="Receiver"
+          />
+        </div>
+
+        {/* 手順本体 */}
+        <section
+          aria-labelledby="guide-heading"
+          className="space-y-6 sm:space-y-8"
+          // role/state をタブパネルとして公開
+          role="tabpanel"
+        >
+          <h2 id="guide-heading" className="sr-only">
+            {audience === "sender" ? "送信者向け手順" : "受信者向け手順"}
+          </h2>
+          {steps.map((step) => (
+            <StepCard key={step.num} step={step} />
+          ))}
+        </section>
+
+        {/* もう一方への導線 — 立場が変わったら反対側のガイドに飛べるように */}
+        <section className="mt-12 rounded-[20px] border border-surface-sand-deep bg-surface p-6 sm:p-8">
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink-muted">
+            もう一方の使い方
+          </p>
+          {audience === "sender" ? (
+            <div className="mt-2">
+              <h3 className="text-balance text-[18px] font-semibold tracking-[-0.005em] text-ink">
+                自分も写真を受け取りたい？
+              </h3>
+              <p className="mt-1 text-[14px] leading-[1.7] text-ink-soft">
+                X (Twitter) アカウントで30秒で登録できます。
+              </p>
+              <button
+                type="button"
+                onClick={() => setAudience("receiver")}
+                className="mt-4 inline-flex items-center rounded-xl border border-surface-sand-deep bg-surface-sand px-4 py-2.5 text-[14px] font-medium text-ink transition-colors hover:bg-surface-sand-hover"
+              >
+                受け取る人の手順を見る →
+              </button>
+            </div>
+          ) : (
+            <div className="mt-2">
+              <h3 className="text-balance text-[18px] font-semibold tracking-[-0.005em] text-ink">
+                友達から共有リンクを受け取った？
+              </h3>
+              <p className="mt-1 text-[14px] leading-[1.7] text-ink-soft">
+                送る側はアカウント不要。リンクを開くだけで写真を送れます。
+              </p>
+              <button
+                type="button"
+                onClick={() => setAudience("sender")}
+                className="mt-4 inline-flex items-center rounded-xl border border-surface-sand-deep bg-surface-sand px-4 py-2.5 text-[14px] font-medium text-ink transition-colors hover:bg-surface-sand-hover"
+              >
+                送る人の手順を見る →
+              </button>
+            </div>
+          )}
+        </section>
+
+        {/* Footer links — Legal / フィードバック */}
+        <nav className="mt-10 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-surface-sand-deep pt-6 text-[13px]">
+          <Link to="/" className="text-ink-soft transition-colors hover:text-ink">
+            トップへ戻る
+          </Link>
+          <Link to="/terms" className="text-ink-soft transition-colors hover:text-ink">
+            利用規約
+          </Link>
+          <Link to="/privacy" className="text-ink-soft transition-colors hover:text-ink">
+            プライバシーポリシー
+          </Link>
+          {FEEDBACK_URL && (
+            <a
+              href={FEEDBACK_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-ink-soft transition-colors hover:text-ink"
+            >
+              不明点をフィードバック
+            </a>
+          )}
+        </nav>
+      </main>
+    </div>
+  );
+}
+
+function TabButton({
+  active,
+  onClick,
+  label,
+  sublabel,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+  sublabel: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      className={`flex flex-col items-center justify-center rounded-xl px-2 py-2.5 text-center transition-all sm:px-3 ${
+        active ? "bg-surface text-ink shadow-card" : "text-ink-soft hover:text-ink"
+      }`}
+    >
+      <span className="whitespace-nowrap text-[14px] font-semibold sm:text-[15px]">{label}</span>
+      <span
+        className="mt-0.5 whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.12em] text-ink-muted sm:text-[11px]"
+        style={{ fontFamily: MONO }}
+      >
+        {sublabel}
+      </span>
+    </button>
+  );
+}
+
+function StepCard({ step }: { step: Step }) {
+  return (
+    <article
+      className={`grid grid-cols-1 gap-5 overflow-hidden rounded-[20px] border bg-surface p-5 shadow-card sm:p-7 md:grid-cols-[1.1fr_1fr] md:gap-8 md:p-8 ${
+        step.highlight ? "border-brand/40" : "border-surface-sand-deep"
+      }`}
+    >
+      <div className="min-w-0">
+        <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+          <span
+            className={`inline-flex h-9 items-center justify-center whitespace-nowrap rounded-full px-3 text-[13px] font-bold ${
+              step.highlight ? "bg-brand text-white" : "bg-brand-tint text-brand-deep"
+            }`}
+            style={{ fontFamily: MONO }}
+          >
+            STEP {step.num}
+          </span>
+          {step.highlight && (
+            <span className="whitespace-nowrap rounded-full bg-status-warn/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-status-warn">
+              最重要
+            </span>
+          )}
+        </div>
+        <h3 className="text-balance text-[20px] font-bold leading-[1.3] tracking-[-0.01em] text-ink sm:text-[22px]">
+          {step.title}
+        </h3>
+        <div className="mt-3 space-y-3 text-[14px] leading-[1.85] text-ink-soft [overflow-wrap:anywhere]">
+          {step.body}
+        </div>
+      </div>
+      <figure className="self-start md:order-last">
+        <div className="overflow-hidden rounded-2xl border border-surface-sand-deep bg-surface-canvas">
+          <img
+            src={step.image.src}
+            alt={step.image.alt}
+            loading="lazy"
+            className="block h-auto w-full"
+          />
+        </div>
+        <figcaption className="mt-2 text-[12px] leading-[1.6] text-ink-muted [overflow-wrap:anywhere]">
+          {step.image.caption}
+        </figcaption>
+      </figure>
+    </article>
+  );
+}
+
+// ────────────────────────────────────────────
+// 送信者向け手順
+// ────────────────────────────────────────────
+
+const SENDER_STEPS: Step[] = [
+  {
+    num: "01",
+    title: "共有リンクを開く",
+    body: (
+      <>
+        <p>
+          受け取る人から送られてきた
+          <code className="mx-0.5 inline-block max-w-full break-all rounded bg-surface-sand px-1.5 py-0.5 align-baseline font-mono text-[0.95em] text-ink">
+            {PUBLIC_HOST}/send/...
+          </code>
+          という形のリンクを、ブラウザで開いてください。
+        </p>
+        <p>
+          相手のプロフィールが表示されたら、
+          <strong className="font-semibold text-ink">「写真を送る」</strong>
+          ボタンをタップします。
+          <br />
+          <span className="text-[13px] text-ink-muted">
+            ※ アカウント登録やログインは必要ありません。
+          </span>
+        </p>
+      </>
+    ),
+    image: {
+      src: "/guide/sender-step1.png",
+      alt: "受信者のプロフィール画面",
+      caption: "受信者のプロフィールと「写真を送る」ボタンが表示されます。",
+    },
+  },
+  {
+    num: "02",
+    title: "写真を選ぶ",
+    body: (
+      <>
+        <p>
+          点線で囲まれたエリアに写真をドラッグ＆ドロップするか、タップしてファイルを選びます。
+          一度に複数枚まとめて選択できます。
+        </p>
+        <ul className="list-disc space-y-1 pl-5 text-[13.5px] marker:text-ink-muted">
+          <li>
+            対応形式: <strong className="text-ink">JPEG / PNG / HEIC</strong>
+          </li>
+          <li>
+            1枚あたり最大 <strong className="text-ink">20MB</strong> ／ 1度に最大{" "}
+            <strong className="text-ink">100枚</strong>
+          </li>
+          <li>iPhoneのHEICはアップロード時にJPEGへ自動変換されます</li>
+        </ul>
+        <p className="text-[13px] text-ink-muted">
+          選び直したいときは、各サムネイル右上の「×」で個別に取り消せます。
+        </p>
+      </>
+    ),
+    image: {
+      src: "/guide/sender-step2.png",
+      alt: "ドロップゾーンとサムネイル一覧",
+      caption: "選んだ写真は即座にプレビューが表示されます。",
+    },
+  },
+  {
+    num: "03",
+    title: "撮影者情報を入力する",
+    highlight: true,
+    body: (
+      <>
+        <p>
+          ここがFurDropの<strong className="font-semibold text-ink">いちばん大切なステップ</strong>
+          です。
+          <br />
+          <strong className="font-semibold text-ink">送信者名 / Twitter ID</strong>{" "}
+          を入力すると、その情報を写真に残せるようになります。
+        </p>
+        <div className="rounded-xl bg-surface-canvas px-4 py-3 text-[13px]">
+          <p className="font-semibold text-ink">クレジット表記の形式</p>
+          <p className="mt-1 text-ink-soft">
+            <code className="font-mono">Shot by ...</code>／
+            <code className="font-mono">Photo by ...</code>／
+            <code className="font-mono">© ...</code>／<code className="font-mono">名前のみ</code>
+            の4種類から選べます。
+          </p>
+        </div>
+        <p>受け取る人が許可している場合のみ、次の埋め込みオプションが表示されます。</p>
+        <ul className="list-disc space-y-1.5 pl-5 text-[13.5px] marker:text-ink-muted">
+          <li>
+            <strong className="text-ink">EXIFカメラモデル欄に埋め込む</strong>
+            ：写真のメタデータに名前を残します（あとから消すことも可能）
+          </li>
+          <li>
+            <strong className="text-ink">透かしを入れる</strong>
+            ：画像そのものに名前を描き込みます。位置・サイズ・透明度・色は{" "}
+            <em className="not-italic text-ink">「透かしを編集」</em>{" "}
+            から細かく調整できます（一度入れると消せません）
+          </li>
+        </ul>
+        <p className="rounded-xl border border-status-warn/30 bg-status-warn/10 px-4 py-3 text-[13px] text-ink">
+          ⚠️
+          受け取る人が「必須」に設定している場合は、送信者名の入力が必須となり、対応する埋め込みも自動でONになります。
+        </p>
+      </>
+    ),
+    image: {
+      src: "/guide/sender-step3.png",
+      alt: "送信者名とクレジット表記、埋め込みオプションのフォーム",
+      caption: "受け取る側の設定で「必須」になっている項目は最初からONで動かせません。",
+    },
+  },
+  {
+    num: "04",
+    title: "送信する",
+    body: (
+      <>
+        <p>
+          画面下部の <strong className="font-semibold text-ink">「送信する (○枚)」</strong>{" "}
+          ボタンをタップすると、写真の加工とアップロードが始まります。
+        </p>
+        <ul className="list-disc space-y-1 pl-5 text-[13.5px] marker:text-ink-muted">
+          <li>進行中はファイルごとの状態（待機 / 送信中 / 完了）が表示されます</li>
+          <li>送信中はブラウザを閉じないでください</li>
+          <li>失敗しても残りの写真は送信され、失敗分のみ再試行できます</li>
+        </ul>
+        <p>完了画面まで進めば送信終了です。「別の写真を送る」から続けて送ることもできます。</p>
+      </>
+    ),
+    image: {
+      src: "/guide/sender-step4.png",
+      alt: "アップロード進行と送信完了画面",
+      caption: "完了マークが出れば、相手のギャラリーに写真が届いています。",
+    },
+  },
+];
+
+// ────────────────────────────────────────────
+// 受信者向け手順
+// ────────────────────────────────────────────
+
+const RECEIVER_STEPS: Step[] = [
+  {
+    num: "01",
+    title: "X (Twitter) でログインしてURLを作る",
+    body: (
+      <>
+        <p>
+          ログイン画面から
+          <strong className="font-semibold text-ink">X (Twitter) アカウントで連携</strong>
+          すると、受信用のページが作成できます。
+        </p>
+        <ul className="list-disc space-y-1 pl-5 text-[13.5px] marker:text-ink-muted">
+          <li>
+            ハンドル（URLの末尾）：
+            <code className="mx-0.5 inline-block max-w-full break-all rounded bg-surface-sand px-1.5 py-0.5 align-baseline font-mono text-[0.95em] text-ink">
+              小文字英数字とアンダースコア・3〜32文字
+            </code>
+          </li>
+          <li>表示名：プロフィールに表示される、相手から見える名前</li>
+        </ul>
+        <p className="text-[13px] text-ink-muted">
+          メールアドレスは公開されません。送る人にもあなたのメアドは伝わりません。
+        </p>
+      </>
+    ),
+    image: {
+      src: "/guide/receiver-step1.png",
+      alt: "ハンドルと表示名の登録フォーム",
+      caption: "ハンドルがそのまま受信URLになります。後から変更したい場合はサポートまで。",
+    },
+  },
+  {
+    num: "02",
+    title: "受け取り用URLを共有する",
+    body: (
+      <>
+        <p>
+          ダッシュボードの
+          <strong className="font-semibold text-ink">「あなたの受信URL」</strong>
+          に、自分専用のリンクが表示されます。共有方法は3通り。
+        </p>
+        <ul className="list-disc space-y-1.5 pl-5 text-[13.5px] marker:text-ink-muted">
+          <li>
+            <strong className="text-ink">コピー</strong>
+            ：URLをクリップボードにコピーして、SNSやメッセージに貼れます
+          </li>
+          <li>
+            <strong className="text-ink">QR</strong>
+            ：QRコードを表示・ダウンロード。名刺やイベントポスターへの掲載に
+          </li>
+          <li>
+            <strong className="text-ink">シェア</strong>
+            ：スマホの共有メニュー（または X 投稿フォーム）が立ち上がります
+          </li>
+        </ul>
+        <p className="text-[13px] text-ink-muted">
+          URLを知っている人だけが写真を送れます。誰にでも公開する必要はありません。
+        </p>
+      </>
+    ),
+    image: {
+      src: "/guide/receiver-step2.png",
+      alt: "受信URLとコピー・QR・シェアボタン",
+      caption: "QRはPNGでダウンロードして印刷物にも使えます。",
+    },
+  },
+  {
+    num: "03",
+    title: "空き容量を確認する",
+    body: (
+      <>
+        <p>
+          無料プランは
+          <strong className="font-semibold text-ink">10GB</strong>
+          まで保存できます（一眼JPEG換算でおよそ680枚）。
+        </p>
+        <p>ダッシュボードと設定ページに使用率バーが表示されます。</p>
+        <ul className="list-disc space-y-1 pl-5 text-[13.5px] marker:text-ink-muted">
+          <li>
+            <span className="font-semibold text-status-success">緑</span>
+            ：余裕あり（〜79%）
+          </li>
+          <li>
+            <span className="font-semibold text-status-warn">オレンジ</span>
+            ：そろそろ整理どき（80〜94%）
+          </li>
+          <li>
+            <span className="font-semibold text-status-danger">赤</span>
+            ：満タン間近（95%以上）
+          </li>
+        </ul>
+        <p className="text-[13px] text-ink-muted">
+          受信した写真には自動的にダウンロード期限（既定30日）が設定され、期限を過ぎたものは自動で削除されます。早めにギャラリーから保存しておきましょう。
+        </p>
+      </>
+    ),
+    image: {
+      src: "/guide/receiver-step3.png",
+      alt: "ストレージ使用状況のプログレスバー",
+      caption: "残量に応じて色が変わります。",
+    },
+  },
+  {
+    num: "04",
+    title: "撮影者情報の受け入れ設定",
+    highlight: true,
+    body: (
+      <>
+        <p>
+          設定ページの
+          <strong className="font-semibold text-ink">「受信オプション」</strong>
+          で、送信者がどこまで自分の名前を写真に残せるかを決められます。
+          <br />
+          各項目に <em className="not-italic text-ink">無効 / 任意 / 必須</em> の3段階があります。
+        </p>
+        <div className="overflow-hidden rounded-xl border border-surface-sand-deep">
+          <table className="w-full table-fixed text-[13px]">
+            <colgroup>
+              {/* モード列はラベルのみで短いので固定幅。残りを挙動列が使う */}
+              <col className="w-[5.5em]" />
+              <col />
+            </colgroup>
+            <thead className="bg-surface-sand text-ink">
+              <tr>
+                <th className="whitespace-nowrap px-3 py-2 text-left font-semibold">モード</th>
+                <th className="px-3 py-2 text-left font-semibold">挙動</th>
+              </tr>
+            </thead>
+            <tbody className="text-ink-soft [&_td]:[overflow-wrap:anywhere] [&_td]:[word-break:keep-all]">
+              <tr className="border-t border-surface-sand-deep">
+                <td className="whitespace-nowrap px-3 py-2 font-medium text-ink">無効</td>
+                <td className="px-3 py-2">送信画面に項目を表示しない</td>
+              </tr>
+              <tr className="border-t border-surface-sand-deep">
+                <td className="whitespace-nowrap px-3 py-2 font-medium text-ink">任意</td>
+                <td className="px-3 py-2">送信者が必要に応じて選択できる</td>
+              </tr>
+              <tr className="border-t border-surface-sand-deep">
+                <td className="whitespace-nowrap px-3 py-2 font-medium text-ink">必須</td>
+                <td className="px-3 py-2">送信者は必ず埋め込み（送信者名の入力も必須に）</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <ul className="list-disc space-y-1.5 pl-5 text-[13.5px] marker:text-ink-muted">
+          <li>
+            <strong className="text-ink">EXIF埋め込み</strong>
+            ：メタデータのみなので画像は変わりません。あとから除去も可能。
+          </li>
+          <li>
+            <strong className="text-ink">透かし</strong>
+            ：画像本体に焼き込まれるため
+            <strong className="text-ink">取り消せません</strong>
+            。「必須」にする場合は慎重に。
+          </li>
+        </ul>
+      </>
+    ),
+    image: {
+      src: "/guide/receiver-step4.png",
+      alt: "受信オプションの3段階ラジオボタン",
+      caption: "迷ったら「任意」がおすすめ。送る人の判断にゆだねつつ、選択肢は提示できます。",
+    },
+  },
+  {
+    num: "05",
+    title: "届いた写真を眺める・保存する",
+    body: (
+      <>
+        <p>
+          ダッシュボードの<strong className="font-semibold text-ink">「最近の写真」</strong>
+          、または<strong className="font-semibold text-ink">ギャラリー</strong>
+          から届いた写真を確認できます。
+        </p>
+        <ul className="list-disc space-y-1 pl-5 text-[13.5px] marker:text-ink-muted">
+          <li>サムネイルをタップして拡大表示・送信者情報の確認</li>
+          <li>「選択」モードで複数枚をまとめてダウンロードまたは削除</li>
+          <li>「ダウンロード期限」を過ぎる前に必要な写真をローカル保存</li>
+        </ul>
+      </>
+    ),
+    image: {
+      src: "/guide/receiver-step5.png",
+      alt: "受信写真のギャラリー一覧",
+      caption: "正方形の均一グリッドで、選びたい写真が一目で分かります。",
+    },
+  },
+];
