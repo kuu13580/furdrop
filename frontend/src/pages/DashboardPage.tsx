@@ -73,6 +73,11 @@ function PublicUrlCard({ receiveUrl }: { receiveUrl: string }) {
             シェア
           </button>
         </div>
+        <p className="text-[12px] text-ink-soft">
+          <Link to="/guide" className="text-brand underline-offset-2 hover:underline">
+            FurDrop の使い方を見る →
+          </Link>
+        </p>
         {qrOpen && (
           <div className="flex flex-col items-center gap-3 py-2">
             <canvas ref={canvasRef} className="rounded-xl" />

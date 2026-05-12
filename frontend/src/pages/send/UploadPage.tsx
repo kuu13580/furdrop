@@ -240,6 +240,13 @@ export default function UploadPage() {
           />
         </label>
 
+        <p className="text-center text-[12px] text-ink-soft">
+          初めての方は
+          <Link to="/guide" className="ml-0.5 text-brand underline-offset-2 hover:underline">
+            使い方を見る →
+          </Link>
+        </p>
+
         {error && (
           <Alert variant="error">
             <div className="whitespace-pre-line">{error}</div>
