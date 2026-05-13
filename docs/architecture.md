@@ -65,7 +65,30 @@ CREATE UNIQUE INDEX idx_users_handle ON users(handle);
 
 **handle制約**: `^[a-z0-9_]{3,32}$`（小文字英数字とアンダースコア、3-32文字）
 
-### 2.2 upload_sessions テーブル
+### 2.2 send_keys テーブル (R16)
+
+受信URL `https://domain/send/:handle?k=KEY` のアクセスキーを格納する。1 受信者 : N キー。
+
+```sql
+CREATE TABLE send_keys (
+    id            TEXT PRIMARY KEY,           -- UUID v4
+    receiver_id   TEXT NOT NULL REFERENCES users(id),
+    key_value     TEXT NOT NULL UNIQUE,        -- URL-safe な乱数 (生成方式は下記)
+    created_at    INTEGER NOT NULL,            -- UNIX秒
+    updated_at    INTEGER NOT NULL             -- UNIX秒
+);
+
+CREATE INDEX idx_send_keys_receiver ON send_keys(receiver_id);
+```
+
+- **生成**: 新規発行は Workers の `generateSendKey()` (`crypto.getRandomValues` + URL-safe 64 文字、デフォルト 21 文字 = 126 bit のエントロピー、nanoid と同等)。既存ユーザーへの初期発行 (`0007_send_keys.sql` マイグレーション内) では SQLite の `lower(hex(randomblob(16)))` で 128 bit の HEX 文字列を生成
+- **保存**: 平文。URL に乗せて配布する性質なのでハッシュ化のセキュリティ効果は限定的で、UI で「現在のキーをそのまま表示」できる UX を優先
+- **無効化**: レコードの DELETE で表現 (`is_active` カラムは現状不要)
+- **拡張性**: 将来必要になれば `expires_at` / `name` / `is_active` を ALTER で追加する。MVP では発行・削除のみ
+- **MVP の UI**: キー管理画面は提供しない。`POST /auth/register` でユーザー作成時に 1 件自動発行、`GET /auth/me` / `PATCH /auth/options` で最古のキー 1 件を `receive_url` に結合して返すのみ
+- **アカウント削除**: `DELETE /auth/account` の batch で同期削除 (`DELETE FROM send_keys WHERE receiver_id = ?`)。upload_sessions のような「孤児」になるケースはないため専用 Cron 不要
+
+### 2.3 upload_sessions テーブル
 
 複数枚アップロードを1セッションにまとめる。
 
@@ -91,7 +114,7 @@ CREATE INDEX idx_sessions_receiver ON upload_sessions(receiver_id);
 CREATE INDEX idx_sessions_expires ON upload_sessions(expires_at);
 ```
 
-### 2.3 photos テーブル
+### 2.4 photos テーブル
 
 ```sql
 CREATE TABLE photos (
@@ -138,7 +161,7 @@ CREATE INDEX idx_photos_status ON photos(receiver_id, upload_status);
 CREATE INDEX idx_photos_expires ON photos(expires_at);
 ```
 
-### 2.4 クォータ管理
+### 2.5 クォータ管理
 
 アトミックなUPDATEでクォータ超過を防止:
 
@@ -242,6 +265,7 @@ Content-Type: application/json
 | 400 | INVALID_REQUEST | バリデーション失敗 |
 | 401 | UNAUTHORIZED | トークンなし/期限切れ |
 | 403 | FORBIDDEN | 権限なし |
+| 403 | INVALID_KEY | 送信URLのアクセスキー (R16) が不一致 |
 | 404 | NOT_FOUND | リソース不在 |
 | 409 | HANDLE_TAKEN | handle使用済み |
 | 413 | FILE_TOO_LARGE | ファイルサイズ超過 |
@@ -270,10 +294,12 @@ Response: 201
     "display_name": "太郎カメラ",
     "storage_used": 0,
     "storage_quota": 10737418240,
-    "receive_url": "https://furdrop.example.com/send/taro_camera"
+    "receive_url": "/send/taro_camera?k=V1StGXR8_Z5jdHi6B-myT"
   }
 }
 ```
+
+`receive_url` には初期発行された送信URLアクセスキー (R16) が `?k=` 付きで含まれる。フロントは `window.location.origin + receive_url` で完全 URL に組み立てる。
 
 #### GET /auth/me
 
@@ -282,7 +308,7 @@ Response: 201
 ```
 Response: 200
 {
-  "user": { ... }  // register同様の形式
+  "user": { ... }  // register同様の形式 — receive_url には最古の send_keys.key_value が ?k= 付きで含まれる
 }
 ```
 
@@ -307,6 +333,7 @@ Response: 204 No Content
 - 削除前に `photos.r2_key_original` / `r2_key_thumb` を全件 SELECT
 - D1 は `batch()` で 順序保証して以下を実行:
   - `DELETE FROM photos WHERE receiver_id = ?` — 全件
+  - `DELETE FROM send_keys WHERE receiver_id = ?` — 全件 (R16)
   - `DELETE FROM upload_sessions WHERE receiver_id = ? AND created_at < (now - 100日)` — **保存期間 (利用規約第13条 = 最低3か月) 経過済みのみ**。保存期間中のセッションは `sender_ip` / `sender_ua` を保護するため保持する
   - `DELETE FROM users WHERE id = ?`
 - R2 削除は `ctx.waitUntil(Promise.allSettled(...))` で背景実行し、レスポンスを早く返す
@@ -418,9 +445,12 @@ Response: 200
 
 アップロードセッション開始。`photo_count` は最大100枚。
 
+`key` は受信URL `?k=` のアクセスキー (R16)。`send_keys.key_value` と一致しない場合は `403 INVALID_KEY` を返す。
+
 ```
 Request:
 {
+  "key": "V1StGXR8_Z5jdHi6B-myT",
   "sender_name": "@hanako_photo",
   "photo_count": 3
 }
@@ -430,6 +460,12 @@ Response: 201
   "session_id": "uuid",
   "expires_at": 1744246800
 }
+
+エラー:
+- 403 INVALID_KEY: key が受信者のいずれのキーとも一致しない
+- 403 FORBIDDEN: 受信者が受付停止中 (is_active=0)
+- 507 QUOTA_EXCEEDED: 受信者のクォータ超過
+- 429 RATE_LIMITED: 送信者IP単位のレート制限超過
 ```
 
 #### POST /send/:handle/sessions/:sessionId/photos
@@ -585,7 +621,7 @@ flowchart TD
 | エンドポイント | 認証 | 認可ルール |
 |---|---|---|
 | GET /send/:handle | 不要 | handleが存在 |
-| POST /send/:handle/sessions | 不要 | handle存在 + is_active + クォータ未超過 |
+| POST /send/:handle/sessions | 不要 | handle存在 + send_keys に key 一致 (R16) + is_active + クォータ未超過 |
 | POST .../photos | 不要 | sessionがそのhandleに属する |
 | PATCH .../confirm | 不要 | photoがそのsessionに属する |
 | POST /auth/register | Firebase必須 | UID未登録 |
@@ -611,8 +647,9 @@ sequenceDiagram
 
     Note over C: クライアントサイド処理<br/>フォーマット変換 (PNG/HEIC→JPEG)<br/>EXIF書き換え (piexifjs)<br/>透かし適用 (Canvas API)<br/>サムネイル生成 (Canvas API)
 
-    C->>W: POST /send/:handle/sessions
-    W-->>C: session_id
+    C->>W: POST /send/:handle/sessions (body: { key, sender_name, photo_count })
+    Note over W: send_keys を JOIN して key 一致を確認 (R16)
+    W-->>C: session_id (key 不一致なら 403 INVALID_KEY)
 
     C->>W: POST .../photos (batch, N件)
     W->>DB: クォータチェック

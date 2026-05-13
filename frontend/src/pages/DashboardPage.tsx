@@ -31,7 +31,10 @@ function PublicUrlCard({ receiveUrl }: { receiveUrl: string }) {
 
   const handleDownloadQr = useCallback(async () => {
     const dataUrl = await QRCode.toDataURL(receiveUrl, { width: 512, margin: 2 });
-    const slug = receiveUrl.split("/").filter(Boolean).pop() ?? "qr";
+    // URL に ?k=KEY が乗るようになったので、path 末尾のみを取り出してファイル名にする
+    // (`new URL().pathname` で クエリを切り落とす)
+    const path = new URL(receiveUrl, window.location.origin).pathname;
+    const slug = path.split("/").filter(Boolean).pop() ?? "qr";
     const a = document.createElement("a");
     a.href = dataUrl;
     a.download = `furdrop-${slug}.png`;

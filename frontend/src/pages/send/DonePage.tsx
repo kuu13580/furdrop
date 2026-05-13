@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router";
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router";
 import SenderAtmosphere from "../../components/send/SenderAtmosphere";
 import Alert from "../../components/ui/Alert";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import { ApiError, senderApi } from "../../lib/api";
+import { withKey } from "../../lib/send-url";
 
 type SessionPhoto = {
   photo_id: string;
@@ -14,6 +15,8 @@ type SessionPhoto = {
 
 export default function DonePage() {
   const { handle } = useParams<{ handle: string }>();
+  const [searchParams] = useSearchParams();
+  const accessKey = searchParams.get("k");
   const location = useLocation();
   const navigate = useNavigate();
   const sessionId = (location.state as { sessionId?: string } | null)?.sessionId;
@@ -25,7 +28,7 @@ export default function DonePage() {
     if (!handle) return;
     if (!sessionId) {
       // 直接アクセス / リロード時はLandingへ戻す
-      navigate(`/send/${handle}`, { replace: true });
+      navigate(withKey(`/send/${handle}`, accessKey), { replace: true });
       return;
     }
     let cancelled = false;
@@ -45,7 +48,7 @@ export default function DonePage() {
     return () => {
       cancelled = true;
     };
-  }, [handle, sessionId, navigate]);
+  }, [handle, sessionId, navigate, accessKey]);
 
   const completed = photos?.filter((p) => p.status === "completed") ?? [];
   const failed = photos?.filter((p) => p.status !== "completed") ?? [];
@@ -101,7 +104,7 @@ export default function DonePage() {
         )}
 
         <Link
-          to={`/send/${handle}/upload`}
+          to={withKey(`/send/${handle}/upload`, accessKey)}
           className="mx-auto block max-w-sm rounded-xl bg-brand px-4 py-3 text-[16px] font-medium text-white transition-all hover:bg-brand-deep active:scale-[0.98]"
         >
           別の写真を送る
