@@ -4,10 +4,10 @@
 
 | ID | 画面名 | パス | 認証 | 説明 |
 |---|---|---|---|---|
-| S01 | 送信者ランディング | `/send/:handle` | 不要 | 受信者プロフィール + 「写真を送る」CTA |
-| S02 | アップロード画面 | `/send/:handle/upload` | 不要 | 写真選択 + 送信者情報入力 + プレビュー |
-| S03 | アップロード進行中 | `/send/:handle/uploading` | 不要 | 処理・アップロード進捗表示 |
-| S04 | 送信完了 | `/send/:handle/done` | 不要 | 完了メッセージ + サムネイル一覧 |
+| S01 | 送信者ランディング | `/send/:handle?k=KEY` | 不要 | 受信者プロフィール + 「写真を送る」CTA。`?k=` (R16) は後続ページに引き回す |
+| S02 | アップロード画面 | `/send/:handle/upload?k=KEY` | 不要 | 写真選択 + 送信者情報入力 + プレビュー |
+| S03 | アップロード進行中 | `/send/:handle/uploading?k=KEY` | 不要 | 処理・アップロード進捗表示。`POST .../sessions` に `key` を含めて送信 |
+| S04 | 送信完了 | `/send/:handle/done?k=KEY` | 不要 | 完了メッセージ + サムネイル一覧 |
 | S05 | ログイン | `/login` | 不要 | Twitter OAuth等 |
 | S06 | ダッシュボード | `/dashboard` | 必要 | 公開URL・ストレージ状況・直近写真 |
 | S07 | フォトギャラリー | `/gallery` | 必要 | サムネイルグリッド + 選択・フィルタ |
@@ -22,13 +22,15 @@
 
 ### 送信者フロー（匿名）
 
+`?k=KEY` (R16 アクセスキー) は S01〜S04 の全ページで URL に保持される。Link/navigate ヘルパー `withKey()` がパス間を引き回す。`POST /send/:handle/sessions` で初めてサーバが検証。
+
 ```mermaid
 flowchart TD
-    EXT[外部リンク<br/>名刺・SNS等] --> S01[S01: ランディング<br/>受信者プロフィール]
-    S01 -->|写真を送る| S02[S02: アップロード画面<br/>写真選択 + 送信者情報]
-    S02 -->|送信する| S03[S03: アップロード進行中<br/>変換→EXIF→透かし→サムネ→UP]
+    EXT[外部リンク<br/>名刺・SNS等<br/>?k=KEY 付き URL] --> S01[S01: ランディング<br/>受信者プロフィール]
+    S01 -->|写真を送る ?k=KEY| S02[S02: アップロード画面<br/>写真選択 + 送信者情報]
+    S02 -->|送信する ?k=KEY| S03[S03: アップロード進行中<br/>変換→EXIF→透かし→サムネ→UP<br/>POST sessions に key を含める]
     S03 --> S04[S04: 送信完了<br/>サムネイル一覧]
-    S04 -->|別の写真を送る| S02
+    S04 -->|別の写真を送る ?k=KEY| S02
 ```
 
 ### 受信者フロー（認証済）
@@ -66,9 +68,11 @@ flowchart TD
 +-----------------------------+
 ```
 
-- API: `GET /send/:handle` で受信者情報取得
+- URL: `/send/:handle?k=KEY` — `?k=` は R16 アクセスキー。ランディング表示自体はキーなしでも 200 を返すが、`?k=` を持っていないと S02 → S03 のセッション作成で 403 になる
+- API: `GET /send/:handle` で受信者情報取得（このエンドポイントは `k` を検証しない、プロフィールは公開情報）
 - ハンドルが存在しない場合は404ページ表示
 - クォータ超過時はCTAを非活性にしてメッセージ表示
+- 「写真を送る」リンクは `?k=` を URL から読み取って S02 にそのまま引き継ぐ（`withKey(path, key)` ヘルパー）
 
 ### S02: アップロード画面
 
@@ -187,8 +191,8 @@ UploaderPage
 ```
 
 - サムネイルはクライアント側で保持したBlob URLを表示
-- ページリロード時はS01へリダイレクト（セッション永続化不要）
-- 「別の写真を送る」→ S02へ（同じ受信者への再送）
+- ページリロード時はS01へリダイレクト（セッション永続化不要）。URL の `?k=` も継承する
+- 「別の写真を送る」→ S02へ（同じ受信者への再送、`?k=` 継承）
 
 ---
 
@@ -223,7 +227,8 @@ UploaderPage
 |-----------------------------|
 |                             |
 |  あなたの受信URL:           |
-|  furdrop.dev/send/taro  |
+|  furdrop.dev/send/taro      |
+|     ?k=V1StGXR8_Z5...       |   ← R16 アクセスキー付き
 |  [コピー] [QR] [シェア]    |
 |                             |
 |-----------------------------|
@@ -243,7 +248,7 @@ UploaderPage
 **コンポーネント構成:**
 ```
 DashboardPage
-  +-- PublicUrlCard
+  +-- PublicUrlCard            // user.receive_url (?k=KEY 付き) を origin と結合して表示
   |     +-- CopyButton        // Clipboard API
   |     +-- QrCodeButton      // qrcode ライブラリ
   |     +-- ShareButton       // Web Share API / Twitter Intent
@@ -251,6 +256,8 @@ DashboardPage
   |     // 80%超: 黄色, 95%超: 赤
   +-- RecentPhotosPreview     // 直近3枚のサムネイル
 ```
+
+`user.receive_url` は Workers の `/auth/me` が `send_keys` から最古のキー 1 件を選んで `?k=KEY` 付きで返す。フロント側はキーの存在を意識しない (R16)。
 
 ### S07: フォトギャラリー
 

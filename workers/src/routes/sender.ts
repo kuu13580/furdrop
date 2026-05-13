@@ -97,6 +97,8 @@ const createSessionRoute = createRoute({
       content: {
         "application/json": {
           schema: z.object({
+            // 受信URLの ?k= に乗っているアクセスキー。受信者ごとに発行され、知らない人は送信できない。
+            key: z.string().min(1).max(128),
             sender_name: z.string().optional(),
             photo_count: z.number().int().min(1).max(MAX_PHOTOS_PER_SESSION),
           }),
@@ -116,7 +118,10 @@ const createSessionRoute = createRoute({
       },
       description: "セッション作成成功",
     },
-    403: { content: { "application/json": { schema: ErrorSchema } }, description: "受付停止中" },
+    403: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "受付停止中 / アクセスキー不一致",
+    },
     404: {
       content: { "application/json": { schema: ErrorSchema } },
       description: "User not found",
@@ -152,14 +157,19 @@ sender.openapi(createSessionRoute, async (c) => {
     );
   }
 
+  // handle + key の JOIN で受信者を解決する。
+  // key が一致しない / handle が存在しない の双方で 403 (キーの有無を漏らさないため一律 INVALID_KEY)。
   const user = await c.env.DB.prepare(
-    "SELECT id, is_active, storage_used, storage_quota FROM users WHERE handle = ?",
+    `SELECT u.id, u.is_active, u.storage_used, u.storage_quota
+       FROM users u
+       JOIN send_keys k ON k.receiver_id = u.id
+       WHERE u.handle = ? AND k.key_value = ?`,
   )
-    .bind(handle)
+    .bind(handle, body.key)
     .first();
 
   if (!user) {
-    return c.json({ error: { code: "NOT_FOUND", message: "User not found" } }, 404);
+    return c.json({ error: { code: "INVALID_KEY", message: "Invalid access key" } }, 403);
   }
 
   if (user.is_active !== 1) {

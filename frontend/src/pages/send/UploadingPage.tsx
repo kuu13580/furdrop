@@ -1,6 +1,6 @@
 import { useAtom, useAtomValue } from "jotai";
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 import SenderAtmosphere from "../../components/send/SenderAtmosphere";
 import Alert from "../../components/ui/Alert";
 import Button from "../../components/ui/Button";
@@ -15,6 +15,7 @@ import {
   normalizeToJpeg,
   stripExifGps,
 } from "../../lib/image-processing";
+import { withKey } from "../../lib/send-url";
 import { debugAtom } from "../../stores/debug";
 import { type SelectedFile, selectedFilesAtom, uploadFormAtom } from "../../stores/sender";
 
@@ -48,6 +49,8 @@ type OverallPhase = "idle" | "processing" | "session" | "uploading" | "done" | "
 
 export default function UploadingPage() {
   const { handle } = useParams<{ handle: string }>();
+  const [searchParams] = useSearchParams();
+  const accessKey = searchParams.get("k");
   const navigate = useNavigate();
   // debugAtom はアプリ全体で共有。?debug=true は App 直下の DebugUrlSync が同期する
   const debug = useAtomValue(debugAtom);
@@ -65,9 +68,9 @@ export default function UploadingPage() {
   // パイプライン完了後の setFiles([]) による空状態では戻さない
   useEffect(() => {
     if (files.length === 0 && !startedRef.current) {
-      navigate(`/send/${handle}/upload`, { replace: true });
+      navigate(withKey(`/send/${handle}/upload`, accessKey), { replace: true });
     }
-  }, [files.length, handle, navigate]);
+  }, [files.length, handle, navigate, accessKey]);
 
   // ルート遷移時にスクロール位置が前ページから引き継がれるため、初回マウントで先頭へ
   useEffect(() => {
@@ -91,6 +94,7 @@ export default function UploadingPage() {
     startedRef.current = true;
     void runPipeline({
       handle,
+      accessKey,
       files,
       form,
       onProgress: (updater) => setProgress(updater),
@@ -100,7 +104,10 @@ export default function UploadingPage() {
         // 選択状態をクリアしつつ、UIでの表示用ObjectURLを解放
         for (const f of files) if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
         setFiles([]);
-        navigate(`/send/${handle}/done`, { state: { sessionId }, replace: true });
+        navigate(withKey(`/send/${handle}/done`, accessKey), {
+          state: { sessionId },
+          replace: true,
+        });
       },
     });
   }, []);
@@ -165,7 +172,7 @@ export default function UploadingPage() {
               variant="secondary"
               size="lg"
               className="w-full"
-              onClick={() => navigate(`/send/${handle}/upload`)}
+              onClick={() => navigate(withKey(`/send/${handle}/upload`, accessKey))}
             >
               アップロード画面に戻る
             </Button>
@@ -245,6 +252,7 @@ type ProcessedFile = {
 
 type PipelineArgs = {
   handle: string;
+  accessKey: string | null;
   files: SelectedFile[];
   form: ReturnType<typeof useAtomValue<typeof uploadFormAtom>>;
   onProgress: (updater: (prev: FileProgress[]) => FileProgress[]) => void;
@@ -255,6 +263,7 @@ type PipelineArgs = {
 
 async function runPipeline({
   handle,
+  accessKey,
   files,
   form,
   onProgress,
@@ -342,14 +351,31 @@ async function runPipeline({
 
   // --- セッション作成 ---
   onOverall("session");
+  // 加工完了後に空キー (?k= 未指定) で 400/403 を引いてユーザーを待たせないよう、ここで早期に弾く
+  if (!accessKey) {
+    onGlobalError(
+      "受信URLが無効です。送信者本人から最新の受信URL（?k=... 付き）を受け取ってください。",
+    );
+    onOverall("failed");
+    return;
+  }
   let sessionId: string;
   try {
     const res = await senderApi.createSession(handle, {
+      key: accessKey,
       sender_name: form.senderName || undefined,
       photo_count: processed.length,
     });
     sessionId = res.session_id;
   } catch (err) {
+    // 403 INVALID_KEY は URL の ?k= が無い/間違っているケース。専用の案内に差し替える。
+    if (err instanceof ApiError && err.status === 403 && err.code === "INVALID_KEY") {
+      onGlobalError(
+        "受信URLが無効です。送信者本人から最新の受信URL（?k=... 付き）を受け取ってください。",
+      );
+      onOverall("failed");
+      return;
+    }
     onGlobalError(rateLimitOrFallback(err, "セッション作成に失敗"));
     onOverall("failed");
     return;

@@ -1,6 +1,6 @@
 import { useAtom } from "jotai";
 import { type ChangeEvent, type DragEvent, useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import SenderAtmosphere from "../../components/send/SenderAtmosphere";
 import WatermarkDialog from "../../components/send/WatermarkDialog";
 import Alert from "../../components/ui/Alert";
@@ -15,6 +15,7 @@ import {
   generateThumbnail,
   MAX_FILE_SIZE,
 } from "../../lib/image-processing";
+import { withKey } from "../../lib/send-url";
 import { type SelectedFile, selectedFilesAtom, uploadFormAtom } from "../../stores/sender";
 
 const CREDIT_FORMAT_OPTIONS: { value: CreditFormat; label: string }[] = [
@@ -55,6 +56,8 @@ function findPreviewFile(files: SelectedFile[]): File | null {
 
 export default function UploadPage() {
   const { handle } = useParams<{ handle: string }>();
+  const [searchParams] = useSearchParams();
+  const accessKey = searchParams.get("k");
   const navigate = useNavigate();
   const [files, setFiles] = useAtom(selectedFilesAtom);
   const [form, setForm] = useAtom(uploadFormAtom);
@@ -153,7 +156,7 @@ export default function UploadPage() {
 
   const handleSubmit = () => {
     if (!canSubmit) return;
-    navigate(`/send/${handle}/uploading`, { replace: true });
+    navigate(withKey(`/send/${handle}/uploading`, accessKey), { replace: true });
   };
 
   // フォームと受信者モードの整合を取る
@@ -183,7 +186,7 @@ export default function UploadPage() {
       <div className="relative z-10 mx-auto max-w-5xl space-y-6">
         <div className="flex items-center justify-between gap-2">
           <Link
-            to={`/send/${handle}`}
+            to={withKey(`/send/${handle}`, accessKey)}
             className="rounded-lg px-2 py-1 text-[14px] text-ink-soft transition-colors hover:bg-surface-sand hover:text-ink"
           >
             &lt; 戻る

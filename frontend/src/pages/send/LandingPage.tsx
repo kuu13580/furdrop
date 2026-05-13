@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router";
+import { Link, useParams, useSearchParams } from "react-router";
 import SenderAtmosphere from "../../components/send/SenderAtmosphere";
 import Alert from "../../components/ui/Alert";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import { ApiError, type EmbedMode, senderApi } from "../../lib/api";
+import { withKey } from "../../lib/send-url";
 
 type Receiver = {
   handle: string;
@@ -18,6 +19,8 @@ type Receiver = {
 
 export default function LandingPage() {
   const { handle } = useParams<{ handle: string }>();
+  const [searchParams] = useSearchParams();
+  const accessKey = searchParams.get("k");
   const [receiver, setReceiver] = useState<Receiver | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<"not_found" | "unknown" | null>(null);
@@ -86,7 +89,7 @@ export default function LandingPage() {
               </p>
               {receiver.is_accepting ? (
                 <Link
-                  to={`/send/${receiver.handle}/upload`}
+                  to={withKey(`/send/${receiver.handle}/upload`, accessKey)}
                   className="block rounded-xl bg-brand px-4 py-3 text-[16px] font-medium text-white transition-all hover:bg-brand-deep active:scale-[0.98]"
                 >
                   写真を送る

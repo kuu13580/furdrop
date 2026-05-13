@@ -1,5 +1,6 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { ErrorSchema } from "../lib/schema";
+import { generateSendKey } from "../lib/send-key";
 import { requireAuth } from "../middleware/auth";
 import type { AuthEnv } from "../types";
 
@@ -22,6 +23,26 @@ type EmbedMode = z.infer<typeof EmbedModeSchema>;
 
 function asMode(v: unknown): EmbedMode {
   return v === "required" || v === "optional" ? v : "disabled";
+}
+
+/**
+ * 受信 URL を ?k=KEY 付きで組み立てる。
+ * 受信者にはキーごとのレコードがあるが、ダッシュボードに出すのは「いちばん古いキー」1 つだけ。
+ * キーが 1 件も無いケースは通常起こらないが (register 時に必ず 1 件作る)、フォールバックで素の URL を返す。
+ */
+async function buildReceiveUrl(
+  db: D1Database,
+  receiverId: string,
+  handle: string,
+): Promise<string> {
+  const row = await db
+    .prepare(
+      "SELECT key_value FROM send_keys WHERE receiver_id = ? ORDER BY created_at ASC, id ASC LIMIT 1",
+    )
+    .bind(receiverId)
+    .first<{ key_value: string }>();
+  if (!row) return `/send/${handle}`;
+  return `/send/${handle}?k=${row.key_value}`;
 }
 
 const auth = new OpenAPIHono<AuthEnv>();
@@ -74,6 +95,7 @@ auth.openapi(registerRoute, async (c) => {
     .first();
 
   if (existing) {
+    const receiveUrl = await buildReceiveUrl(c.env.DB, uid, existing.handle as string);
     return c.json(
       {
         user: {
@@ -82,7 +104,7 @@ auth.openapi(registerRoute, async (c) => {
           display_name: existing.display_name as string,
           storage_used: existing.storage_used as number,
           storage_quota: existing.storage_quota as number,
-          receive_url: `/send/${existing.handle}`,
+          receive_url: receiveUrl,
           exif_embed_mode: asMode(existing.exif_embed_mode),
           watermark_mode: asMode(existing.watermark_mode),
         },
@@ -114,6 +136,16 @@ auth.openapi(registerRoute, async (c) => {
     throw e;
   }
 
+  // ユーザー作成と同時に送信キーを 1 つ発行する。これ以降はマイグレーション SQL ではなく
+  // generateSendKey() (URL-safe 21文字) を使うのでフォーマットが揃う。
+  const keyId = crypto.randomUUID();
+  const keyValue = generateSendKey();
+  await c.env.DB.prepare(
+    "INSERT INTO send_keys (id, receiver_id, key_value, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+  )
+    .bind(keyId, uid, keyValue, now, now)
+    .run();
+
   return c.json(
     {
       user: {
@@ -122,7 +154,7 @@ auth.openapi(registerRoute, async (c) => {
         display_name,
         storage_used: 0,
         storage_quota: 10737418240,
-        receive_url: `/send/${handle}`,
+        receive_url: `/send/${handle}?k=${keyValue}`,
         exif_embed_mode: exifMode,
         watermark_mode: watermarkMode,
       },
@@ -163,6 +195,8 @@ auth.openapi(meRoute, async (c) => {
     return c.json({ error: { code: "NOT_FOUND", message: "User not registered" } }, 404);
   }
 
+  const receiveUrl = await buildReceiveUrl(c.env.DB, uid, user.handle as string);
+
   return c.json(
     {
       user: {
@@ -171,7 +205,7 @@ auth.openapi(meRoute, async (c) => {
         display_name: user.display_name as string,
         storage_used: user.storage_used as number,
         storage_quota: user.storage_quota as number,
-        receive_url: `/send/${user.handle}`,
+        receive_url: receiveUrl,
         exif_embed_mode: asMode(user.exif_embed_mode),
         watermark_mode: asMode(user.watermark_mode),
       },
@@ -243,6 +277,8 @@ auth.openapi(updateOptionsRoute, async (c) => {
       .run();
   }
 
+  const receiveUrl = await buildReceiveUrl(c.env.DB, uid, current.handle as string);
+
   return c.json(
     {
       user: {
@@ -251,7 +287,7 @@ auth.openapi(updateOptionsRoute, async (c) => {
         display_name: current.display_name as string,
         storage_used: current.storage_used as number,
         storage_quota: current.storage_quota as number,
-        receive_url: `/send/${current.handle}`,
+        receive_url: receiveUrl,
         exif_embed_mode: nextExif,
         watermark_mode: nextWatermark,
       },
@@ -323,10 +359,11 @@ auth.openapi(deleteAccountRoute, async (c) => {
   // 100日経過後に物理削除する。
   const sessionRetentionThreshold = Math.floor(Date.now() / 1000) - 100 * 24 * 60 * 60;
 
-  // DB を batch で削除 (photos → upload_sessions → users)
+  // DB を batch で削除 (photos → send_keys → upload_sessions → users)
   // D1 はトランザクション分離はないが、batch は順序を保証
   await c.env.DB.batch([
     c.env.DB.prepare("DELETE FROM photos WHERE receiver_id = ?").bind(uid),
+    c.env.DB.prepare("DELETE FROM send_keys WHERE receiver_id = ?").bind(uid),
     c.env.DB.prepare("DELETE FROM upload_sessions WHERE receiver_id = ? AND created_at < ?").bind(
       uid,
       sessionRetentionThreshold,

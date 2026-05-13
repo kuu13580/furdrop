@@ -64,7 +64,10 @@ export const senderApi = {
       };
     }>(`/send/${handle}`),
 
-  createSession: (handle: string, body: { sender_name?: string; photo_count: number }) =>
+  createSession: (
+    handle: string,
+    body: { key: string; sender_name?: string; photo_count: number },
+  ) =>
     request<{ session_id: string; expires_at: number }>(`/send/${handle}/sessions`, {
       method: "POST",
       body: JSON.stringify(body),
