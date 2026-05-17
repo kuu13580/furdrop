@@ -63,16 +63,31 @@ export async function registerReceiver(
 
 /** Page 上で signInWithEmailAndPassword を呼んで Firebase Auth セッションを確立する */
 export async function signInOnPage(page: Page, user: TestUser): Promise<void> {
-  // page.evaluate の中身はブラウザ側で実行される。
-  // 動的 import の解決は Vite dev server に任せるので、Node 側の typecheck では
-  // モジュール名を解決できない (これは想定通りなので無視する)。
+  // ブラウザコンテキストでは bare specifier "firebase/auth" を解決できないので、
+  // frontend/src/lib/firebase.ts が emulator 接続時にだけ window に露出する
+  // __firebaseForTests を経由する (本番ビルドではそもそも値が入らない)。
+  await page.waitForFunction(
+    () =>
+      typeof (window as unknown as { __firebaseForTests?: unknown }).__firebaseForTests ===
+      "object",
+    null,
+    { timeout: 15_000 },
+  );
   await page.evaluate(
     async ({ email, password }) => {
-      // @ts-expect-error — Vite dev サーバが実行時に解決する
-      const { signInWithEmailAndPassword } = await import("firebase/auth");
-      // @ts-expect-error — Vite が ESM import で解決する frontend ソース
-      const mod = await import("/src/lib/firebase.ts");
-      await signInWithEmailAndPassword(mod.auth, email, password);
+      const handle = (
+        window as unknown as {
+          __firebaseForTests: {
+            auth: unknown;
+            signInWithEmailAndPassword: (
+              auth: unknown,
+              email: string,
+              password: string,
+            ) => Promise<unknown>;
+          };
+        }
+      ).__firebaseForTests;
+      await handle.signInWithEmailAndPassword(handle.auth, email, password);
     },
     { email: user.email, password: user.password },
   );
