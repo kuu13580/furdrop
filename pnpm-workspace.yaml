@@ -5,6 +5,17 @@ packages:
 minimumReleaseAge: 7d
 minimumReleaseAgeExclude:
   - fsevents
+  # テスト基盤の依存。リリース頻度が高くデフォルトの 7d を待つと
+  # マイナーアップグレードのたびに pnpm install が失敗してしまうため除外する。
+  - firebase-tools
+  - vitest
+  - "@vitest/*"
+  - "@cloudflare/vitest-pool-workers"
+  - "@playwright/test"
+  - "playwright"
+  - "playwright-core"
+  - "@types/node"
+  - "typescript"
 onlyBuiltDependencies:
   - esbuild
   - workerd

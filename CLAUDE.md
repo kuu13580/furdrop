@@ -64,7 +64,26 @@ pnpm secrets:prod
 # R2バケットCORS設定適用 (workers/r2-cors.json の内容を両バケットに適用)
 # CIのdeployワークフローで自動実行される
 pnpm cors:prod
+
+# ===== テスト =====
+# 3 層すべて (frontend ユニット + Workers 統合 + Playwright E2E) を一括実行
+# 内部で firebase emulators:exec で Auth Emulator を立ち上げる (JRE 17+ 必須)
+pnpm test
+
+# frontend ユニットテストのみ (Vitest、emulator 不要)
+pnpm test:frontend
+
+# Workers 統合テストのみ (vitest-pool-workers + Auth Emulator)
+pnpm test:workers
+
+# Playwright E2E のみ (Auth Emulator + Vite + Wrangler dev)
+pnpm test:e2e
+
+# Auth Emulator を手動起動 (port 9099、別ターミナルで `pnpm test:workers` 等を回す用)
+pnpm emulator
 ```
+
+詳細なテスト規約は `.claude/rules/testing.md` を参照。
 
 ### 環境ファイル
 

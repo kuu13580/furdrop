@@ -1,0 +1,55 @@
+# テスト専用の Wrangler 設定。本番設定 (wrangler.toml = テンプレ生成) とは別系統で、
+# こちらは git 追跡されてチームで共有される (シークレットは含めない)。
+# vitest-pool-workers が `configPath` でこのファイルを読み込む。
+#:schema node_modules/wrangler/config-schema.json
+name = "furdrop-api-test"
+main = "src/index.ts"
+compatibility_date = "2026-04-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "furdrop-test"
+database_id = "00000000-0000-0000-0000-000000000001"
+
+[[kv_namespaces]]
+binding = "PUBLIC_JWK_CACHE_KV"
+id = "test_jwk_cache"
+
+[[r2_buckets]]
+binding = "R2_ORIGINALS"
+bucket_name = "furdrop-originals-test"
+
+[[r2_buckets]]
+binding = "R2_THUMBS"
+bucket_name = "furdrop-thumbs-test"
+
+# Rate Limiter は本番と同じ unsafe binding 形式で宣言する (本番に近い環境を維持)。
+# テスト用に limit を実質無制限 (10000) にすることで、テスト間の意図しない 429 を防ぐ。
+[[unsafe.bindings]]
+name = "RATE_LIMITER_SESSION"
+type = "ratelimit"
+namespace_id = "9001"
+simple = { limit = 10000, period = 60 }
+
+[[unsafe.bindings]]
+name = "RATE_LIMITER_PHOTOS"
+type = "ratelimit"
+namespace_id = "9002"
+simple = { limit = 10000, period = 60 }
+
+[vars]
+# ENVIRONMENT=development にすることで dev/* ルートが有効化され、
+# R2 PUT を /dev/images/upload/... プロキシで本物の R2 (miniflare) に投入できる。
+ENVIRONMENT = "development"
+# Auth Emulator 用の固定プロジェクト ID (リアル GCP プロジェクトと衝突しない `demo-` 接頭辞)
+FIREBASE_PROJECT_ID = "demo-furdrop"
+# Workers の verifyFirebaseToken はこの env を見て Auth Emulator REST を叩く
+FIREBASE_AUTH_EMULATOR_HOST = "127.0.0.1:9099"
+PUBLIC_JWK_CACHE_KEY = "test-jwk"
+R2_BUCKET_ORIGINALS = "furdrop-originals-test"
+R2_BUCKET_THUMBS = "furdrop-thumbs-test"
+# 本番用の S3 SDK 経路はテストでは通らない (ENVIRONMENT=development で迂回) ためダミーで OK
+R2_ACCESS_KEY_ID = "test"
+R2_SECRET_ACCESS_KEY = "test"
+R2_ENDPOINT = "http://localhost:1"

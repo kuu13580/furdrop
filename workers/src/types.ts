@@ -29,4 +29,8 @@ export interface Env {
   // Rate limiting (X05) — wrangler.toml の [[unsafe.bindings]] で宣言
   RATE_LIMITER_SESSION: RateLimit;
   RATE_LIMITER_PHOTOS: RateLimit;
+
+  // テスト時のみセットされ、firebase-auth-cloudflare-workers の verifyIdToken に
+  // 第 3 引数として渡すと Auth Emulator REST に切り替わる (本番は未定義のままで no-op)。
+  FIREBASE_AUTH_EMULATOR_HOST?: string;
 }
