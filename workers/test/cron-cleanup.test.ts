@@ -1,0 +1,98 @@
+// Cron runCleanup (X04/X11/R13 + 100日保存期間)
+// scheduled エンドポイントを通すと scheduled() を直接叩けないため、ハンドラを import して呼ぶ。
+import { env } from "cloudflare:test";
+import { describe, expect, it } from "vitest";
+import { runCleanup } from "../src/cron/cleanup";
+import { seedPhoto, seedUser } from "./helpers/seed";
+
+const ONE_HOUR = 3600;
+const THIRTY_DAYS = 30 * 24 * 3600;
+const HUNDRED_DAYS = 100 * 24 * 3600;
+
+describe("runCleanup (Cron)", () => {
+  it("1 時間以上 pending の写真は failed にされる (X03 アップロード未完了の救出)", async () => {
+    await seedUser({ uid: "cron-uid-1", handle: "cron_pending" });
+    const oldNow = Math.floor(Date.now() / 1000) - ONE_HOUR - 60;
+    const photo = await seedPhoto({
+      receiverId: "cron-uid-1",
+      handle: "cron_pending",
+      status: "pending",
+      createdAt: oldNow,
+    });
+
+    await runCleanup(env);
+
+    // failed に遷移 → cleanupFailedPhotos で物理削除されるところまで一気に走る
+    const row = await env.DB.prepare("SELECT upload_status FROM photos WHERE id = ?")
+      .bind(photo.photoId)
+      .first<{ upload_status: string }>();
+    expect(row).toBeNull(); // failed → 物理削除されるはず
+  });
+
+  it("DL 期限 (30日) を過ぎた completed 写真は削除され、storage_used も減算される (R13/X11)", async () => {
+    const fileSize = 1000;
+    const thumbSize = 100;
+    await seedUser({
+      uid: "cron-uid-2",
+      handle: "cron_expired",
+      storage_used: fileSize + thumbSize,
+    });
+    const expiredAt = Math.floor(Date.now() / 1000) - THIRTY_DAYS - 60;
+    const photo = await seedPhoto({
+      receiverId: "cron-uid-2",
+      handle: "cron_expired",
+      status: "completed",
+      fileSize,
+      thumbSize,
+      createdAt: expiredAt,
+    });
+    // R2 にも入れて、Cron で消えることを確認
+    await env.R2_ORIGINALS.put(photo.r2KeyOriginal, new Uint8Array(fileSize));
+    await env.R2_THUMBS.put(photo.r2KeyThumb, new Uint8Array(thumbSize));
+
+    await runCleanup(env);
+
+    const row = await env.DB.prepare("SELECT id FROM photos WHERE id = ?")
+      .bind(photo.photoId)
+      .first();
+    expect(row).toBeNull();
+    const user = await env.DB.prepare("SELECT storage_used FROM users WHERE id = ?")
+      .bind("cron-uid-2")
+      .first<{ storage_used: number }>();
+    expect(user?.storage_used).toBe(0);
+    const r2 = await env.R2_ORIGINALS.head(photo.r2KeyOriginal);
+    expect(r2).toBeNull();
+  });
+
+  it("100日経過したセッションの sender_ip / sender_ua が NULL に設定される (個情法/規約13条 保存期間制限)", async () => {
+    await seedUser({ uid: "cron-uid-3", handle: "cron_session" });
+    const old = Math.floor(Date.now() / 1000) - HUNDRED_DAYS - 60;
+    const sessionId = crypto.randomUUID();
+    await env.DB.prepare(
+      `INSERT INTO upload_sessions (id, receiver_id, photo_count, total_size, status, expires_at, sender_ip, sender_ua, created_at, updated_at)
+       VALUES (?, ?, 0, 0, 'expired', ?, '203.0.113.99', 'UA-old', ?, ?)`,
+    )
+      .bind(sessionId, "cron-uid-3", old + 3600, old, old)
+      .run();
+
+    await runCleanup(env);
+
+    const row = await env.DB.prepare(
+      "SELECT sender_ip, sender_ua FROM upload_sessions WHERE id = ?",
+    )
+      .bind(sessionId)
+      .first<{ sender_ip: string | null; sender_ua: string | null }>();
+    expect(row?.sender_ip).toBeNull();
+    expect(row?.sender_ua).toBeNull();
+  });
+
+  // 本番 Cloudflare D1 は FOREIGN KEY 制約を強制しない (内部実装) ため、R15 削除フローでは
+  // 保存期間内の upload_sessions を残したまま users を消すと「孤児」状態が生まれる。
+  // miniflare の D1 (SQLite) はデフォルトで FK を強制し、PRAGMA foreign_keys = OFF も
+  // miniflare の D1 セッション越しには反映されないため、本番と同じ孤児状態をテスト環境で
+  // 作ることができない。`cleanupOrphanedSessions` のロジック自体は 1 行の DELETE 文なので
+  // 目視レビューに任せ、ここでは skip にする (将来 miniflare 側で対応されたら有効化)。
+  it.skip("孤児セッション (receiver_id が users に存在しない + 100日経過) は物理削除される", async () => {
+    // 省略 — 上記理由により miniflare 環境で再現不可
+  });
+});

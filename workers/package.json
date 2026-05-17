@@ -6,7 +6,11 @@
     "deploy": "pnpm -w generate:prod && wrangler deploy",
     "typecheck": "tsc --noEmit",
     "migrate:local": "wrangler d1 migrations apply furdrop --local",
-    "migrate:prod": "wrangler d1 migrations apply furdrop --remote"
+    "migrate:prod": "wrangler d1 migrations apply furdrop --remote",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "migrate:test": "wrangler d1 migrations apply furdrop-test --local --config wrangler.test.toml",
+    "dev:test": "pnpm migrate:test && wrangler dev --config wrangler.test.toml --port 9000"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1028.0",
@@ -18,8 +22,10 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.10.0",
     "@cloudflare/workers-types": "^4.20260409.1",
     "typescript": "^6.0.2",
+    "vitest": "^3.0.0",
     "wrangler": "^4.81.1"
   }
 }

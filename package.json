@@ -14,20 +14,32 @@
     "secrets:prod": "dotenvx run -f .env.prod -- node scripts/deploy-secrets.mjs",
     "cors:prod": "node scripts/apply-r2-cors.mjs",
     "seed": "node scripts/seed.mjs",
-    "dev": "concurrently -n front,api -c cyan,magenta \"pnpm --filter frontend dev\" \"pnpm --filter workers dev\""
+    "dev": "concurrently -n front,api -c cyan,magenta \"pnpm --filter frontend dev\" \"pnpm --filter workers dev\"",
+    "emulator": "firebase emulators:start --only auth --project demo-furdrop",
+    "emulator:exec": "firebase emulators:exec --only auth --project demo-furdrop",
+    "test": "pnpm test:frontend && pnpm emulator:exec \"pnpm test:workers:bare && pnpm test:e2e:bare\"",
+    "test:frontend": "pnpm --filter frontend test",
+    "test:workers": "pnpm emulator:exec \"pnpm --filter workers test\"",
+    "test:e2e": "pnpm emulator:exec \"pnpm --filter e2e test\"",
+    "test:workers:bare": "pnpm --filter workers test",
+    "test:e2e:bare": "pnpm --filter e2e test"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
       "@firebase/util",
       "esbuild",
       "protobufjs",
+      "re2",
+      "sharp",
       "workerd"
     ]
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.11",
     "@dotenvx/dotenvx": "^1.61.0",
-    "concurrently": "^9.2.1"
+    "concurrently": "^9.2.1",
+    "firebase-tools": "^14.0.0",
+    "vitest": "^3.0.0"
   },
-  "packageManager": "pnpm@10.33.0"
+  "packageManager": "pnpm@11.1.2+sha512.415a1cc25974731e75455c1468371be74c5aa5fb7621b50d4056d222451609f11412f23fd602e6169f1e060466641f798597e1be961a10688836a67b16569499"
 }
