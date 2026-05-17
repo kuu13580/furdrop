@@ -26,9 +26,10 @@ test("設定で EXIF 埋め込みを必須に変更すると、送信者 UI に 
   const { tinyJpeg } = await import("../fixtures/images");
   await senderPage.locator("input[type=file]").setInputFiles(tinyJpeg());
 
-  // 「必須」バッジ (= EXIF カメラモデル欄に埋め込む の右側) が出ること
-  await expect(senderPage.getByText("EXIFカメラモデル欄に埋め込む")).toBeVisible();
-  await expect(
-    senderPage.getByText("EXIFカメラモデル欄に埋め込む").locator("xpath=..").getByText("必須"),
-  ).toBeVisible();
+  // 「必須」バッジ (= EXIF カメラモデル欄に埋め込む の右側) が出ること。
+  // xpath=.. の親辿りは DOM 階層変更で剥がれやすいので、ラベル要素に絞ってバッジを取得。
+  // UploadPage.tsx の構造: <label>...EXIFカメラモデル欄に埋め込む <span>必須</span>...</label>
+  const exifLabel = senderPage.locator('label:has-text("EXIFカメラモデル欄に埋め込む")');
+  await expect(exifLabel).toBeVisible();
+  await expect(exifLabel.getByText("必須")).toBeVisible();
 });

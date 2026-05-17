@@ -81,6 +81,9 @@ pnpm test:e2e
 
 # Auth Emulator を手動起動 (port 9099、別ターミナルで `pnpm test:workers` 等を回す用)
 pnpm emulator
+
+# `:bare` 派生は emulator 起動を含まない (外側が `pnpm emulator` を立てている前提)。
+# `pnpm test` の内部で使われる。手動で叩く必要は基本ない。
 ```
 
 詳細なテスト規約は `.claude/rules/testing.md` を参照。

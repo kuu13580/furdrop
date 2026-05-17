@@ -2,6 +2,13 @@ packages:
   - "frontend"
   - "workers"
   - "e2e"
+allowBuilds:
+  '@firebase/util': true
+  esbuild: true
+  protobufjs: true
+  re2: true
+  sharp: true
+  workerd: true
 minimumReleaseAge: 7d
 minimumReleaseAgeExclude:
   - fsevents
@@ -17,5 +24,9 @@ minimumReleaseAgeExclude:
   - "@types/node"
   - "typescript"
 onlyBuiltDependencies:
+  - "@firebase/util"
   - esbuild
+  - protobufjs
+  - re2
+  - sharp
   - workerd

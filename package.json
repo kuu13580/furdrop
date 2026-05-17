@@ -17,16 +17,20 @@
     "dev": "concurrently -n front,api -c cyan,magenta \"pnpm --filter frontend dev\" \"pnpm --filter workers dev\"",
     "emulator": "firebase emulators:start --only auth --project demo-furdrop",
     "emulator:exec": "firebase emulators:exec --only auth --project demo-furdrop",
-    "test": "pnpm test:frontend && pnpm emulator:exec \"pnpm test:workers && pnpm test:e2e\"",
+    "test": "pnpm test:frontend && pnpm emulator:exec \"pnpm test:workers:bare && pnpm test:e2e:bare\"",
     "test:frontend": "pnpm --filter frontend test",
     "test:workers": "pnpm emulator:exec \"pnpm --filter workers test\"",
-    "test:e2e": "pnpm emulator:exec \"pnpm --filter e2e test\""
+    "test:e2e": "pnpm emulator:exec \"pnpm --filter e2e test\"",
+    "test:workers:bare": "pnpm --filter workers test",
+    "test:e2e:bare": "pnpm --filter e2e test"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
       "@firebase/util",
       "esbuild",
       "protobufjs",
+      "re2",
+      "sharp",
       "workerd"
     ]
   },

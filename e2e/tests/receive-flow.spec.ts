@@ -23,9 +23,12 @@ test("ログイン → ダッシュボード → ギャラリー → 写真詳�
   await page.goto("/dashboard");
   await expect(page.getByText(handle)).toBeVisible({ timeout: 15_000 });
 
-  // 4. ギャラリー: 1 枚の写真が表示される (img タグの存在 = ギャラリー表示成功)
+  // 4. ギャラリー: 1 枚の写真が表示される
+  //    AppLayout のロゴ <img alt="FurDrop"> と区別するため alt 属性 (= 送信者名) で取得。
+  //    seedOnePhotoFor で senderName: "@e2e_sender" を渡しているので、GalleryPage の
+  //    <img alt={photo.sender_name ?? "写真"}> がこの alt を持つ。
   await page.goto("/gallery");
-  const photoImg = page.locator("img").first();
+  const photoImg = page.getByRole("img", { name: "@e2e_sender" });
   await expect(photoImg).toBeVisible({ timeout: 15_000 });
 
   // 5. 写真詳細 → DL リンク (ダウンロードボタンを目視確認、実 DL は別経路)

@@ -81,10 +81,12 @@ describe("GET /receiver/photos", () => {
     expect(first.body.next_cursor).not.toBeNull();
     expect(first.body.date_counts).not.toBeNull();
 
+    const cursor = first.body.next_cursor;
+    if (cursor === null) throw new Error("unreachable: next_cursor が null"); // 直前の expect で確認済み、型ナローイング用
     const second = await apiJson<{
       photos: { id: string }[];
       date_counts: unknown;
-    }>(`/receiver/photos?limit=2&cursor=${encodeURIComponent(first.body.next_cursor!)}`, {
+    }>(`/receiver/photos?limit=2&cursor=${encodeURIComponent(cursor)}`, {
       headers: authHeader(idToken),
     });
     expect(second.body.photos).toHaveLength(2);
