@@ -70,7 +70,10 @@ export default function UploadPage() {
     exif_embed_mode: EmbedMode;
     watermark_mode: EmbedMode;
   } | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const previewSectionRef = useRef<HTMLDivElement>(null);
+  const importTimeoutRef = useRef<number | null>(null);
 
   // 受信者の情報（display_name + オプション設定）を取得
   useEffect(() => {
@@ -90,7 +93,37 @@ export default function UploadPage() {
     };
   }, [handle]);
 
+  // モバイルでは写真ピッカーが閉じてから change が発火するまでに数秒の「無の期間」がある
+  // (端末側で HEIC→JPEG 変換・大量ファイルの転送等が走るため、iOS/Android いずれでも発生)。
+  // change を待っていては手遅れなので、タップした瞬間にローダーを立て、
+  // change / cancel または安全タイムアウトで解除する。
+  // cancel イベントは Safari 16+ / Chrome 113+ で対応。未対応環境は 60s タイムアウトで吸収。
+  // input element は renderDropZone の外側で 1 度だけマウントするので、effect も 1 度で十分。
+  useEffect(() => {
+    const input = fileInputRef.current;
+    if (!input) return;
+    const handler = () => {
+      setIsImporting(false);
+      if (importTimeoutRef.current !== null) {
+        window.clearTimeout(importTimeoutRef.current);
+        importTimeoutRef.current = null;
+      }
+    };
+    input.addEventListener("cancel", handler);
+    return () => input.removeEventListener("cancel", handler);
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (importTimeoutRef.current !== null) {
+        window.clearTimeout(importTimeoutRef.current);
+      }
+    },
+    [],
+  );
+
   const addFiles = (incoming: FileList | File[]) => {
+    const wasEmpty = files.length === 0;
     const arr = Array.from(incoming);
     const accepted: SelectedFile[] = [];
     const rejected: string[] = [];
@@ -124,6 +157,13 @@ export default function UploadPage() {
     // 採用分のうちまだ未処理のもののみプレビュー生成
     const toProcess = accepted.filter((a) => !overflowed.includes(a));
     void generatePreviews(toProcess, setFiles);
+
+    // 0→非ゼロ遷移時のみプレビューエリアへ自動スクロール (現在の操作を邪魔しない)
+    if (wasEmpty && merged.length > 0) {
+      requestAnimationFrame(() => {
+        previewSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
   };
 
   const removeFile = (id: string) => {
@@ -132,7 +172,25 @@ export default function UploadPage() {
     setFiles(files.filter((f) => f.id !== id));
   };
 
+  const handleLabelClick = () => {
+    // モバイルでは写真ピッカーが閉じてから change が発火するまでに「無の期間」がある。
+    // change を待つと手遅れになるので、ピッカーを開くタップの瞬間にローダーを立てる。
+    setIsImporting(true);
+    if (importTimeoutRef.current !== null) {
+      window.clearTimeout(importTimeoutRef.current);
+    }
+    importTimeoutRef.current = window.setTimeout(() => {
+      setIsImporting(false);
+      importTimeoutRef.current = null;
+    }, 60_000);
+  };
+
   const handleFileInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setIsImporting(false);
+    if (importTimeoutRef.current !== null) {
+      window.clearTimeout(importTimeoutRef.current);
+      importTimeoutRef.current = null;
+    }
     if (e.target.files) addFiles(e.target.files);
     e.target.value = ""; // 同じファイル再選択可
   };
@@ -180,9 +238,74 @@ export default function UploadPage() {
 
   const previewFile = findPreviewFile(files);
 
+  const renderDropZone = (compact: boolean) => (
+    <label
+      htmlFor="file-input"
+      onDragOver={(e) => {
+        e.preventDefault();
+        setDragOver(true);
+      }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={handleDrop}
+      className={`block cursor-pointer rounded-[24px] border-2 border-dashed bg-surface/60 text-center backdrop-blur-sm transition-all ${
+        compact ? "p-4 sm:p-6" : "p-10 sm:p-16 lg:p-20"
+      } ${
+        dragOver
+          ? "border-brand bg-brand-tint"
+          : "border-surface-sand-deep hover:border-brand/60 hover:bg-surface/80"
+      }`}
+    >
+      <div
+        className={`mx-auto flex items-center justify-center rounded-full bg-brand-tint text-brand ${
+          compact ? "h-9 w-9" : "h-14 w-14 sm:h-16 sm:w-16"
+        }`}
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={compact ? "h-4 w-4" : "h-7 w-7 sm:h-8 sm:w-8"}
+          aria-hidden="true"
+        >
+          {compact ? <path d="M12 5v14M5 12h14" /> : <path d="M12 19V5M5 12l7-7 7 7" />}
+        </svg>
+      </div>
+      <p
+        className={`font-semibold tracking-[-0.01em] text-ink ${
+          compact ? "mt-2 text-[14px]" : "mt-4 text-[18px] sm:text-[22px]"
+        }`}
+      >
+        {compact ? "他の写真を追加" : "写真をここにドロップ"}
+      </p>
+      <p className={`text-ink-soft ${compact ? "mt-0.5 text-[12px]" : "mt-1 text-[14px]"}`}>
+        またはタップしてファイルを選択
+      </p>
+      {!compact && (
+        <p className="mt-3 font-mono text-[11px] text-ink-muted">
+          JPEG / PNG / HEIC ・ 最大 20MB / 枚 ・ 100 枚まで
+        </p>
+      )}
+    </label>
+  );
+
   return (
     <div className="relative overflow-hidden px-4 py-6 sm:px-6 sm:py-8">
       <SenderAtmosphere tone="warm" />
+      {/* label[htmlFor] で関連付けるため、input は DropZone のバリアント切り替えに影響されない位置に 1 度だけ置く。
+          onClick はラベル経由のクリックでも発火する (label が input に click を delegate するため)。 */}
+      <input
+        id="file-input"
+        ref={fileInputRef}
+        type="file"
+        accept={ACCEPT}
+        multiple
+        className="hidden"
+        onClick={handleLabelClick}
+        onChange={handleFileInputChange}
+      />
       <div className="relative z-10 mx-auto max-w-5xl space-y-6">
         <div className="flex items-center justify-between gap-2">
           <Link
@@ -197,51 +320,40 @@ export default function UploadPage() {
           <div className="w-12" />
         </div>
 
-        <label
-          htmlFor="file-input"
-          onDragOver={(e) => {
-            e.preventDefault();
-            setDragOver(true);
-          }}
-          onDragLeave={() => setDragOver(false)}
-          onDrop={handleDrop}
-          className={`block cursor-pointer rounded-[24px] border-2 border-dashed bg-surface/60 p-10 text-center backdrop-blur-sm transition-all sm:p-16 lg:p-20 ${
-            dragOver
-              ? "border-brand bg-brand-tint"
-              : "border-surface-sand-deep hover:border-brand/60 hover:bg-surface/80"
-          }`}
-        >
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand-tint text-brand sm:h-16 sm:w-16">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-7 w-7 sm:h-8 sm:w-8"
-              aria-hidden="true"
-            >
-              <path d="M12 19V5M5 12l7-7 7 7" />
-            </svg>
+        {files.length === 0 ? (
+          renderDropZone(false)
+        ) : (
+          <>
+            <div ref={previewSectionRef}>
+              <div className="mb-2 flex items-center justify-between text-[14px]">
+                <span className="font-medium text-ink">{files.length}枚選択中</span>
+                <button
+                  type="button"
+                  className="rounded-lg px-2 py-1 text-ink-soft transition-colors hover:bg-surface-sand hover:text-ink"
+                  onClick={() => {
+                    for (const f of files) if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
+                    setFiles([]);
+                  }}
+                >
+                  すべてクリア
+                </button>
+              </div>
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+                {files.map((f) => (
+                  <PreviewTile key={f.id} file={f} onRemove={() => removeFile(f.id)} />
+                ))}
+              </div>
+            </div>
+            {renderDropZone(true)}
+          </>
+        )}
+
+        {isImporting && (
+          <div className="flex items-center justify-center gap-2.5 rounded-2xl border border-surface-sand-deep bg-surface/80 px-4 py-3 text-[14px] text-ink-soft">
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-surface-sand-deep border-t-brand" />
+            <span>写真を取り込み中…</span>
           </div>
-          <p className="mt-4 text-[18px] font-semibold tracking-[-0.01em] text-ink sm:text-[22px]">
-            写真をここにドロップ
-          </p>
-          <p className="mt-1 text-[14px] text-ink-soft">またはタップしてファイルを選択</p>
-          <p className="mt-3 font-mono text-[11px] text-ink-muted">
-            JPEG / PNG / HEIC ・ 最大 20MB / 枚 ・ 100 枚まで
-          </p>
-          <input
-            id="file-input"
-            ref={fileInputRef}
-            type="file"
-            accept={ACCEPT}
-            multiple
-            className="hidden"
-            onChange={handleFileInputChange}
-          />
-        </label>
+        )}
 
         <p className="text-center text-[12px] text-ink-soft">
           初めての方は
@@ -254,29 +366,6 @@ export default function UploadPage() {
           <Alert variant="error">
             <div className="whitespace-pre-line">{error}</div>
           </Alert>
-        )}
-
-        {files.length > 0 && (
-          <div>
-            <div className="mb-2 flex items-center justify-between text-[14px]">
-              <span className="font-medium text-ink">{files.length}枚選択中</span>
-              <button
-                type="button"
-                className="rounded-lg px-2 py-1 text-ink-soft transition-colors hover:bg-surface-sand hover:text-ink"
-                onClick={() => {
-                  for (const f of files) if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
-                  setFiles([]);
-                }}
-              >
-                すべてクリア
-              </button>
-            </div>
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-              {files.map((f) => (
-                <PreviewTile key={f.id} file={f} onRemove={() => removeFile(f.id)} />
-              ))}
-            </div>
-          </div>
         )}
 
         {files.length > 0 && (
