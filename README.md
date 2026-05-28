@@ -14,6 +14,23 @@
 
 ## アーキテクチャ
 
+```mermaid
+flowchart LR
+    B[ブラウザ<br/>受信者 / 送信者]
+    P[Cloudflare Pages<br/>React + Vite]
+    W[Cloudflare Workers<br/>Hono API]
+    D[(Cloudflare D1<br/>メタデータ)]
+    R[(Cloudflare R2<br/>画像)]
+    F[Firebase Auth<br/>Twitter OAuth]
+
+    B --> P
+    B -->|API| W
+    B <-.->|Presigned URL<br/>直接 PUT / GET| R
+    W --> D
+    W --> R
+    W -->|JWT 検証| F
+```
+
 | レイヤー | 技術 |
 |---|---|
 | フロントエンド | React + TypeScript + Vite + Tailwind CSS + Jotai (Cloudflare Pages) |
