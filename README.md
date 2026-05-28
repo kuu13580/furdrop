@@ -45,7 +45,7 @@ flowchart LR
 
 ## モノレポ構成
 
-```
+```text
 frontend/   # Cloudflare Pages (React アプリ)
 workers/    # Cloudflare Workers (API)
 e2e/        # Playwright テスト
