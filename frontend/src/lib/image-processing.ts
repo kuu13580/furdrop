@@ -97,10 +97,30 @@ export function formatCredit(
 }
 
 /** 入力がHEIC系か判定 (MIME / 拡張子) */
-function isHeic(file: File): boolean {
+export function isHeic(file: File): boolean {
   const type = file.type.toLowerCase();
   if (type === "image/heic" || type === "image/heif") return true;
   return /\.hei[cf]$/i.test(file.name);
+}
+
+/**
+ * File を ImageBitmap に decode する。
+ * - JPEG / PNG / ネイティブ HEIC 対応ブラウザ (Safari 17+, Chrome 120+) はそのまま decode
+ * - createImageBitmap が失敗し、かつ HEIC だった場合のみ heic-to で JPEG 変換して再試行
+ *   (JPEG/PNG が decode 不能なら壊れているので諦めて null を返す)
+ */
+export async function tryLoadBitmap(file: File): Promise<ImageBitmap | null> {
+  try {
+    return await createImageBitmap(file, { imageOrientation: "from-image" });
+  } catch {
+    if (!isHeic(file)) return null;
+    try {
+      const jpeg = await normalizeToJpeg(file);
+      return await createImageBitmap(jpeg, { imageOrientation: "from-image" });
+    } catch {
+      return null;
+    }
+  }
 }
 
 /** Blob を Canvas 経由で JPEG に変換する共通処理 */

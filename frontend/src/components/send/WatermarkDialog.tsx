@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   drawWatermark,
+  tryLoadBitmap,
   WATERMARK_FONT_STACKS,
   type WatermarkFontFamily,
   type WatermarkOptions,
@@ -51,8 +52,11 @@ type Props = {
   onChange: (next: WatermarkOptions) => void;
   /** 透かしテキスト（通常は送信者名） */
   text: string;
-  /** プレビューに使う1枚目の画像 (HEICは未対応) */
-  previewFile: File | null;
+  /**
+   * プレビュー候補。先頭から順にレンダリングを試し、成功した最初の 1 枚をプレビューに使う。
+   * 全て HEIC でも heic-to でフォールバック変換するので、最終的にどれか 1 枚が表示できれば OK。
+   */
+  previewFiles: File[];
 };
 
 export default function WatermarkDialog({
@@ -61,44 +65,55 @@ export default function WatermarkDialog({
   options,
   onChange,
   text,
-  previewFile,
+  previewFiles,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const bitmapRef = useRef<ImageBitmap | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [previewReady, setPreviewReady] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
   /** 透かし位置を中心にズームするトグル。開いた直後は実寸感を確認しやすいよう拡大状態 */
   const [zoomed, setZoomed] = useState(true);
 
-  // ダイアログopen時に1枚目をビットマップ化してキャッシュ
+  // ダイアログopen時に候補を順番に decode し、最初に成功したものをキャッシュ
   useEffect(() => {
     if (!open) {
       setZoomed(true);
     }
-    if (!open || !previewFile) {
+    if (!open || previewFiles.length === 0) {
       setPreviewReady(false);
+      setPreviewLoading(false);
       return;
     }
     let cancelled = false;
     setPreviewError(null);
     setPreviewReady(false);
-    createImageBitmap(previewFile, { imageOrientation: "from-image" })
-      .then((b) => {
+    setPreviewLoading(true);
+    (async () => {
+      for (const file of previewFiles) {
+        if (cancelled) return;
+        const bmp = await tryLoadBitmap(file);
         if (cancelled) {
-          b.close();
+          bmp?.close();
           return;
         }
-        bitmapRef.current?.close();
-        bitmapRef.current = b;
-        setPreviewReady(true);
-      })
-      .catch(() => {
-        if (!cancelled) setPreviewError("この画像形式ではプレビューできません");
-      });
+        if (bmp) {
+          bitmapRef.current?.close();
+          bitmapRef.current = bmp;
+          setPreviewReady(true);
+          setPreviewLoading(false);
+          return;
+        }
+      }
+      if (!cancelled) {
+        setPreviewError("プレビューできる画像がありません");
+        setPreviewLoading(false);
+      }
+    })();
     return () => {
       cancelled = true;
     };
-  }, [open, previewFile]);
+  }, [open, previewFiles]);
 
   // unmount時のクリーンアップ
   useEffect(() => {
@@ -145,7 +160,7 @@ export default function WatermarkDialog({
     >
       <div className="space-y-4">
         <div className="relative flex aspect-video items-center justify-center overflow-hidden rounded-2xl bg-surface-canvas">
-          {previewFile && !previewError ? (
+          {previewFiles.length > 0 && !previewError ? (
             <>
               <canvas
                 ref={canvasRef}
@@ -158,17 +173,25 @@ export default function WatermarkDialog({
                   transition: "transform 150ms ease-out",
                 }}
               />
-              <button
-                type="button"
-                onClick={() => setZoomed((v) => !v)}
-                aria-label={zoomed ? "ズーム解除" : "透かし箇所をズーム"}
-                aria-pressed={zoomed}
-                className={`absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full shadow-card transition-colors ${
-                  zoomed ? "bg-brand text-white" : "bg-surface/90 text-ink-soft hover:bg-surface"
-                }`}
-              >
-                <ZoomIcon zoomed={zoomed} />
-              </button>
+              {previewLoading && (
+                <div className="absolute inset-0 flex items-center justify-center gap-2 bg-surface-canvas/80 text-[13px] text-ink-soft">
+                  <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-ink-muted border-t-transparent" />
+                  <span>プレビューを読み込み中…</span>
+                </div>
+              )}
+              {previewReady && (
+                <button
+                  type="button"
+                  onClick={() => setZoomed((v) => !v)}
+                  aria-label={zoomed ? "ズーム解除" : "透かし箇所をズーム"}
+                  aria-pressed={zoomed}
+                  className={`absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full shadow-card transition-colors ${
+                    zoomed ? "bg-brand text-white" : "bg-surface/90 text-ink-soft hover:bg-surface"
+                  }`}
+                >
+                  <ZoomIcon zoomed={zoomed} />
+                </button>
+              )}
             </>
           ) : (
             <p className="px-4 text-center text-[13px] text-ink-soft">

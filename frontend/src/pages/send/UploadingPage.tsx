@@ -12,6 +12,7 @@ import {
   formatCredit,
   generateThumbnail,
   getImageDimensions,
+  isHeic,
   normalizeToJpeg,
   stripExifGps,
 } from "../../lib/image-processing";
@@ -234,11 +235,6 @@ function phaseColor(p: Phase): string {
     default:
       return "text-brand";
   }
-}
-
-function isHeic(file: File): boolean {
-  const t = file.type.toLowerCase();
-  return t === "image/heic" || t === "image/heif" || /\.hei[cf]$/i.test(file.name);
 }
 
 type ProcessedFile = {

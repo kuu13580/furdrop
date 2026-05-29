@@ -1,5 +1,5 @@
 import { useAtom } from "jotai";
-import { type ChangeEvent, type DragEvent, useEffect, useRef, useState } from "react";
+import { type ChangeEvent, type DragEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import SenderAtmosphere from "../../components/send/SenderAtmosphere";
 import WatermarkDialog from "../../components/send/WatermarkDialog";
@@ -13,6 +13,7 @@ import {
   type CreditFormat,
   formatCredit,
   generateThumbnail,
+  isHeic,
   MAX_FILE_SIZE,
 } from "../../lib/image-processing";
 import { withKey } from "../../lib/send-url";
@@ -38,20 +39,6 @@ function isAccepted(file: File): boolean {
   }
   // ブラウザによってはHEICのMIMEが空になる → 拡張子で判定
   return ACCEPTED_EXTS.test(file.name);
-}
-
-function isHeicFile(file: File): boolean {
-  const t = file.type.toLowerCase();
-  if (t === "image/heic" || t === "image/heif") return true;
-  return /\.hei[cf]$/i.test(file.name);
-}
-
-/** プレビュー用に使える（HEICではない）最初のファイルを返す */
-function findPreviewFile(files: SelectedFile[]): File | null {
-  for (const f of files) {
-    if (!isHeicFile(f.file)) return f.file;
-  }
-  return null;
 }
 
 export default function UploadPage() {
@@ -236,7 +223,8 @@ export default function UploadPage() {
     });
   }, [hasSenderName, exifMode, watermarkMode, setForm]);
 
-  const previewFile = findPreviewFile(files);
+  // 毎レンダーで新しい配列を作ると WatermarkDialog 側の useEffect が再発火するため memoize
+  const previewFiles = useMemo(() => files.map((f) => f.file), [files]);
 
   const renderDropZone = (compact: boolean) => (
     <label
@@ -555,7 +543,7 @@ export default function UploadPage() {
           options={form.watermark}
           onChange={(w) => setForm({ ...form, watermark: w })}
           text={formatCredit(form.senderName, form.creditFormat)}
-          previewFile={previewFile}
+          previewFiles={previewFiles}
         />
       </div>
     </div>
@@ -571,7 +559,7 @@ function RequiredBadge() {
 }
 
 function PreviewTile({ file, onRemove }: { file: SelectedFile; onRemove: () => void }) {
-  const heic = isHeicFile(file.file);
+  const heic = isHeic(file.file);
   const hasPreview = file.previewUrl.length > 0;
   const generating = !file.previewReady;
   return (
@@ -637,7 +625,7 @@ async function generatePreviews(items: SelectedFile[], setFiles: SetFiles) {
   };
   await runConcurrent(items, PREVIEW_CONCURRENCY, async (item) => {
     // HEIC は専用の「プレビュー不可」表示にするため生成試行しない
-    if (isHeicFile(item.file)) {
+    if (isHeic(item.file)) {
       applyUpdate(item.id, { previewReady: true });
       return;
     }
