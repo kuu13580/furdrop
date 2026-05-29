@@ -223,8 +223,12 @@ export default function UploadPage() {
     });
   }, [hasSenderName, exifMode, watermarkMode, setForm]);
 
-  // 毎レンダーで新しい配列を作ると WatermarkDialog 側の useEffect が再発火するため memoize
-  const previewFiles = useMemo(() => files.map((f) => f.file), [files]);
+  // SelectedFile.previewReady/previewUrl 更新でも files 参照は変わるが、File 自体は同一。
+  // ダイアログが開いたまま別タイルのプレビュー生成が完了したときに再 decode しないよう、
+  // id 集合のシグネチャで identity を追跡する
+  const previewFilesKey = files.map((f) => f.id).join("|");
+  // biome-ignore lint/correctness/useExhaustiveDependencies: previewFilesKey が files の identity を代表する
+  const previewFiles = useMemo(() => files.map((f) => f.file), [previewFilesKey]);
 
   const renderDropZone = (compact: boolean) => (
     <label

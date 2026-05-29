@@ -81,8 +81,13 @@ export default function WatermarkDialog({
       setZoomed(true);
     }
     if (!open || previewFiles.length === 0) {
+      // 閉じる時 / 候補が空になった時は前回のエラー文言とキャッシュ bitmap も破棄して
+      // 次回 open 時にステートが混じらないようにする
       setPreviewReady(false);
       setPreviewLoading(false);
+      setPreviewError(null);
+      bitmapRef.current?.close();
+      bitmapRef.current = null;
       return;
     }
     let cancelled = false;
