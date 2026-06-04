@@ -1,0 +1,1716 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FurDrop — Release Trailer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Caveat:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- ローカルのロゴ。Scene 1 と Scene 6 で使用するので最優先で読ませる -->
+    <link rel="preload" as="image" href="logo.png" />
+
+    <!-- 動物 (placedog.net) と景色 (picsum.photos seed 固定) を再生開始までにキャッシュ。
+         これがないと各シーン出現時にネットワーク待ちで一瞬無地になる。 -->
+    <!-- Scene 2 ポラロイド (動物 3 / 景色 4) -->
+    <link rel="preload" as="image" href="https://placedog.net/640/640?id=1" />
+    <link rel="preload" as="image" href="https://picsum.photos/seed/mountain1/640/640" />
+    <link rel="preload" as="image" href="https://placedog.net/640/640?id=100" />
+    <link rel="preload" as="image" href="https://picsum.photos/seed/ocean1/640/640" />
+    <link rel="preload" as="image" href="https://picsum.photos/seed/forest1/640/640" />
+    <link rel="preload" as="image" href="https://placedog.net/640/640?id=230" />
+    <link rel="preload" as="image" href="https://picsum.photos/seed/sunset1/640/640" />
+    <!-- Scene 4 落下写真 (景色 2 / 動物 1) -->
+    <link rel="preload" as="image" href="https://picsum.photos/seed/field1/240/240" />
+    <link rel="preload" as="image" href="https://placedog.net/240/240?id=60" />
+    <link rel="preload" as="image" href="https://picsum.photos/seed/lake1/240/240" />
+    <!-- Scene 4 サムネ既存 (景色 2 / 動物 1) -->
+    <link rel="preload" as="image" href="https://picsum.photos/seed/cabin1/640/640" />
+    <link rel="preload" as="image" href="https://placedog.net/640/640?id=210" />
+    <link rel="preload" as="image" href="https://picsum.photos/seed/trail1/640/640" />
+    <!-- Scene 4 サムネ新着 — 落下写真 (上記 3 枚) と同じ画像を受信側にも表示。
+         サイズだけ 640 にして大判サムネとして preload しておく。 -->
+    <link rel="preload" as="image" href="https://picsum.photos/seed/field1/640/640" />
+    <link rel="preload" as="image" href="https://placedog.net/640/640?id=60" />
+    <link rel="preload" as="image" href="https://picsum.photos/seed/lake1/640/640" />
+    <!-- Scene 5 メイン写真 (景色) -->
+    <link rel="preload" as="image" href="https://picsum.photos/seed/vista1/640/480" />
+    <!-- Scene 3 QR (実物・api.qrserver.com 生成) -->
+    <link
+      rel="preload"
+      as="image"
+      href="https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https%3A%2F%2Ffurdrop.pages.dev&margin=4&color=2A1F1B&bgcolor=FFFFFF"
+    />
+    <style>
+      /* ===========================================================
+         FurDrop Release Trailer
+         - 単一 HTML / 約 26 秒 / CSS @keyframes でタイムライン制御
+         - DESIGN.md 準拠 (Cream / Sunset Coral / Espresso)
+         - prefers-reduced-motion: 簡素化版を提供
+         =========================================================== */
+
+      :root {
+        --total: 24s;
+
+        --cream: #faf6f0;
+        --surface: #ffffff;
+        --sand: #f1e8db;
+        --sand-deep: #eae1d3;
+        --sand-hover: #ded3c1;
+        --coral: #d96a4a;
+        --coral-deep: #b8502f;
+        --coral-tint: #fcede4;
+        --espresso: #2a1f1b;
+        --mocha: #6e5f52;
+        --silver: #a79a8c;
+        --sage: #4b7a5a;
+        --amber: #d98f2e;
+
+        --font-sans: "Inter", "Noto Sans JP", -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        --font-mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+        --font-script: "Caveat", cursive;
+
+        --shadow-card: 0 0 0 1px rgba(0, 0, 0, 0.02),
+          0 2px 6px rgba(0, 0, 0, 0.04), 0 4px 8px rgba(0, 0, 0, 0.1);
+        --shadow-lift: 0 18px 40px rgba(42, 31, 27, 0.18),
+          0 6px 14px rgba(42, 31, 27, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        font-family: var(--font-sans);
+        color: var(--espresso);
+        background: radial-gradient(
+            ellipse at top,
+            rgba(217, 106, 74, 0.08),
+            transparent 60%
+          ),
+          linear-gradient(180deg, #1c1410 0%, #2a1f1b 100%);
+        overflow: hidden;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* ===== ステージ (16:9, 1280x720 基準) ===== */
+      .stage-wrap {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
+
+      /* ステージは 1280x720 固定で設計し、JS で transform: scale() を当てて
+         ビューポートに等比フィットさせる。中身は px ベースのままで歪みなく縮小される。 */
+      .stage {
+        position: relative;
+        width: 1280px;
+        height: 720px;
+        background: var(--cream);
+        overflow: hidden;
+        border-radius: 24px;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5),
+          0 0 0 1px rgba(255, 255, 255, 0.06);
+        transform-origin: center center;
+        transform: scale(var(--stage-scale, 1));
+      }
+
+      /* シーン共通 */
+      .scene {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        will-change: opacity, transform;
+      }
+
+      /* ===========================================================
+         SCENE 1 — Opening (0.0s – 3.6s)
+         アイコンが浮かび上がり、FurDrop のロゴと
+         「写真を、匿名で。」が組み上がる
+         =========================================================== */
+      .scene-1 {
+        background:
+          radial-gradient(circle at 30% 30%, rgba(217, 106, 74, 0.18), transparent 55%),
+          radial-gradient(circle at 70% 70%, rgba(217, 106, 74, 0.1), transparent 60%),
+          var(--cream);
+        animation: scene1 var(--total) linear forwards;
+      }
+      @keyframes scene1 {
+        0% { opacity: 0; }
+        1% { opacity: 1; }
+        11% { opacity: 1; }
+        12% { opacity: 0; }
+        100% { opacity: 0; }
+      }
+
+      .s1-stack {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 32px;
+      }
+      .s1-logo {
+        height: 170px;
+        width: auto;
+        filter: drop-shadow(0 16px 32px rgba(217, 106, 74, 0.28));
+        opacity: 0;
+        transform: translateY(20px) scale(0.92);
+        animation: s1Logo var(--total) cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      }
+      @keyframes s1Logo {
+        0% { opacity: 0; transform: translateY(20px) scale(0.92); }
+        3% { opacity: 1; transform: translateY(0) scale(1); }
+        11% { opacity: 1; transform: translateY(0) scale(1); }
+        12% { opacity: 0; transform: translateY(-8px) scale(1.02); }
+        100% { opacity: 0; }
+      }
+
+      .s1-sub {
+        font-family: var(--font-sans);
+        font-weight: 500;
+        font-size: 22px;
+        color: var(--mocha);
+        letter-spacing: 0.04em;
+        margin: 0;
+        opacity: 0;
+        animation: s1Sub var(--total) ease-out forwards;
+      }
+      .s1-sub b {
+        color: var(--coral-deep);
+        font-weight: 700;
+      }
+      @keyframes s1Sub {
+        0% { opacity: 0; transform: translateY(12px); }
+        3% { opacity: 0; transform: translateY(12px); }
+        4% { opacity: 1; transform: translateY(0); }
+        11% { opacity: 1; transform: translateY(0); }
+        12% { opacity: 0; transform: translateY(-4px); }
+        100% { opacity: 0; }
+      }
+
+      /* ===========================================================
+         SCENE 2 — 課題 (3.5s – 8.2s)
+         「撮ってもらった写真、どう集める?」
+         ポラロイド風カードが散乱する
+         =========================================================== */
+      .scene-2 {
+        background:
+          radial-gradient(circle at 80% 20%, rgba(217, 106, 74, 0.08), transparent 60%),
+          var(--cream);
+        animation: scene2 var(--total) linear forwards;
+      }
+      @keyframes scene2 {
+        0% { opacity: 0; }
+        12% { opacity: 0; }
+        13% { opacity: 1; }
+        26% { opacity: 1; }
+        27% { opacity: 0; }
+        100% { opacity: 0; }
+      }
+
+      .s2-question {
+        position: relative;
+        z-index: 3;
+        text-align: center;
+      }
+      .s2-q {
+        font-family: var(--font-sans);
+        font-weight: 700;
+        font-size: 54px;
+        line-height: 1.25;
+        letter-spacing: -0.02em;
+        color: var(--espresso);
+        margin: 0;
+        opacity: 0;
+        animation: s2Q var(--total) ease-out forwards;
+      }
+      .s2-q em {
+        font-style: normal;
+        color: var(--coral);
+        position: relative;
+      }
+      .s2-q em::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: -6px;
+        height: 6px;
+        background: var(--coral);
+        opacity: 0.25;
+        border-radius: 4px;
+      }
+      @keyframes s2Q {
+        0% { opacity: 0; transform: translateY(14px); }
+        13% { opacity: 0; transform: translateY(14px); }
+        14% { opacity: 1; transform: translateY(0); }
+        26% { opacity: 1; transform: translateY(0); }
+        27% { opacity: 0; transform: translateY(-6px); }
+        100% { opacity: 0; }
+      }
+
+      /* 散らばるポラロイド */
+      .polaroid {
+        position: absolute;
+        background: #ffffff;
+        padding: 14px 14px 36px 14px;
+        box-shadow: var(--shadow-lift);
+        opacity: 0;
+        animation: var(--total) cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      }
+      .polaroid .frame {
+        width: 100%;
+        height: 100%;
+        border-radius: 4px;
+        background-color: var(--sand);
+        background-size: cover;
+        background-position: center;
+        position: relative;
+        overflow: hidden;
+      }
+      /* 動物プレースホルダ画像の上にコーラル系の色味をうっすら乗せる。
+         multiply + opacity 控えめで「写真は見えつつ、色彩は FurDrop の温度に揃える」。 */
+      .polaroid .frame::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: var(--g, linear-gradient(135deg, #f1c19a, #d96a4a 60%, #b8502f));
+        opacity: 0.35;
+        mix-blend-mode: multiply;
+      }
+      .polaroid .caption {
+        position: absolute;
+        left: 14px;
+        right: 14px;
+        bottom: 8px;
+        text-align: center;
+        font-family: var(--font-script);
+        font-size: 22px;
+        color: var(--mocha);
+      }
+
+      /* 6 枚を異なる軌道で散らす */
+      .p1 { top: 18%; left: 8%; width: 200px; height: 200px; --g: linear-gradient(135deg, #f4b27a, #d96a4a); animation-name: s2P1; }
+      .p2 { top: 56%; left: 14%; width: 220px; height: 220px; --g: linear-gradient(135deg, #f1c19a, #c47a4b); animation-name: s2P2; }
+      .p3 { top: 12%; right: 18%; width: 180px; height: 180px; --g: linear-gradient(135deg, #d98f2e, #b8502f); animation-name: s2P3; }
+      .p4 { top: 60%; right: 8%; width: 210px; height: 210px; --g: linear-gradient(135deg, #d96a4a, #8a3e25); animation-name: s2P4; }
+      .p5 { top: 38%; left: 4%; width: 160px; height: 160px; --g: linear-gradient(135deg, #ead9b6, #d98f2e); animation-name: s2P5; }
+      .p6 { top: 4%; left: 44%; width: 170px; height: 170px; --g: linear-gradient(135deg, #f4d2b3, #d96a4a); animation-name: s2P6; }
+      .p7 { top: 70%; left: 46%; width: 190px; height: 190px; --g: linear-gradient(135deg, #c47a4b, #6e3a22); animation-name: s2P7; }
+
+      /* ポラロイド 7 枚を 13.5% から 0.5% 間隔で順次着地。
+         17.5% には全部見えている → 26% まで完成形 hold。 */
+      @keyframes s2P1 {
+        0%  { opacity: 0; transform: translate(60px, -40px) rotate(-30deg) scale(0.4); }
+        13.5% { opacity: 0; transform: translate(60px, -40px) rotate(-30deg) scale(0.4); }
+        14.5% { opacity: 1; transform: translate(0, 0) rotate(-12deg) scale(1); }
+        26% { opacity: 1; transform: translate(0, 0) rotate(-12deg) scale(1); }
+        27% { opacity: 0; transform: translate(-80px, 100px) rotate(-40deg) scale(0.8); }
+        100%{ opacity: 0; }
+      }
+      @keyframes s2P2 {
+        0%  { opacity: 0; transform: translate(-40px, 80px) rotate(20deg) scale(0.4); }
+        14% { opacity: 0; }
+        15% { opacity: 1; transform: translate(0, 0) rotate(8deg) scale(1); }
+        26% { opacity: 1; transform: translate(0, 0) rotate(8deg) scale(1); }
+        27% { opacity: 0; transform: translate(-120px, 60px) rotate(30deg) scale(0.85); }
+        100%{ opacity: 0; }
+      }
+      @keyframes s2P3 {
+        0%  { opacity: 0; transform: translate(80px, -60px) rotate(40deg) scale(0.4); }
+        14.5% { opacity: 0; }
+        15.5% { opacity: 1; transform: translate(0, 0) rotate(14deg) scale(1); }
+        26% { opacity: 1; transform: translate(0, 0) rotate(14deg) scale(1); }
+        27% { opacity: 0; transform: translate(120px, -80px) rotate(50deg) scale(0.85); }
+        100%{ opacity: 0; }
+      }
+      @keyframes s2P4 {
+        0%  { opacity: 0; transform: translate(40px, 80px) rotate(-20deg) scale(0.4); }
+        15% { opacity: 0; }
+        16% { opacity: 1; transform: translate(0, 0) rotate(-7deg) scale(1); }
+        26% { opacity: 1; transform: translate(0, 0) rotate(-7deg) scale(1); }
+        27% { opacity: 0; transform: translate(140px, 100px) rotate(-30deg) scale(0.85); }
+        100%{ opacity: 0; }
+      }
+      @keyframes s2P5 {
+        0%  { opacity: 0; transform: translate(-80px, 20px) rotate(60deg) scale(0.4); }
+        15.5% { opacity: 0; }
+        16.5% { opacity: 1; transform: translate(0, 0) rotate(18deg) scale(1); }
+        26% { opacity: 1; transform: translate(0, 0) rotate(18deg) scale(1); }
+        27% { opacity: 0; transform: translate(-160px, 40px) rotate(70deg) scale(0.85); }
+        100%{ opacity: 0; }
+      }
+      @keyframes s2P6 {
+        0%  { opacity: 0; transform: translate(0, -80px) rotate(-50deg) scale(0.4); }
+        16% { opacity: 0; }
+        17% { opacity: 1; transform: translate(0, 0) rotate(-6deg) scale(1); }
+        26% { opacity: 1; transform: translate(0, 0) rotate(-6deg) scale(1); }
+        27% { opacity: 0; transform: translate(0, -140px) rotate(-60deg) scale(0.85); }
+        100%{ opacity: 0; }
+      }
+      @keyframes s2P7 {
+        0%  { opacity: 0; transform: translate(0, 80px) rotate(28deg) scale(0.4); }
+        16.5% { opacity: 0; }
+        17.5% { opacity: 1; transform: translate(0, 0) rotate(10deg) scale(1); }
+        26% { opacity: 1; transform: translate(0, 0) rotate(10deg) scale(1); }
+        27% { opacity: 0; transform: translate(0, 140px) rotate(30deg) scale(0.85); }
+        100%{ opacity: 0; }
+      }
+
+      /* ===========================================================
+         SCENE 3 — URL/QR 発行 (8.0s – 13.2s)
+         「URLを渡すだけ」
+         ハンドル入力ボックスに文字がタイプされ、QR が現れる
+         =========================================================== */
+      .scene-3 {
+        background:
+          radial-gradient(ellipse at center, rgba(217, 106, 74, 0.06), transparent 70%),
+          var(--cream);
+        animation: scene3 var(--total) linear forwards;
+      }
+      @keyframes scene3 {
+        0% { opacity: 0; }
+        26% { opacity: 0; }
+        27% { opacity: 1; }
+        45% { opacity: 1; }
+        46% { opacity: 0; }
+        100% { opacity: 0; }
+      }
+
+      .s3-grid {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 64px;
+        align-items: center;
+        padding: 0 80px;
+        width: 100%;
+      }
+
+      .s3-headline {
+        font-family: var(--font-sans);
+        font-weight: 800;
+        font-size: 60px;
+        line-height: 1.15;
+        letter-spacing: -0.03em;
+        color: var(--espresso);
+        margin: 0 0 24px 0;
+        opacity: 0;
+        animation: s3Head var(--total) ease-out forwards;
+      }
+      .s3-headline em {
+        font-style: normal;
+        color: var(--coral);
+        background: linear-gradient(180deg, transparent 65%, var(--coral-tint) 65%);
+        padding: 0 4px;
+      }
+      @keyframes s3Head {
+        0% { opacity: 0; transform: translateY(20px); }
+        27% { opacity: 0; transform: translateY(20px); }
+        28% { opacity: 1; transform: translateY(0); }
+        45% { opacity: 1; transform: translateY(0); }
+        46% { opacity: 0; transform: translateY(-6px); }
+        100% { opacity: 0; }
+      }
+      .s3-sub {
+        font-family: var(--font-sans);
+        font-size: 20px;
+        color: var(--mocha);
+        line-height: 1.6;
+        margin: 0 0 32px 0;
+        opacity: 0;
+        animation: s3Sub var(--total) ease-out forwards;
+      }
+      @keyframes s3Sub {
+        0% { opacity: 0; }
+        28% { opacity: 0; transform: translateY(8px); }
+        29% { opacity: 1; transform: translateY(0); }
+        45% { opacity: 1; }
+        46% { opacity: 0; }
+        100% { opacity: 0; }
+      }
+
+      .s3-urlbox {
+        display: flex;
+        align-items: center;
+        background: #fff;
+        border: 1.5px solid var(--sand-deep);
+        border-radius: 18px;
+        box-shadow: 0 8px 24px rgba(42, 31, 27, 0.08);
+        padding: 10px 14px 10px 20px;
+        gap: 6px;
+        opacity: 0;
+        animation: s3Box var(--total) ease-out forwards;
+        font-family: var(--font-mono);
+      }
+      @keyframes s3Box {
+        0% { opacity: 0; transform: scale(0.96); }
+        28% { opacity: 0; transform: scale(0.96); }
+        29% { opacity: 1; transform: scale(1); }
+        45% { opacity: 1; transform: scale(1); }
+        46% { opacity: 0; transform: scale(0.98); }
+        100% { opacity: 0; }
+      }
+      .s3-host {
+        color: var(--silver);
+        font-size: 18px;
+        white-space: nowrap;
+      }
+      .s3-handle {
+        color: var(--espresso);
+        font-size: 22px;
+        font-weight: 500;
+        position: relative;
+        white-space: nowrap;
+      }
+      .s3-handle .typed {
+        display: inline-block;
+        overflow: hidden;
+        white-space: nowrap;
+        vertical-align: bottom;
+        border-right: 2px solid var(--coral);
+        animation: s3Type var(--total) steps(12, end) forwards,
+          s3Caret 0.6s steps(1) infinite;
+      }
+      @keyframes s3Type {
+        0% { width: 0; }
+        29% { width: 0; }
+        32% { width: 12ch; }
+        100% { width: 12ch; }
+      }
+      @keyframes s3Caret {
+        50% { border-color: transparent; }
+      }
+      .s3-key {
+        margin-left: 10px;
+        padding: 4px 10px;
+        background: var(--coral-tint);
+        color: var(--coral-deep);
+        font-size: 14px;
+        border-radius: 999px;
+        font-weight: 600;
+        font-family: var(--font-mono);
+        opacity: 0;
+        animation: s3Key var(--total) ease-out forwards;
+      }
+      @keyframes s3Key {
+        0% { opacity: 0; transform: scale(0.4); }
+        35% { opacity: 0; transform: scale(0.4); }
+        36% { opacity: 1; transform: scale(1); }
+        45% { opacity: 1; }
+        46% { opacity: 0; }
+        100% { opacity: 0; }
+      }
+
+      .s3-qr-stack {
+        display: grid;
+        place-items: center;
+      }
+      .s3-qr {
+        position: relative;
+        width: 280px;
+        height: 280px;
+        background: #fff;
+        border-radius: 24px;
+        box-shadow: var(--shadow-lift);
+        display: grid;
+        place-items: center;
+        padding: 28px;
+        opacity: 0;
+        transform: rotate(-6deg);
+        animation: s3Qr var(--total) cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      }
+      @keyframes s3Qr {
+        0% { opacity: 0; transform: rotate(-6deg) scale(0.7); }
+        29% { opacity: 0; transform: rotate(-6deg) scale(0.7); }
+        31% { opacity: 1; transform: rotate(-6deg) scale(1); }
+        45% { opacity: 1; transform: rotate(-6deg) scale(1); }
+        46% { opacity: 0; transform: rotate(-6deg) scale(1); }
+        100% { opacity: 0; }
+      }
+      .s3-qr-img {
+        width: 100%;
+        height: 100%;
+        display: block;
+        image-rendering: pixelated; /* 拡大しても QR の角がボケない */
+      }
+
+      /* ===========================================================
+         SCENE 4 — 送信→受信のリアルタイムデモ (13.0s – 18.2s)
+         上: 送信者画面、下: 受信者画面
+         写真がドロップ → アップロード → 受信者ギャラリーに着弾
+         =========================================================== */
+      .scene-4 {
+        background: var(--cream);
+        animation: scene4 var(--total) linear forwards;
+      }
+      @keyframes scene4 {
+        0% { opacity: 0; }
+        45% { opacity: 0; }
+        46% { opacity: 1; }
+        66% { opacity: 1; }
+        67% { opacity: 0; }
+        100% { opacity: 0; }
+      }
+
+      .s4-grid {
+        position: relative; /* 中央の矢印アイコンを absolute で重ねる */
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 64px;
+        padding: 32px 56px;
+        width: 100%;
+        height: 100%;
+        align-items: stretch;
+      }
+
+      /* パネル間中央の矢印 — 「送信者 → 受信者」の流れを明示 */
+      .s4-flow-arrow {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 5;
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        background: var(--coral);
+        display: grid;
+        place-items: center;
+        box-shadow: 0 10px 28px rgba(217, 106, 74, 0.45),
+          0 0 0 6px rgba(217, 106, 74, 0.12);
+        opacity: 0;
+        animation: s4FlowFade var(--total) ease-out forwards;
+      }
+      .s4-flow-arrow .icon {
+        color: #fff;
+        font-size: 38px;
+        font-weight: 700;
+        line-height: 1;
+        animation: s4FlowPulse 1.1s ease-in-out infinite;
+      }
+      @keyframes s4FlowFade {
+        0%, 46% { opacity: 0; transform: translate(-50%, -50%) scale(0.6); }
+        47% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        66% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        67% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+      }
+      @keyframes s4FlowPulse {
+        0%, 100% { transform: translateX(-3px); }
+        50% { transform: translateX(3px); }
+      }
+
+      .s4-panel {
+        background: #fff;
+        border-radius: 20px;
+        box-shadow: var(--shadow-card);
+        padding: 18px 22px 22px;
+        display: flex;
+        flex-direction: column;
+        opacity: 0;
+        animation: s4Panel var(--total) ease-out forwards;
+      }
+      .s4-panel.right { animation-delay: 0.06s; }
+      @keyframes s4Panel {
+        0% { opacity: 0; transform: translateY(20px); }
+        45% { opacity: 0; transform: translateY(20px); }
+        46.5% { opacity: 1; transform: translateY(0); }
+        66% { opacity: 1; transform: translateY(0); }
+        67% { opacity: 0; transform: translateY(-6px); }
+        100% { opacity: 0; }
+      }
+      .s4-panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-bottom: 14px;
+        margin-bottom: 14px;
+        border-bottom: 1px solid var(--sand-deep);
+      }
+      .s4-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 12px;
+        border-radius: 999px;
+        background: var(--sand);
+        color: var(--mocha);
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .s4-tag .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--coral);
+        animation: s4Dot 1.4s ease-in-out infinite;
+      }
+      @keyframes s4Dot {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.6); opacity: 0.5; }
+      }
+      .s4-panel-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--espresso);
+        letter-spacing: -0.01em;
+      }
+      .s4-handle {
+        font-family: var(--font-mono);
+        font-size: 14px;
+        color: var(--silver);
+      }
+
+      /* 送信者ドロップゾーン */
+      .s4-drop {
+        position: relative;
+        flex: 1;
+        border-radius: 18px;
+        background: var(--cream);
+        border: 2px dashed var(--sand-deep);
+        overflow: hidden;
+        display: grid;
+        place-items: center;
+        animation: s4Drop var(--total) ease-out forwards;
+      }
+      @keyframes s4Drop {
+        0%, 46.5% { background: var(--cream); border-color: var(--sand-deep); }
+        47% { background: var(--coral-tint); border-color: var(--coral); }
+        55% { background: var(--coral-tint); border-color: var(--coral); }
+        56% { background: var(--cream); border-color: var(--sand-deep); }
+      }
+      .s4-drop-label {
+        text-align: center;
+        color: var(--mocha);
+        font-size: 14px;
+      }
+      .s4-drop-label b {
+        display: block;
+        font-size: 18px;
+        color: var(--espresso);
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+
+      /* 飛んでくる写真 — 親 .s4-drop の中央起点に配置 (margin による中央寄せで
+         既存の transform translate の値が相対位置として効くようにする) */
+      .s4-falling {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        margin: -64px 0 0 -64px;
+        width: 128px;
+        height: 128px;
+        border-radius: 14px;
+        box-shadow: var(--shadow-lift);
+        opacity: 0;
+        animation: var(--total) cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      }
+      .s4-falling.f1 {
+        --g: linear-gradient(135deg, #f4b27a, #d96a4a);
+        background-image: url("https://picsum.photos/seed/field1/240/240");
+        animation-name: s4Fall1;
+      }
+      .s4-falling.f2 {
+        --g: linear-gradient(135deg, #d98f2e, #b8502f);
+        background-image: url("https://placedog.net/240/240?id=60");
+        animation-name: s4Fall2;
+      }
+      .s4-falling.f3 {
+        --g: linear-gradient(135deg, #f1c19a, #c47a4b);
+        background-image: url("https://picsum.photos/seed/lake1/240/240");
+        animation-name: s4Fall3;
+      }
+      .s4-falling {
+        background-size: cover;
+        background-position: center;
+      }
+      .s4-falling::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 14px;
+        background: var(--g);
+        opacity: 0.4;
+        mix-blend-mode: multiply;
+      }
+      @keyframes s4Fall1 {
+        0%, 47% { opacity: 0; transform: translate(-80px, -200px) rotate(-12deg) scale(0.85); }
+        47.5% { opacity: 1; transform: translate(-80px, -200px) rotate(-12deg) scale(0.85); }
+        50% { opacity: 1; transform: translate(-40px, -10px) rotate(-4deg) scale(1); }
+        51% { opacity: 0; transform: translate(-40px, 20px) rotate(0deg) scale(0.7); }
+        100% { opacity: 0; }
+      }
+      @keyframes s4Fall2 {
+        0%, 47.7% { opacity: 0; transform: translate(100px, -220px) rotate(15deg) scale(0.85); }
+        48.2% { opacity: 1; }
+        50.7% { opacity: 1; transform: translate(30px, -10px) rotate(6deg) scale(1); }
+        51.7% { opacity: 0; transform: translate(30px, 20px) rotate(0deg) scale(0.7); }
+        100% { opacity: 0; }
+      }
+      @keyframes s4Fall3 {
+        0%, 48.5% { opacity: 0; transform: translate(0px, -240px) rotate(-6deg) scale(0.85); }
+        49% { opacity: 1; }
+        51.5% { opacity: 1; transform: translate(0px, 0px) rotate(2deg) scale(1); }
+        52.5% { opacity: 0; transform: translate(0px, 30px) rotate(0deg) scale(0.7); }
+        100% { opacity: 0; }
+      }
+
+      /* 進捗バー */
+      .s4-progress {
+        margin-top: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .s4-progress .row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 13px;
+        color: var(--mocha);
+        font-family: var(--font-mono);
+      }
+      .s4-bar {
+        height: 8px;
+        background: var(--sand);
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .s4-bar::after {
+        content: "";
+        display: block;
+        height: 100%;
+        width: 0;
+        background: linear-gradient(90deg, var(--coral), var(--coral-deep));
+        border-radius: 999px;
+        animation: s4Bar var(--total) ease-out forwards;
+      }
+      @keyframes s4Bar {
+        0%, 50% { width: 0; }
+        56% { width: 100%; }
+        67% { width: 100%; }
+      }
+      .s4-progress .pct {
+        font-weight: 600;
+        color: var(--coral-deep);
+        opacity: 0;
+        animation: s4Pct var(--total) ease-out forwards;
+      }
+      @keyframes s4Pct {
+        0%, 50% { opacity: 0; }
+        51% { opacity: 1; }
+        67% { opacity: 1; }
+      }
+
+      /* 送信完了オーバーレイ — 進捗 100% (56%) の直後にドロップゾーン上に出現 */
+      .s4-success {
+        position: absolute;
+        inset: 0;
+        z-index: 3;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        background: rgba(255, 255, 255, 0.94);
+        backdrop-filter: blur(6px);
+        border-radius: 18px;
+        opacity: 0;
+        transform: scale(0.96);
+        animation: s4Success var(--total) cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      }
+      @keyframes s4Success {
+        0%, 56% { opacity: 0; transform: scale(0.96); }
+        57% { opacity: 1; transform: scale(1); }
+        66% { opacity: 1; transform: scale(1); }
+        67% { opacity: 0; transform: scale(1); }
+      }
+      .s4-success .check {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: var(--sage);
+        color: #fff;
+        display: grid;
+        place-items: center;
+        font-size: 36px;
+        font-weight: 700;
+        line-height: 1;
+        box-shadow: 0 8px 20px rgba(75, 122, 90, 0.4);
+      }
+      .s4-success .msg {
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--espresso);
+        letter-spacing: -0.01em;
+      }
+      .s4-success .sub {
+        font-size: 13px;
+        color: var(--mocha);
+        font-family: var(--font-mono);
+      }
+
+      /* 受信者ギャラリー */
+      .s4-gallery {
+        flex: 1;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+      }
+      .s4-thumb {
+        position: relative;
+        aspect-ratio: 1/1;
+        border-radius: 12px;
+        background: var(--cream);
+        overflow: hidden;
+      }
+      .s4-thumb .img {
+        position: absolute;
+        inset: 12px;
+        border-radius: 8px;
+        background-color: var(--sand);
+        background-size: cover;
+        background-position: center;
+        overflow: hidden;
+        opacity: 0;
+        transform: scale(0.4);
+        animation: var(--total) cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      }
+      /* 動物プレースホルダの上にコーラル系を控えめに重ねる */
+      .s4-thumb .img::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 8px;
+        background: var(--g, linear-gradient(135deg, #f4b27a, #d96a4a));
+        opacity: 0.35;
+        mix-blend-mode: multiply;
+      }
+      /* 既存写真 (フェードで先に見えている) */
+      .s4-thumb.old .img {
+        opacity: 1;
+        transform: scale(1);
+        animation: none;
+      }
+      .s4-thumb.old1 .img { --g: linear-gradient(135deg, #ead9b6, #c47a4b); background-image: url("https://picsum.photos/seed/cabin1/640/640"); }
+      .s4-thumb.old2 .img { --g: linear-gradient(135deg, #f1c19a, #b8502f); background-image: url("https://placedog.net/640/640?id=210"); }
+      .s4-thumb.old3 .img { --g: linear-gradient(135deg, #d98f2e, #8a3e25); background-image: url("https://picsum.photos/seed/trail1/640/640"); }
+      /* 新着 — タイミング差で順次着弾。
+         送信側 (.s4-falling f1/f2/f3) と同じ画像になるよう URL を揃える。
+         サイズ違いでも picsum/placedog 共に同じ seed/id なら同一画像が返る。 */
+      .s4-thumb.new1 .img {
+        --g: linear-gradient(135deg, #f4b27a, #d96a4a);
+        background-image: url("https://picsum.photos/seed/field1/640/640");
+        animation-name: s4Drop1;
+      }
+      .s4-thumb.new2 .img {
+        --g: linear-gradient(135deg, #d98f2e, #b8502f);
+        background-image: url("https://placedog.net/640/640?id=60");
+        animation-name: s4Drop2;
+      }
+      .s4-thumb.new3 .img {
+        --g: linear-gradient(135deg, #f1c19a, #c47a4b);
+        background-image: url("https://picsum.photos/seed/lake1/640/640");
+        animation-name: s4Drop3;
+      }
+      /* 着弾後は scale(1) で固定し、67% にも明示して以降 transform が
+         interpolation で縮まないようにする (pop は scale(1.04) に抑えて自然に) */
+      @keyframes s4Drop1 {
+        0%, 55.5% { opacity: 0; transform: scale(0.5) translateY(-12px); }
+        56.5% { opacity: 1; transform: scale(1.04) translateY(0); }
+        57% { transform: scale(1); }
+        67% { opacity: 1; transform: scale(1); }
+      }
+      @keyframes s4Drop2 {
+        0%, 56.2% { opacity: 0; transform: scale(0.5) translateY(-12px); }
+        57.2% { opacity: 1; transform: scale(1.04) translateY(0); }
+        57.7% { transform: scale(1); }
+        67% { opacity: 1; transform: scale(1); }
+      }
+      @keyframes s4Drop3 {
+        0%, 57% { opacity: 0; transform: scale(0.5) translateY(-12px); }
+        58% { opacity: 1; transform: scale(1.04) translateY(0); }
+        58.5% { transform: scale(1); }
+        67% { opacity: 1; transform: scale(1); }
+      }
+      .s4-thumb .badge {
+        position: absolute;
+        top: 6px;
+        left: 6px;
+        z-index: 2; /* 写真 (.img) より前面に置かないと隠れる */
+        background: var(--coral);
+        color: #fff;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        padding: 4px 8px;
+        border-radius: 999px;
+        box-shadow: 0 2px 6px rgba(217, 106, 74, 0.45);
+        opacity: 0;
+        animation: var(--total) ease-out forwards;
+      }
+      .s4-thumb.new1 .badge { animation-name: s4Badge1; }
+      .s4-thumb.new2 .badge { animation-name: s4Badge2; }
+      .s4-thumb.new3 .badge { animation-name: s4Badge3; }
+      @keyframes s4Badge1 {
+        0%, 56% { opacity: 0; }
+        57% { opacity: 1; transform: scale(1.15); }
+        57.5% { transform: scale(1); }
+        67% { opacity: 1; transform: scale(1); }
+      }
+      @keyframes s4Badge2 {
+        0%, 56.7% { opacity: 0; }
+        57.7% { opacity: 1; transform: scale(1.15); }
+        58.2% { transform: scale(1); }
+        67% { opacity: 1; transform: scale(1); }
+      }
+      @keyframes s4Badge3 {
+        0%, 57.5% { opacity: 0; }
+        58.5% { opacity: 1; transform: scale(1.15); }
+        59% { transform: scale(1); }
+        67% { opacity: 1; transform: scale(1); }
+      }
+
+      /* ===========================================================
+         SCENE 5 — EXIF & 透かしの実演 (18.0s – 22.9s)
+         「だれが撮ったか、写真に残せる。」
+         写真に透かしが書き込まれ、横で EXIF パネルの Model 行が
+         Coral でハイライトされる
+         =========================================================== */
+      .scene-5 {
+        background:
+          radial-gradient(circle at 50% 0%, rgba(217, 106, 74, 0.12), transparent 60%),
+          var(--cream);
+        animation: scene5 var(--total) linear forwards;
+      }
+      @keyframes scene5 {
+        0% { opacity: 0; }
+        66% { opacity: 0; }
+        67% { opacity: 1; }
+        87% { opacity: 1; }
+        88% { opacity: 0; }
+        100% { opacity: 0; }
+      }
+
+      .s5-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 32px;
+        width: 100%;
+        padding: 48px 56px 0;
+      }
+
+      .s5-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 14px;
+        background: var(--coral-tint);
+        color: var(--coral-deep);
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        border-radius: 999px;
+        opacity: 0;
+        animation: s5Eyebrow var(--total) ease-out forwards;
+      }
+      .s5-eyebrow .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--coral);
+      }
+      @keyframes s5Eyebrow {
+        0%, 66% { opacity: 0; transform: translateY(8px); }
+        70% { opacity: 1; transform: translateY(0); }
+        86% { opacity: 1; }
+        88% { opacity: 0; }
+      }
+
+      .s5-headline {
+        font-family: var(--font-sans);
+        font-weight: 800;
+        font-size: 60px;
+        line-height: 1.15;
+        letter-spacing: -0.03em;
+        color: var(--espresso);
+        text-align: center;
+        margin: 0;
+      }
+      .s5-headline span {
+        display: inline-block;
+        opacity: 0;
+        transform: translateY(20px);
+        animation: s5Head var(--total) cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      }
+      .s5-headline em {
+        font-style: normal;
+        color: var(--coral);
+        background: linear-gradient(180deg, transparent 60%, var(--coral-tint) 60%);
+        padding: 0 4px;
+      }
+      .s5-headline span:nth-child(1) { animation-delay: 0.02s; }
+      .s5-headline span:nth-child(2) { animation-delay: 0.20s; }
+      @keyframes s5Head {
+        0%, 67% { opacity: 0; transform: translateY(20px); }
+        68% { opacity: 1; transform: translateY(0); }
+        87% { opacity: 1; }
+        88% { opacity: 0; transform: translateY(-6px); }
+      }
+
+      .s5-demo {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 44px;
+        align-items: start;
+        justify-items: center;
+        width: 100%;
+        max-width: 1040px;
+        margin-top: 4px;
+      }
+
+      .s5-col {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+      }
+      .s5-caption {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--espresso);
+        letter-spacing: -0.005em;
+      }
+      .s5-caption b {
+        color: var(--coral);
+        font-weight: 800;
+        font-size: 22px;
+      }
+
+      /* ----- 写真 + 透かし ----- */
+      .s5-photo {
+        width: 480px;
+        height: 320px;
+        border-radius: 16px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: var(--shadow-lift);
+        /* 景色のプレースホルダを背景に */
+        background-color: var(--sand);
+        background-image: url("https://picsum.photos/seed/vista1/640/480");
+        background-size: cover;
+        background-position: center;
+        opacity: 0;
+        transform: translateX(-30px);
+        animation: s5Photo var(--total) cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      }
+      @keyframes s5Photo {
+        0%, 68% { opacity: 0; transform: translateX(-30px); }
+        69.5% { opacity: 1; transform: translateX(0); }
+        87% { opacity: 1; transform: translateX(0); }
+        88% { opacity: 0; }
+      }
+      .s5-photo::before {
+        /* 写真の上にコーラル系を薄く乗せて FurDrop の色温度に揃える */
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(ellipse at 25% 20%, rgba(255, 240, 220, 0.5), transparent 50%),
+          linear-gradient(135deg, #f4b27a 0%, #d96a4a 55%, #8a3e25 100%);
+        opacity: 0.38;
+        mix-blend-mode: multiply;
+      }
+      .s5-photo::after {
+        /* 微かなビネット */
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(
+            circle at 50% 50%,
+            transparent 55%,
+            rgba(42, 31, 27, 0.28)
+          );
+        pointer-events: none;
+      }
+      .s5-watermark {
+        /* 実装 (image-processing.ts) のデフォルト透かしは sans (ゴシック)。
+           実態と揃えるため Noto Sans JP 系を使用、回転もなし。 */
+        position: absolute;
+        bottom: 18px;
+        right: 22px;
+        font-family: var(--font-sans);
+        font-weight: 700;
+        font-size: 28px;
+        color: rgba(255, 255, 255, 0.98);
+        letter-spacing: 0.02em;
+        text-shadow: 0 2px 6px rgba(0, 0, 0, 0.55),
+          0 0 14px rgba(0, 0, 0, 0.3);
+        transform-origin: right bottom;
+        z-index: 2;
+        opacity: 0;
+        transform: scale(0.7);
+        animation: s5Wm var(--total) cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      }
+      @keyframes s5Wm {
+        0%, 71% { opacity: 0; transform: scale(0.7); }
+        72% { opacity: 1; transform: scale(1.06); }
+        72.5% { opacity: 1; transform: scale(1); }
+        87% { opacity: 1; transform: scale(1); }
+        88% { opacity: 0; }
+      }
+      /* 透かしが書き込まれる瞬間のフラッシュ (光のリング) */
+      .s5-flash {
+        position: absolute;
+        bottom: 18px;
+        right: 22px;
+        width: 220px;
+        height: 60px;
+        border-radius: 80px;
+        background: radial-gradient(
+          ellipse at center,
+          rgba(255, 255, 255, 0.65),
+          transparent 65%
+        );
+        transform-origin: right bottom;
+        z-index: 1;
+        opacity: 0;
+        transform: scale(0.3);
+        animation: s5Flash var(--total) ease-out forwards;
+      }
+      @keyframes s5Flash {
+        0%, 71% { opacity: 0; transform: scale(0.3); }
+        71.5% { opacity: 1; transform: scale(1.2); }
+        72.5% { opacity: 0; transform: scale(1.6); }
+        88% { opacity: 0; }
+      }
+
+      /* ----- EXIF パネル ----- */
+      .s5-exif {
+        width: 440px;
+        background: #fff;
+        border-radius: 18px;
+        padding: 22px 26px;
+        box-shadow: var(--shadow-card);
+        font-family: var(--font-mono);
+        font-size: 16px;
+        color: var(--espresso);
+        opacity: 0;
+        transform: translateX(30px);
+        animation: s5Exif var(--total) cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      }
+      @keyframes s5Exif {
+        0%, 68% { opacity: 0; transform: translateX(30px); }
+        70% { opacity: 1; transform: translateX(0); }
+        87% { opacity: 1; transform: translateX(0); }
+        88% { opacity: 0; }
+      }
+      .s5-exif-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-family: var(--font-sans);
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--silver);
+        padding-bottom: 12px;
+        margin-bottom: 10px;
+        border-bottom: 1px solid var(--sand-deep);
+      }
+      .s5-exif-title::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--sage);
+      }
+      .s5-exif-row {
+        display: grid;
+        grid-template-columns: 110px 1fr;
+        gap: 10px;
+        padding: 8px 0;
+        position: relative;
+        transition: background 0.2s ease;
+      }
+      .s5-exif-row .k {
+        color: var(--silver);
+        font-size: 14px;
+        letter-spacing: 0.06em;
+      }
+      .s5-exif-row .v {
+        color: var(--espresso);
+        font-size: 16px;
+      }
+      /* Model 行は他より一段大きく、行間も広く取って視線が集まるよう強調 */
+      .s5-exif-row.model {
+        background: transparent;
+        border-radius: 10px;
+        padding: 12px 14px;
+        margin: 4px -14px;
+        animation: s5ModelHi var(--total) ease-out forwards;
+      }
+      .s5-exif-row.model .k {
+        font-size: 15px;
+      }
+      .s5-exif-row.model .v {
+        font-size: 19px;
+      }
+      @keyframes s5ModelHi {
+        0%, 73% { background: transparent; }
+        74% { background: var(--coral-tint); }
+        87% { background: var(--coral-tint); }
+        88% { background: transparent; }
+      }
+      .s5-exif-row.model .k {
+        color: var(--coral-deep);
+        font-weight: 700;
+        animation: s5ModelKey var(--total) ease-out forwards;
+      }
+      .s5-exif-row.model .v {
+        color: var(--coral-deep);
+        font-weight: 600;
+      }
+      @keyframes s5ModelKey {
+        0%, 73% { color: var(--silver); font-weight: 400; }
+        74% { color: var(--coral-deep); font-weight: 700; }
+        88% { color: var(--coral-deep); }
+      }
+      /* Model 行が書き換わる演出 */
+      .s5-exif-row.model .v {
+        position: relative;
+      }
+      .s5-exif-row.model .v::before {
+        content: "Canon EOS R5";
+        position: absolute;
+        inset: 0;
+        color: var(--silver);
+        text-decoration: line-through;
+        animation: s5OldModel var(--total) ease-out forwards;
+      }
+      @keyframes s5OldModel {
+        0%, 72% { opacity: 1; }
+        73.5% { opacity: 0; transform: translateX(-8px); }
+        88% { opacity: 0; }
+      }
+      .s5-exif-row.model .v .new {
+        opacity: 0;
+        animation: s5NewModel var(--total) ease-out forwards;
+      }
+      @keyframes s5NewModel {
+        0%, 73.5% { opacity: 0; transform: translateY(6px); }
+        74.5% { opacity: 1; transform: translateY(0); }
+        88% { opacity: 1; }
+      }
+      .s5-exif-arrow {
+        position: absolute;
+        right: -36px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--coral);
+        font-size: 28px;
+        opacity: 0;
+        animation: s5Arrow var(--total) ease-out infinite;
+      }
+      @keyframes s5Arrow {
+        0%, 74% { opacity: 0; transform: translate(0, -50%); }
+        75% { opacity: 1; transform: translate(-4px, -50%); }
+        77% { opacity: 1; transform: translate(0, -50%); }
+        79% { opacity: 1; transform: translate(-4px, -50%); }
+        88% { opacity: 0; }
+      }
+
+      .s5-sub {
+        font-size: 18px;
+        color: var(--mocha);
+        margin: 0;
+        text-align: center;
+        font-weight: 500;
+        opacity: 0;
+        animation: s5Sub var(--total) ease-out forwards;
+      }
+      .s5-sub b {
+        color: var(--espresso);
+        font-weight: 700;
+      }
+      @keyframes s5Sub {
+        0%, 74% { opacity: 0; transform: translateY(6px); }
+        75.5% { opacity: 1; transform: translateY(0); }
+        87% { opacity: 1; }
+        88% { opacity: 0; }
+      }
+
+      /* ===========================================================
+         SCENE 6 — CTA / クロージング (22.5s – 26s)
+         ロゴ + URL + タグライン
+         =========================================================== */
+      .scene-6 {
+        background:
+          radial-gradient(circle at 50% 40%, rgba(217, 106, 74, 0.18), transparent 60%),
+          var(--cream);
+        animation: scene6 var(--total) linear forwards;
+      }
+      @keyframes scene6 {
+        0% { opacity: 0; }
+        87% { opacity: 0; }
+        88% { opacity: 1; }
+        100% { opacity: 1; }
+      }
+
+      .s6-stack {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 28px;
+      }
+      .s6-logo {
+        height: 100px;
+        width: auto;
+        opacity: 0;
+        transform: translateY(20px) scale(0.92);
+        animation: s6Logo var(--total) cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        filter: drop-shadow(0 12px 28px rgba(217, 106, 74, 0.25));
+      }
+      @keyframes s6Logo {
+        0%, 87% { opacity: 0; transform: translateY(20px) scale(0.92); }
+        89% { opacity: 1; transform: translateY(0) scale(1); }
+        100% { opacity: 1; transform: translateY(0) scale(1); }
+      }
+      .s6-tag {
+        font-size: 30px;
+        font-weight: 700;
+        letter-spacing: -0.015em;
+        color: var(--espresso);
+        margin: 0;
+        opacity: 0;
+        animation: s6Tag var(--total) ease-out forwards;
+      }
+      .s6-tag b {
+        color: var(--coral);
+      }
+      @keyframes s6Tag {
+        0%, 88% { opacity: 0; transform: translateY(12px); }
+        89.5% { opacity: 1; transform: translateY(0); }
+        100% { opacity: 1; }
+      }
+
+      /* ===========================================================
+         コントロール — リプレイボタン
+         =========================================================== */
+      .replay {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        background: rgba(255, 255, 255, 0.92);
+        color: var(--espresso);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        padding: 10px 18px;
+        border-radius: 999px;
+        font-family: var(--font-sans);
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        backdrop-filter: blur(8px);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        opacity: 0.6;
+        transition: opacity 0.2s ease, transform 0.15s ease;
+        z-index: 10;
+      }
+      .replay:hover {
+        opacity: 1;
+        transform: scale(1.04);
+      }
+      .replay:active {
+        transform: scale(0.98);
+      }
+
+      .meta {
+        position: fixed;
+        bottom: 24px;
+        left: 24px;
+        color: rgba(255, 255, 255, 0.45);
+        font-family: var(--font-mono);
+        font-size: 12px;
+        letter-spacing: 0.05em;
+        z-index: 10;
+      }
+
+      /* 録画モード: ?record=1 を付けて開くと装飾を全て外し、
+         ステージを画面ぴったりに置いて録画しやすくする */
+      body.recording {
+        background: var(--cream);
+      }
+      body.recording .stage-wrap {
+        padding: 0;
+      }
+      body.recording .stage {
+        border-radius: 0;
+        box-shadow: none;
+      }
+      /* 切り抜き時の目印として、ステージ前面に常時 1px の薄い枠線を重ねる。
+         背景レイヤー (inset shadow) だとシーン背景に隠れたり透けたりして
+         「出たり消えたり」するため、最前面に固定して安定表示する。 */
+      body.recording .stage::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border: 1px solid rgba(42, 31, 27, 0.22);
+        pointer-events: none;
+        z-index: 100;
+      }
+      body.recording .replay,
+      body.recording .meta {
+        display: none;
+      }
+
+      /* prefers-reduced-motion: タイムラインだけ残してモーションを抑制 */
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.001ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.001ms !important;
+        }
+        .scene {
+          opacity: 1 !important;
+        }
+        .scene + .scene { display: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="stage-wrap">
+      <div class="stage" id="stage">
+        <!-- ===== SCENE 1: Opening ===== -->
+        <section class="scene scene-1">
+          <div class="s1-stack">
+            <img class="s1-logo" src="logo.png" alt="FurDrop" />
+            <p class="s1-sub">写真を<b>匿名で</b>受け取ろう</p>
+          </div>
+        </section>
+
+        <!-- ===== SCENE 2: 課題 ===== -->
+        <section class="scene scene-2">
+          <div class="polaroid p1"><div class="frame" style="background-image: url('https://placedog.net/640/640?id=1')"></div><span class="caption">IMG_0042</span></div>
+          <div class="polaroid p2"><div class="frame" style="background-image: url('https://picsum.photos/seed/mountain1/640/640')"></div><span class="caption">DSC_8910</span></div>
+          <div class="polaroid p3"><div class="frame" style="background-image: url('https://placedog.net/640/640?id=100')"></div><span class="caption">PXL_2024</span></div>
+          <div class="polaroid p4"><div class="frame" style="background-image: url('https://picsum.photos/seed/ocean1/640/640')"></div><span class="caption">IMG_1188</span></div>
+          <div class="polaroid p5"><div class="frame" style="background-image: url('https://picsum.photos/seed/forest1/640/640')"></div><span class="caption">live_03</span></div>
+          <div class="polaroid p6"><div class="frame" style="background-image: url('https://placedog.net/640/640?id=230')"></div><span class="caption">stage_a1</span></div>
+          <div class="polaroid p7"><div class="frame" style="background-image: url('https://picsum.photos/seed/sunset1/640/640')"></div><span class="caption">backstage</span></div>
+          <div class="s2-question">
+            <p class="s2-q">撮ってもらった写真<br /><em>どうやって集めてる？</em></p>
+          </div>
+        </section>
+
+        <!-- ===== SCENE 3: URL/QR 発行 ===== -->
+        <section class="scene scene-3">
+          <div class="s3-grid">
+            <div>
+              <h2 class="s3-headline">URLを<em>渡すだけ</em><br />それだけで届く</h2>
+              <p class="s3-sub">
+                アカウント不要・ログイン不要<br />
+                受信者は専用URLを発行<br />
+                送信者は開いて写真を選ぶだけ
+              </p>
+              <div class="s3-urlbox">
+                <span class="s3-host">furdrop.app/send/</span>
+                <span class="s3-handle"><span class="typed">photographer</span></span>
+              </div>
+            </div>
+            <div class="s3-qr-stack">
+              <div class="s3-qr">
+                <!-- 実物の QR コード (api.qrserver.com で furdrop.pages.dev を生成) -->
+                <img
+                  class="s3-qr-img"
+                  src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https%3A%2F%2Ffurdrop.pages.dev&margin=4&color=2A1F1B&bgcolor=FFFFFF"
+                  alt="furdrop.pages.dev の QR コード"
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== SCENE 4: 送信→受信デモ ===== -->
+        <section class="scene scene-4">
+          <div class="s4-grid">
+            <!-- 中央の矢印 — 「送信者 → 受信者」の流れを明示 -->
+            <div class="s4-flow-arrow" aria-hidden="true">
+              <span class="icon">→</span>
+            </div>
+            <!-- 送信者パネル -->
+            <div class="s4-panel">
+              <div class="s4-panel-head">
+                <div class="s4-panel-title">送信者</div>
+                <span class="s4-tag"><span class="dot"></span>匿名でOK</span>
+              </div>
+              <div class="s4-drop">
+                <div class="s4-falling f1"></div>
+                <div class="s4-falling f2"></div>
+                <div class="s4-falling f3"></div>
+                <div class="s4-drop-label">
+                  <b>ここに写真をドロップ</b>
+                  JPEG / PNG / HEIC・最大20MB
+                </div>
+                <div class="s4-success">
+                  <div class="check">✓</div>
+                  <div class="msg">送信完了</div>
+                  <div class="sub">3 ファイル · 28.4 MB</div>
+                </div>
+              </div>
+              <div class="s4-progress">
+                <div class="row">
+                  <span>3 ファイルをアップロード中</span>
+                  <span class="pct">100%</span>
+                </div>
+                <div class="s4-bar"></div>
+              </div>
+            </div>
+
+            <!-- 受信者パネル -->
+            <div class="s4-panel right">
+              <div class="s4-panel-head">
+                <div>
+                  <div class="s4-panel-title">受信者ギャラリー</div>
+                  <div class="s4-handle">@photographer</div>
+                </div>
+                <span class="s4-tag"><span class="dot"></span>NEW</span>
+              </div>
+              <div class="s4-gallery">
+                <div class="s4-thumb new1"><span class="badge">NEW</span><div class="img"></div></div>
+                <div class="s4-thumb new2"><span class="badge">NEW</span><div class="img"></div></div>
+                <div class="s4-thumb new3"><span class="badge">NEW</span><div class="img"></div></div>
+                <div class="s4-thumb old old1"><div class="img"></div></div>
+                <div class="s4-thumb old old2"><div class="img"></div></div>
+                <div class="s4-thumb old old3"><div class="img"></div></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== SCENE 5: EXIF & 透かしの実演 ===== -->
+        <section class="scene scene-5">
+          <div class="s5-wrap">
+            <h2 class="s5-headline">
+              <span>だれが撮ったか</span><br />
+              <span><em>写真自体に</em>残せる</span>
+            </h2>
+
+            <div class="s5-demo">
+              <!-- 左: 写真 + 透かし -->
+              <div class="s5-col">
+                <div class="s5-photo">
+                  <div class="s5-flash"></div>
+                  <div class="s5-watermark">撮影：@hanako_photo</div>
+                </div>
+                <div class="s5-caption"><b>透かし</b> を画像に焼き込み</div>
+              </div>
+
+              <!-- 右: EXIF パネル -->
+              <div class="s5-col">
+                <div class="s5-exif">
+                  <div class="s5-exif-title">EXIF Metadata</div>
+                  <div class="s5-exif-row">
+                    <span class="k">File</span>
+                    <span class="v">IMG_0042.JPG</span>
+                  </div>
+                  <div class="s5-exif-row">
+                    <span class="k">Date</span>
+                    <span class="v">2026:05:29 18:42:17</span>
+                  </div>
+                  <div class="s5-exif-row">
+                    <span class="k">ISO</span>
+                    <span class="v">400</span>
+                  </div>
+                  <div class="s5-exif-row model">
+                    <span class="k">Model</span>
+                    <span class="v"><span class="new">@hanako_photo</span></span>
+                    <span class="s5-exif-arrow">◀</span>
+                  </div>
+                  <div class="s5-exif-row">
+                    <span class="k">Software</span>
+                    <span class="v">FurDrop</span>
+                  </div>
+                </div>
+                <div class="s5-caption"><b>EXIF</b> Model 欄に送信者情報</div>
+              </div>
+            </div>
+
+            <p class="s5-sub">匿名で受け取りつつ<b>誰が撮ったかは画像に残せる</b></p>
+          </div>
+        </section>
+
+        <!-- ===== SCENE 6: CTA ===== -->
+        <section class="scene scene-6">
+          <div class="s6-stack">
+            <img class="s6-logo" src="logo.png" alt="FurDrop" />
+            <p class="s6-tag">写真を<b>迷わず</b>集めよう</p>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <button class="replay" id="replay" type="button" aria-label="リプレイ">
+      ↻ もう一度再生
+    </button>
+    <div class="meta">FURDROP · RELEASE TRAILER · v1</div>
+
+    <script>
+      // 録画モード判定: ?record=1 で装飾を外し、ステージを画面ぴったりにする
+      const RECORDING =
+        new URLSearchParams(location.search).get("record") === "1";
+      if (RECORDING) document.body.classList.add("recording");
+
+      // ステージを 1280x720 のまま、ビューポートに 16:9 等比フィットさせる
+      (function () {
+        const wrap = document.querySelector(".stage-wrap");
+        // 録画モードはステージ周辺の padding を取るのでフルビューポートで計算する
+        const PAD = RECORDING ? 0 : 48; // 通常は 24px x 2 の余白
+
+        function applyScale() {
+          const w = window.innerWidth - PAD;
+          const h = window.innerHeight - PAD;
+          const scale = Math.min(w / 1280, h / 720, 1);
+          wrap.style.setProperty("--stage-scale", scale.toFixed(4));
+        }
+
+        applyScale();
+        window.addEventListener("resize", applyScale);
+        // モバイルの URL バー出し入れに追従
+        window.addEventListener("orientationchange", applyScale);
+      })();
+
+      // リプレイ: stage を DOM から外して再アタッチして全 @keyframes をリセット
+      (function () {
+        const replay = document.getElementById("replay");
+        replay.addEventListener("click", function () {
+          const stage = document.getElementById("stage");
+          if (!stage) return;
+          const next = stage.cloneNode(true);
+          stage.replaceWith(next);
+        });
+      })();
+    </script>
+  </body>
+</html>
