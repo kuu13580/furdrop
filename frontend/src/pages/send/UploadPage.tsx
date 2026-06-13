@@ -8,6 +8,7 @@ import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
 import { type EmbedMode, senderApi } from "../../lib/api";
 import { runConcurrent } from "../../lib/concurrency";
+import { generateId } from "../../lib/id";
 import {
   CREDIT_FORMATS,
   type CreditFormat,
@@ -16,6 +17,7 @@ import {
   isHeic,
   MAX_FILE_SIZE,
 } from "../../lib/image-processing";
+import { clearAllPhotos, deletePhotos, getPhoto, putPhoto } from "../../lib/photo-store";
 import { withKey } from "../../lib/send-url";
 import { type SelectedFile, selectedFilesAtom, uploadFormAtom } from "../../stores/sender";
 
@@ -29,6 +31,31 @@ const CREDIT_FORMAT_OPTIONS: { value: CreditFormat; label: string }[] = [
 const ACCEPT = "image/jpeg,image/png,image/heic,image/heif,.heic,.heif";
 const MAX_PHOTOS_PER_SESSION = 100;
 const PREVIEW_CONCURRENCY = 3;
+// IndexedDB への書き出し並列度。put は実体読み取り (content:// I/O) を伴うため
+// 程よく並列化しつつ、瞬間的な読み取り競合を抑えるために控えめにする。
+const STORE_CONCURRENCY = 4;
+// Android では content:// 読み取り (NotReadableError) もデコード (EncodingError) も
+// 資源競合で一時的に失敗することがある。いずれも遅延付きリトライで大半回収できる。
+const STORE_RETRIES = 3;
+const DECODE_RETRIES = 2;
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+/** 失敗時に遅延付きで再試行する。最後まで失敗したら最後の例外を投げる。 */
+async function withRetry<T>(retries: number, fn: () => Promise<T>): Promise<T> {
+  let lastErr: unknown;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      // リトライ待機中はワーカーが埋まり実効並列度が下がるため、
+      // 同時デコード数も減ってメモリ逼迫が緩む副次効果がある。
+      if (attempt < retries) await sleep(200 * (attempt + 1));
+    }
+  }
+  throw lastErr;
+}
 
 const ACCEPTED_EXTS = /\.(jpe?g|png|hei[cf])$/i;
 
@@ -39,6 +66,17 @@ function isAccepted(file: File): boolean {
   }
   // ブラウザによってはHEICのMIMEが空になる → 拡張子で判定
   return ACCEPTED_EXTS.test(file.name);
+}
+
+// 透かしプレビュー候補の最大枚数。実体は IndexedDB から取り出すため、メモリを抑える目的で
+// 少数に絞る。WatermarkDialog が先頭から順に decode を試し、最初に成功した 1 枚を使う。
+const PREVIEW_CANDIDATE_LIMIT = 6;
+
+/** 透かしプレビュー候補を選ぶ。非HEICを優先し、上限枚数で打ち切る */
+function pickPreviewCandidates(files: SelectedFile[]): SelectedFile[] {
+  const nonHeic = files.filter((f) => !isHeic(f.file));
+  const heic = files.filter((f) => isHeic(f.file));
+  return [...nonHeic, ...heic].slice(0, PREVIEW_CANDIDATE_LIMIT);
 }
 
 export default function UploadPage() {
@@ -109,10 +147,20 @@ export default function UploadPage() {
     [],
   );
 
+  // リロード等で前回フローの bytes が IndexedDB に孤立して残る (atom はリロードで
+  // 空に戻る)。選択が空の状態で開いたとき=新規フロー開始とみなし、一度だけ回収する。
+  const cleanupRanRef = useRef(false);
+  useEffect(() => {
+    if (cleanupRanRef.current) return;
+    cleanupRanRef.current = true;
+    if (files.length === 0) void clearAllPhotos();
+  }, [files.length]);
+
   const addFiles = (incoming: FileList | File[]) => {
     const wasEmpty = files.length === 0;
     const arr = Array.from(incoming);
-    const accepted: SelectedFile[] = [];
+    // メタ情報と実体 File をペアで保持。state にはメタのみ載せ、実体は IndexedDB へ退避する。
+    const accepted: { meta: SelectedFile; file: File }[] = [];
     const rejected: string[] = [];
     for (const f of arr) {
       if (!isAccepted(f)) {
@@ -124,29 +172,31 @@ export default function UploadPage() {
         continue;
       }
       accepted.push({
-        id: crypto.randomUUID(),
+        meta: {
+          id: generateId(),
+          file: { name: f.name, type: f.type, size: f.size },
+          previewUrl: "",
+          previewReady: false,
+        },
         file: f,
-        previewUrl: "",
-        previewReady: false,
       });
     }
 
-    const merged = [...files, ...accepted];
-    const overflowed: SelectedFile[] = [];
-    if (merged.length > MAX_PHOTOS_PER_SESSION) {
+    const mergedMetas = [...files, ...accepted.map((a) => a.meta)];
+    const overflowedMetas: SelectedFile[] = [];
+    if (mergedMetas.length > MAX_PHOTOS_PER_SESSION) {
       rejected.push(`一度に送れるのは${MAX_PHOTOS_PER_SESSION}枚までです`);
-      overflowed.push(...merged.splice(MAX_PHOTOS_PER_SESSION));
+      overflowedMetas.push(...mergedMetas.splice(MAX_PHOTOS_PER_SESSION));
     }
-    setFiles(merged);
+    setFiles(mergedMetas);
     setError(rejected.length > 0 ? rejected.join("\n") : null);
 
-    // 上限超過で切り落とされた分は新規生成前なので URL 解放不要
-    // 採用分のうちまだ未処理のもののみプレビュー生成
-    const toProcess = accepted.filter((a) => !overflowed.includes(a));
-    void generatePreviews(toProcess, setFiles);
+    // 上限超過で切り落とされた分は IndexedDB 未保存なのでクリーンアップ不要
+    const toProcess = accepted.filter((a) => !overflowedMetas.includes(a.meta));
+    void ingestFiles(toProcess, setFiles, setError);
 
     // 0→非ゼロ遷移時のみプレビューエリアへ自動スクロール (現在の操作を邪魔しない)
-    if (wasEmpty && merged.length > 0) {
+    if (wasEmpty && mergedMetas.length > 0) {
       requestAnimationFrame(() => {
         previewSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       });
@@ -157,6 +207,7 @@ export default function UploadPage() {
     const target = files.find((f) => f.id === id);
     if (target?.previewUrl) URL.revokeObjectURL(target.previewUrl);
     setFiles(files.filter((f) => f.id !== id));
+    void deletePhotos([id]);
   };
 
   const handleLabelClick = () => {
@@ -223,12 +274,36 @@ export default function UploadPage() {
     });
   }, [hasSenderName, exifMode, watermarkMode, setForm]);
 
-  // SelectedFile.previewReady/previewUrl 更新でも files 参照は変わるが、File 自体は同一。
-  // ダイアログが開いたまま別タイルのプレビュー生成が完了したときに再 decode しないよう、
-  // id 集合のシグネチャで identity を追跡する
+  // 透かしダイアログのライブプレビュー用。実体は IndexedDB にあるので、ダイアログを
+  // 開いている間だけ候補数枚を取り出し、名前を保持するため File に復元して渡す。
+  // id 集合のシグネチャで identity を追跡し、別タイルのプレビュー生成完了による
+  // 再 fetch を避ける。
   const previewFilesKey = files.map((f) => f.id).join("|");
   // biome-ignore lint/correctness/useExhaustiveDependencies: previewFilesKey が files の identity を代表する
-  const previewFiles = useMemo(() => files.map((f) => f.file), [previewFilesKey]);
+  const previewCandidates = useMemo(() => pickPreviewCandidates(files), [previewFilesKey]);
+  const [previewFiles, setPreviewFiles] = useState<File[]>([]);
+  useEffect(() => {
+    if (!watermarkDialogOpen) {
+      setPreviewFiles([]);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const out: File[] = [];
+      for (const c of previewCandidates) {
+        try {
+          const blob = await getPhoto(c.id);
+          out.push(new File([blob], c.file.name, { type: c.file.type }));
+        } catch {
+          // 取り出せない候補はスキップし、残りの候補でプレビューを試みる
+        }
+      }
+      if (!cancelled) setPreviewFiles(out);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [watermarkDialogOpen, previewCandidates]);
 
   const renderDropZone = (compact: boolean) => (
     <label
@@ -324,6 +399,7 @@ export default function UploadPage() {
                   className="rounded-lg px-2 py-1 text-ink-soft transition-colors hover:bg-surface-sand hover:text-ink"
                   onClick={() => {
                     for (const f of files) if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
+                    void deletePhotos(files.map((f) => f.id));
                     setFiles([]);
                   }}
                 >
@@ -610,12 +686,30 @@ function PreviewTile({ file, onRemove }: { file: SelectedFile; onRemove: () => v
 
 type SetFiles = (update: SelectedFile[] | ((prev: SelectedFile[]) => SelectedFile[])) => void;
 
+/** IndexedDB の容量超過エラーか判定する (iOS/各ブラウザ共通で name は QuotaExceededError) */
+function isQuotaError(err: unknown): boolean {
+  return err instanceof DOMException && err.name === "QuotaExceededError";
+}
+
 /**
- * 選択された各ファイルについて非同期にサムネプレビュー (長辺 400px) を生成する。
- * オリジナルを `<img>` に渡すとモバイルで巨大な raw データがデコードされて重くなるため、
- * プレビュー表示に使う画像自体を小さくしておく。
+ * 選択された各ファイルを取り込み、サムネプレビュー (長辺 400px) を生成する。
+ *
+ * 処理は 2 パス:
+ *  1. 各ファイルの bytes を IndexedDB (photo-store) へ書き出す。picker 由来の
+ *     File を put すると実体が読まれてストアにコピーされ、content:// から
+ *     切り離される。Android Chrome では content:// File が選択時スナップショットを
+ *     持ち、遅延読み込み時に失効すると ERR_UPLOAD_FILE_CHANGED / decode 失敗で
+ *     全滅するため、低速なデコードより先にここで全件確保する。bytes は state に
+ *     持たず IDB (ディスク) に逃がすので RAM も圧迫しない。
+ *  2. IDB から 1 枚ずつ取り出して 400px サムネを生成する。オリジナルを `<img>` に
+ *     直接渡すと巨大な raw データがデコードされて重いため、表示用は小さくする。
+ *     RAM 常駐は同時デコード数ぶんに限られる。
  */
-async function generatePreviews(items: SelectedFile[], setFiles: SetFiles) {
+async function ingestFiles(
+  items: { meta: SelectedFile; file: File }[],
+  setFiles: SetFiles,
+  setError: (msg: string | null) => void,
+) {
   const applyUpdate = (id: string, patch: Partial<SelectedFile>) => {
     setFiles((prev) => {
       const target = prev.find((f) => f.id === id);
@@ -627,17 +721,56 @@ async function generatePreviews(items: SelectedFile[], setFiles: SetFiles) {
       return prev.map((f) => (f.id === id ? { ...f, ...patch } : f));
     });
   };
-  await runConcurrent(items, PREVIEW_CONCURRENCY, async (item) => {
+
+  // Pass 1: bytes を IndexedDB へ退避し、content:// から切り離す
+  const stored = await runConcurrent(items, STORE_CONCURRENCY, async ({ meta, file }) => {
+    await withRetry(STORE_RETRIES, () => putPhoto(meta.id, file));
+    return meta;
+  });
+  let quotaHit = false;
+  const pendingPreview = stored.map((r, i) => {
+    if (r.status === "fulfilled") return r.value;
+    // IDB 書き出しに失敗したケース。プレビュー不可として確定させる
+    if (isQuotaError(r.reason)) quotaHit = true;
+    applyUpdate(items[i].meta.id, { previewReady: true });
+    return null;
+  });
+  // iOS など端末の保存容量上限に達した場合は原因が分かる文言を出す
+  if (quotaHit) {
+    setError(
+      "端末の保存容量が不足しているため、一部の写真を取り込めませんでした。写真の枚数を減らすか、空き容量を確保してお試しください。",
+    );
+  }
+
+  const renderThumb = async (meta: SelectedFile): Promise<void> => {
+    const thumb = await generateThumbnail(await getPhoto(meta.id));
+    applyUpdate(meta.id, { previewUrl: URL.createObjectURL(thumb), previewReady: true });
+  };
+
+  // Pass 2: IDB から取り出して 1 枚ずつサムネ生成
+  // 並列デコードの圧で一過性に失敗したものは、圧が消えた後に逐次で再挑戦する
+  const decodeFailed: SelectedFile[] = [];
+  await runConcurrent(pendingPreview, PREVIEW_CONCURRENCY, async (meta) => {
+    if (!meta) return;
     // HEIC は専用の「プレビュー不可」表示にするため生成試行しない
-    if (isHeic(item.file)) {
-      applyUpdate(item.id, { previewReady: true });
+    if (isHeic(meta.file)) {
+      applyUpdate(meta.id, { previewReady: true });
       return;
     }
     try {
-      const thumb = await generateThumbnail(item.file);
-      applyUpdate(item.id, { previewUrl: URL.createObjectURL(thumb), previewReady: true });
+      await withRetry(DECODE_RETRIES, () => renderThumb(meta));
     } catch {
-      applyUpdate(item.id, { previewReady: true });
+      decodeFailed.push(meta);
     }
   });
+
+  // Pass 3: 最終スイープ。並列デコードが全て終わってメモリ逼迫が解けた状態で、
+  // 失敗分を逐次 (並列度1) で 1 回ずつ再試行する。
+  for (const meta of decodeFailed) {
+    try {
+      await renderThumb(meta);
+    } catch {
+      applyUpdate(meta.id, { previewReady: true });
+    }
+  }
 }

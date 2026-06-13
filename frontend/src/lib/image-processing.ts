@@ -96,11 +96,11 @@ export function formatCredit(
   return CREDIT_FORMATS[format].format(trimmed);
 }
 
-/** 入力がHEIC系か判定 (MIME / 拡張子) */
-export function isHeic(file: File): boolean {
-  const type = file.type.toLowerCase();
+/** 入力がHEIC系か判定 (MIME / 拡張子)。File も SelectedFileMeta も渡せる */
+export function isHeic(meta: { name: string; type: string }): boolean {
+  const type = meta.type.toLowerCase();
   if (type === "image/heic" || type === "image/heif") return true;
-  return /\.hei[cf]$/i.test(file.name);
+  return /\.hei[cf]$/i.test(meta.name);
 }
 
 /**
@@ -115,7 +115,8 @@ export async function tryLoadBitmap(file: File): Promise<ImageBitmap | null> {
   } catch {
     if (!isHeic(file)) return null;
     try {
-      const jpeg = await normalizeToJpeg(file);
+      // File は Blob かつ name/type を持つので bytes・meta の両方として渡せる
+      const jpeg = await normalizeToJpeg(file, file);
       return await createImageBitmap(jpeg, { imageOrientation: "from-image" });
     } catch {
       return null;
@@ -125,37 +126,44 @@ export async function tryLoadBitmap(file: File): Promise<ImageBitmap | null> {
 
 /** Blob を Canvas 経由で JPEG に変換する共通処理 */
 async function blobToJpegViaCanvas(blob: Blob): Promise<Blob> {
-  const bitmap = await createImageBitmap(blob, { imageOrientation: "from-image" });
+  const img = await decodeImage(blob);
   try {
-    const canvas = createCanvas(bitmap.width, bitmap.height);
-    const ctx = getContext2d(canvas);
-    // JPEGはアルファを持てないため、透過部分を白埋め (デフォルト黒になるのを防ぐ)
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, bitmap.width, bitmap.height);
-    ctx.drawImage(bitmap, 0, 0);
-    return await canvasToBlob(canvas, "image/jpeg", 0.92);
+    return await withCanvas(img.width, img.height, (canvas) => {
+      const ctx = getContext2d(canvas);
+      // JPEGはアルファを持てないため、透過部分を白埋め (デフォルト黒になるのを防ぐ)
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, img.width, img.height);
+      ctx.drawImage(img.source, 0, 0);
+      return canvasToBlob(canvas, "image/jpeg", 0.92);
+    });
   } finally {
-    bitmap.close();
+    img.close();
   }
 }
 
-/** JPEG以外はJPEGに変換する。JPEGはそのまま返す */
-export async function normalizeToJpeg(file: File): Promise<Blob> {
-  if (file.type === "image/jpeg") return file;
+/**
+ * JPEG以外はJPEGに変換する。JPEGはそのまま返す。
+ * bytes は Blob で、元ファイル名・MIME は meta で受け取る (HEIC は拡張子でも判定するため)。
+ */
+export async function normalizeToJpeg(
+  blob: Blob,
+  meta: { name: string; type: string },
+): Promise<Blob> {
+  if (meta.type.toLowerCase() === "image/jpeg") return blob;
 
-  if (isHeic(file)) {
+  if (isHeic(meta)) {
     // モダンブラウザ (Safari 17+, Chrome 120+) は HEIC をネイティブデコード可能。
     // まず createImageBitmap を試し、失敗時のみ heic-to にフォールバック。
     try {
-      return await blobToJpegViaCanvas(file);
+      return await blobToJpegViaCanvas(blob);
     } catch {
       const { heicTo } = await import("heic-to");
-      return await heicTo({ blob: file, type: "image/jpeg", quality: 0.92 });
+      return await heicTo({ blob, type: "image/jpeg", quality: 0.92 });
     }
   }
 
   // PNG等をCanvasでJPEGに変換
-  return blobToJpegViaCanvas(file);
+  return blobToJpegViaCanvas(blob);
 }
 
 /** 送信者が入力したテキストをEXIFのカメラモデル欄 (IFD0.Model) に書き込む */
@@ -220,48 +228,50 @@ export async function applyWatermark(
   text: string,
   options: WatermarkOptions,
 ): Promise<{ blob: Blob; width: number; height: number }> {
-  const bitmap = await createImageBitmap(jpegBlob, { imageOrientation: "from-image" });
+  const img = await decodeImage(jpegBlob);
   try {
-    const width = bitmap.width;
-    const height = bitmap.height;
-    const canvas = createCanvas(width, height);
-    const ctx = getContext2d(canvas);
-    // JPEG出力時に透過が黒になるのを防ぐ
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, width, height);
-    ctx.drawImage(bitmap, 0, 0);
-    if (text) drawWatermark(ctx, width, height, text, options);
-    const blob = await canvasToBlob(canvas, "image/jpeg", 0.92);
-    return { blob, width, height };
+    const width = img.width;
+    const height = img.height;
+    return await withCanvas(width, height, async (canvas) => {
+      const ctx = getContext2d(canvas);
+      // JPEG出力時に透過が黒になるのを防ぐ
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, width, height);
+      ctx.drawImage(img.source, 0, 0);
+      if (text) drawWatermark(ctx, width, height, text, options);
+      const blob = await canvasToBlob(canvas, "image/jpeg", 0.92);
+      return { blob, width, height };
+    });
   } finally {
-    bitmap.close();
+    img.close();
   }
 }
 
 /** JPEGの寸法を取得（再エンコードしないのでEXIFは維持される） */
 export async function getImageDimensions(blob: Blob): Promise<{ width: number; height: number }> {
-  const bitmap = await createImageBitmap(blob, { imageOrientation: "from-image" });
+  const img = await decodeImage(blob);
   try {
-    return { width: bitmap.width, height: bitmap.height };
+    return { width: img.width, height: img.height };
   } finally {
-    bitmap.close();
+    img.close();
   }
 }
 
 /** 長辺400px, 品質0.7のサムネイルJPEGを生成 */
 export async function generateThumbnail(jpegBlob: Blob): Promise<Blob> {
-  const bitmap = await createImageBitmap(jpegBlob, { imageOrientation: "from-image" });
+  const img = await decodeImage(jpegBlob);
   try {
     const maxSize = 400;
-    const scale = Math.min(maxSize / bitmap.width, maxSize / bitmap.height, 1);
-    const w = Math.max(1, Math.round(bitmap.width * scale));
-    const h = Math.max(1, Math.round(bitmap.height * scale));
-    const canvas = createCanvas(w, h);
-    const ctx = getContext2d(canvas);
-    ctx.drawImage(bitmap, 0, 0, w, h);
-    return await canvasToBlob(canvas, "image/jpeg", 0.7);
+    const scale = Math.min(maxSize / img.width, maxSize / img.height, 1);
+    const w = Math.max(1, Math.round(img.width * scale));
+    const h = Math.max(1, Math.round(img.height * scale));
+    return await withCanvas(w, h, (canvas) => {
+      const ctx = getContext2d(canvas);
+      ctx.drawImage(img.source, 0, 0, w, h);
+      return canvasToBlob(canvas, "image/jpeg", 0.7);
+    });
   } finally {
-    bitmap.close();
+    img.close();
   }
 }
 
@@ -387,6 +397,68 @@ function pickContrastColor(
 
 function supportsOffscreen(): boolean {
   return typeof OffscreenCanvas !== "undefined";
+}
+
+/**
+ * Blob を `<img>` 要素経由でデコードする。
+ *
+ * iOS Safari では `createImageBitmap` が `close()` してもデコードバッファを
+ * すぐに解放せず、大量の高解像度画像を処理すると累積でメモリ上限に達し、
+ * ある枚数以降のデコードが一律 "The source image could not be decoded" で
+ * 失敗する既知の不具合がある。GC で回収されやすい `<img>` + objectURL 経路を
+ * 使うことでこれを回避する。
+ *
+ * EXIF 回転は `<img>` のデフォルト `image-orientation: from-image` で適用され、
+ * `naturalWidth` / `naturalHeight` は回転後の寸法を返すため、
+ * `createImageBitmap(blob, { imageOrientation: "from-image" })` と等価に扱える。
+ * 使用後は必ず `close()` で objectURL を解放すること。
+ */
+interface DecodedImage {
+  readonly source: CanvasImageSource;
+  readonly width: number;
+  readonly height: number;
+  close(): void;
+}
+
+async function decodeImage(blob: Blob): Promise<DecodedImage> {
+  const url = URL.createObjectURL(blob);
+  const img = new Image();
+  img.decoding = "async";
+  img.src = url;
+  try {
+    await img.decode();
+  } catch (err) {
+    URL.revokeObjectURL(url);
+    throw err;
+  }
+  return {
+    source: img,
+    width: img.naturalWidth,
+    height: img.naturalHeight,
+    close() {
+      URL.revokeObjectURL(url);
+      img.src = "";
+    },
+  };
+}
+
+/**
+ * w×h の Canvas を作って fn に渡し、終了後に必ずバッキングストアを解放する。
+ * iOS/Android では多数の大きな Canvas を連続生成するとデコード/描画用メモリが
+ * 逼迫し EncodingError 等を招くため、使い終わったら 0×0 にして回収を早める。
+ */
+async function withCanvas<T>(
+  w: number,
+  h: number,
+  fn: (canvas: AnyCanvas) => Promise<T>,
+): Promise<T> {
+  const canvas = createCanvas(w, h);
+  try {
+    return await fn(canvas);
+  } finally {
+    canvas.width = 0;
+    canvas.height = 0;
+  }
 }
 
 function createCanvas(w: number, h: number): AnyCanvas {

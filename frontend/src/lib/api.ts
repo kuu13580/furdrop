@@ -1,6 +1,15 @@
 import { auth } from "./firebase";
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
+const configuredBase = import.meta.env.VITE_API_BASE_URL ?? "";
+
+// 開発時に LAN 経由 (192.168.x.x 等) でアクセスした場合、API ベースURLが
+// localhost を指していると「アクセス元の端末自身」を指してしまい Workers に
+// 到達できない。ページを開いたホスト名に差し替えて localhost / LAN どちらからも
+// 動くようにする (本番ビルドでは localhost を含まないので no-op)。
+const BASE_URL =
+  import.meta.env.DEV && configuredBase
+    ? configuredBase.replace(/\/\/(localhost|127\.0\.0\.1)/, `//${window.location.hostname}`)
+    : configuredBase;
 
 export type EmbedMode = "disabled" | "optional" | "required";
 
