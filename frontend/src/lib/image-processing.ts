@@ -149,7 +149,7 @@ export async function normalizeToJpeg(
   blob: Blob,
   meta: { name: string; type: string },
 ): Promise<Blob> {
-  if (meta.type === "image/jpeg") return blob;
+  if (meta.type.toLowerCase() === "image/jpeg") return blob;
 
   if (isHeic(meta)) {
     // モダンブラウザ (Safari 17+, Chrome 120+) は HEIC をネイティブデコード可能。
