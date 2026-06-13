@@ -16,6 +16,7 @@ import {
   normalizeToJpeg,
   stripExifGps,
 } from "../../lib/image-processing";
+import { deletePhotos, getPhoto } from "../../lib/photo-store";
 import { withKey } from "../../lib/send-url";
 import { debugAtom } from "../../stores/debug";
 import { type SelectedFile, selectedFilesAtom, uploadFormAtom } from "../../stores/sender";
@@ -102,8 +103,9 @@ export default function UploadingPage() {
       onOverall: setOverall,
       onGlobalError: setGlobalError,
       onDone: (sessionId) => {
-        // 選択状態をクリアしつつ、UIでの表示用ObjectURLを解放
+        // 選択状態をクリアしつつ、UIでの表示用ObjectURLと IndexedDB の bytes を解放
         for (const f of files) if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
+        void deletePhotos(files.map((f) => f.id));
         setFiles([]);
         navigate(withKey(`/send/${handle}/done`, accessKey), {
           state: { sessionId },
@@ -287,7 +289,9 @@ async function runPipeline({
     async (f): Promise<ProcessedFile> => {
       try {
         if (isHeic(f.file)) updatePhase(f.id, "converting");
-        const jpeg = await normalizeToJpeg(f.file);
+        // 実体 bytes は IndexedDB に退避済み。取り出してメタ (名前/MIME) と共に渡す。
+        const original = await getPhoto(f.id);
+        const jpeg = await normalizeToJpeg(original, f.file);
 
         updatePhase(f.id, "processing");
         // 透かしあり: Canvas再エンコード (既存EXIFは剥がれる)
