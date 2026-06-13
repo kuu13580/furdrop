@@ -94,31 +94,15 @@ function HandleInputBox({ onSubmit }: { onSubmit: () => void }) {
   );
 }
 
-function Eyebrow({
-  num,
-  label,
-  align = "left",
-}: {
-  num: string;
-  label: string;
-  align?: "left" | "center";
-}) {
+function SectionKicker({ label, align = "left" }: { label: string; align?: "left" | "center" }) {
   return (
     <div
-      className={`mb-[18px] flex items-baseline gap-[14px] ${
+      className={`mb-4 flex items-center gap-2.5 ${
         align === "center" ? "justify-center" : "justify-start"
       }`}
     >
-      <div
-        className="text-[11px] font-bold tracking-[0.16em] text-brand"
-        style={{ fontFamily: MONO }}
-      >
-        {num}
-      </div>
-      <div className="h-px w-7 bg-brand" />
-      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-muted">
-        {label}
-      </div>
+      <span className="h-[7px] w-[7px] shrink-0 rotate-45 bg-brand" aria-hidden="true" />
+      <span className="text-[13px] font-semibold tracking-[0.02em] text-brand">{label}</span>
     </div>
   );
 }
@@ -155,11 +139,8 @@ function FlowStep({
       <div className="absolute -top-[10px] left-5 rounded-full bg-brand-tint px-[10px] py-[3px] text-[10px] font-bold tracking-[0.1em] text-brand-deep">
         {side}
       </div>
-      <div
-        className="mb-[10px] text-[11px] tracking-[0.16em] text-ink-muted"
-        style={{ fontFamily: MONO }}
-      >
-        STEP {step}
+      <div className="mb-[2px] text-[30px] leading-none text-brand" style={{ fontFamily: CAVEAT }}>
+        {step}
       </div>
       <div className="mb-[10px] text-[22px] font-bold tracking-[-0.015em] text-ink">{title}</div>
       <div className="whitespace-pre-line text-[13px] leading-[1.7] text-ink-soft">{body}</div>
@@ -238,10 +219,10 @@ function ComparisonCards() {
       {/* FurDrop — featured */}
       <div className="rounded-[20px] border border-[#e0d6c5] bg-brand p-6 text-white shadow-[0_8px_24px_rgba(217,106,74,0.18)] sm:p-8">
         <div className="mb-5 flex items-center gap-3">
-          <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-[10px] py-1 text-[10px] font-bold uppercase tracking-[0.16em]">
-            ◎ ベスト
-          </span>
           <h3 className="m-0 text-[24px] font-bold tracking-[-0.01em] sm:text-[28px]">FurDrop</h3>
+          <span className="rounded-full bg-white/15 px-[11px] py-1 text-[11px] font-semibold">
+            写真の受け取りに特化
+          </span>
         </div>
         <ul className="grid list-none grid-cols-1 gap-x-5 gap-y-[10px] p-0 sm:grid-cols-2">
           {FURDROP_FEATURES.map((f) => (
@@ -494,7 +475,7 @@ export default function LandingPage() {
       {/* Problem */}
       <section className="bg-[#f4eee2] px-5 py-14 md:px-14 md:py-[110px]">
         <div className="mx-auto mb-9 max-w-[760px] text-center md:mb-12">
-          <Eyebrow num="01" label="The problem" align="center" />
+          <SectionKicker label="よくある困りごと" align="center" />
           <h2 className="mb-4 text-[clamp(28px,7vw,36px)] font-bold leading-[1.25] tracking-[-0.03em] text-ink md:text-[44px]">
             こんな経験
             <br />
@@ -510,17 +491,12 @@ export default function LandingPage() {
             "Driveの招待でメアドを知られたくない",
             "イベント共有アルバムから探すのが面倒",
             "「写真送るね」と言ったまま、半年",
-          ].map((text, i) => (
+          ].map((text) => (
             <div
               key={text}
               className="flex items-center gap-4 rounded-[14px] border border-[#e0d6c5] bg-white px-6 py-5"
             >
-              <div
-                className="shrink-0 text-[11px] font-bold tracking-[0.1em] text-brand"
-                style={{ fontFamily: MONO }}
-              >
-                {String(i + 1).padStart(2, "0")}
-              </div>
+              <span className="h-[8px] w-[8px] shrink-0 rotate-45 bg-brand" aria-hidden="true" />
               <p className="m-0 text-[15px] font-medium leading-[1.6] text-ink">{text}</p>
             </div>
           ))}
@@ -616,12 +592,6 @@ export default function LandingPage() {
         id="how"
         className="relative overflow-hidden bg-surface-canvas px-5 py-14 text-ink md:px-14 md:py-[120px]"
       >
-        <div
-          className="absolute right-14 top-8 text-[11px] tracking-[0.16em] text-ink-muted"
-          style={{ fontFamily: MONO }}
-        >
-          02 / SOLUTION
-        </div>
         <div className="mx-auto max-w-[920px] text-center">
           <div
             className="mb-3 inline-flex items-center gap-3 text-[36px] text-ink-soft"
@@ -632,7 +602,12 @@ export default function LandingPage() {
           <h2 className="mb-6 text-[clamp(28px,7.5vw,40px)] font-bold leading-[1.25] tracking-[-0.03em] text-ink [word-break:keep-all] md:text-[clamp(34px,4.5vw,56px)]">
             個人情報の交換なしで
             <br />
-            <span className="italic text-brand">撮影者情報は残せる</span>
+            <span
+              className="box-decoration-clone px-1"
+              style={{ backgroundImage: "linear-gradient(transparent 62%, #fcede4 62%)" }}
+            >
+              撮影者情報は残せる
+            </span>
             <br />
             写真の受け取り
           </h2>
@@ -643,7 +618,7 @@ export default function LandingPage() {
           </p>
           <div className="mt-6 grid grid-cols-1 items-stretch md:grid-cols-[1fr_auto_1fr_auto_1fr]">
             <FlowStep
-              step="01"
+              step="1"
               side="受け取り側"
               title="URLを作る"
               body={`X (Twitter)で30秒。\n${PUBLIC_HOST}/send/your_handle が完成。`}
@@ -652,7 +627,7 @@ export default function LandingPage() {
               <ArrowRight />
             </div>
             <FlowStep
-              step="02"
+              step="2"
               side="受け取り側"
               title="URLを共有"
               body={"プロフィールやイベントページに貼るだけ。\nQRも自動生成。"}
@@ -661,7 +636,7 @@ export default function LandingPage() {
               <ArrowRight />
             </div>
             <FlowStep
-              step="03"
+              step="3"
               side="送る側"
               title="写真が届く"
               body={"送る側はURLにドロップするだけ。\nアカウント不要、匿名のまま。"}
@@ -682,7 +657,7 @@ export default function LandingPage() {
       {/* Two pillars */}
       <section id="features" className="bg-[#f4eee2] px-5 py-14 md:px-14 md:py-[120px]">
         <div className="mx-auto mb-10 max-w-[720px] text-center md:mb-[72px]">
-          <Eyebrow num="03" label="Two pillars" align="center" />
+          <SectionKicker label="FurDropの特長" align="center" />
           <h2 className="m-0 text-[clamp(28px,7vw,36px)] font-bold leading-[1.15] tracking-[-0.03em] md:text-[clamp(36px,4.6vw,52px)]">
             FurDropの
             <br />
@@ -694,8 +669,11 @@ export default function LandingPage() {
           <div className="relative overflow-hidden rounded-3xl border border-[#e0d6c5] bg-white p-7 md:p-11">
             <div className="absolute -top-10 -right-10 h-[200px] w-[200px] rounded-full bg-brand-tint opacity-70" />
             <div className="relative">
-              <div className="mb-[6px] text-[28px] text-brand" style={{ fontFamily: CAVEAT }}>
-                pillar 01
+              <div
+                className="mb-[6px] text-[34px] leading-none text-brand"
+                style={{ fontFamily: CAVEAT }}
+              >
+                01
               </div>
               <h3 className="mb-[14px] text-[28px] font-bold leading-[1.2] tracking-[-0.02em] md:mb-[18px] md:text-[36px]">
                 個人情報は
@@ -750,8 +728,11 @@ export default function LandingPage() {
           <div className="relative overflow-hidden rounded-3xl border border-[#e0d6c5] bg-white p-7 md:p-11">
             <div className="absolute -top-10 -right-10 h-[200px] w-[200px] rounded-full bg-[#e9ddc8] opacity-60" />
             <div className="relative">
-              <div className="mb-[6px] text-[28px] text-brand" style={{ fontFamily: CAVEAT }}>
-                pillar 02
+              <div
+                className="mb-[6px] text-[34px] leading-none text-brand"
+                style={{ fontFamily: CAVEAT }}
+              >
+                02
               </div>
               <h3 className="mb-[14px] text-[28px] font-bold leading-[1.2] tracking-[-0.02em] md:mb-[18px] md:text-[36px]">
                 撮影者情報を
@@ -804,7 +785,7 @@ export default function LandingPage() {
       <section className="bg-surface-canvas px-5 py-14 md:px-14 md:py-[120px]">
         <div className="mx-auto max-w-[1180px]">
           <div className="mb-10 max-w-[720px] md:mb-14">
-            <Eyebrow num="04" label="How it looks" />
+            <SectionKicker label="送る側の画面" />
             <h2 className="mb-4 text-[clamp(28px,7vw,36px)] font-bold leading-[1.15] tracking-[-0.03em] md:text-[clamp(36px,4.6vw,52px)]">
               送る側に
               <br />
@@ -846,7 +827,41 @@ export default function LandingPage() {
                   </div>
                 </div>
                 <div className="mb-4 rounded-[14px] border-2 border-dashed border-[#b8ac97] bg-brand-tint px-6 py-9 text-center">
-                  <div className="mb-2 text-[32px] opacity-70">📷</div>
+                  <svg
+                    width="36"
+                    height="36"
+                    viewBox="0 0 36 36"
+                    className="mx-auto mb-2 text-brand"
+                    aria-hidden="true"
+                  >
+                    <title>photo</title>
+                    <rect
+                      x="5"
+                      y="8"
+                      width="26"
+                      height="20"
+                      rx="3"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                    />
+                    <circle
+                      cx="12.5"
+                      cy="15"
+                      r="2.4"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                    />
+                    <path
+                      d="M7 25 L15 18 L21 23 L25 19 L29 23"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
                   <div className="mb-1 text-[14px] font-semibold text-ink">
                     ここに写真をドロップ
                   </div>
@@ -883,7 +898,31 @@ export default function LandingPage() {
                   </button>
                 </div>
                 <div className="mt-4 flex items-center gap-2 rounded-lg border border-[#e0d6c5] bg-surface-canvas px-3 py-[10px] text-[11px] text-ink-muted">
-                  <span>🔒</span>
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 14 14"
+                    className="shrink-0"
+                    aria-hidden="true"
+                  >
+                    <title>lock</title>
+                    <rect
+                      x="2.5"
+                      y="6.2"
+                      width="9"
+                      height="6"
+                      rx="1.4"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.2"
+                    />
+                    <path
+                      d="M4.5 6.2 V4.6 a2.5 2.5 0 0 1 5 0 V6.2"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.2"
+                    />
+                  </svg>
                   <span>アカウント登録もメアド入力も不要</span>
                 </div>
               </div>
@@ -926,7 +965,7 @@ export default function LandingPage() {
       {/* Comparison */}
       <section id="compare" className="bg-[#f4eee2] px-5 py-14 md:px-14 md:py-[120px]">
         <div className="mx-auto mb-10 max-w-[720px] text-center md:mb-14">
-          <Eyebrow num="05" label="Comparison" align="center" />
+          <SectionKicker label="くらべる" align="center" />
           <h2 className="mb-[14px] text-[clamp(28px,7vw,36px)] font-bold leading-[1.15] tracking-[-0.03em] md:text-[clamp(32px,4.2vw,48px)]">
             他の方法との違い
           </h2>
