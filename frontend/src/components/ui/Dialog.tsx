@@ -65,7 +65,7 @@ export default function Dialog({ open, onClose, title, children, footer, size = 
             </button>
           </div>
         )}
-        <div className="flex-1 overflow-auto p-5">{children}</div>
+        <div className="min-h-0 flex-1 overflow-auto p-5">{children}</div>
         {footer && (
           <div className="shrink-0 border-t border-surface-sand-deep px-5 py-3.5">{footer}</div>
         )}

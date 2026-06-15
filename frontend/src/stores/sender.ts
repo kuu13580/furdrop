@@ -27,6 +27,20 @@ export type SelectedFile = {
   previewReady: boolean;
 };
 
+/**
+ * 透かしプレビューの候補画像。WatermarkDialog のセレクタ表示に使う最小情報。
+ * 実体 (File) は選択時に getFile で IndexedDB から都度取り出す (RAM 常駐を避ける)。
+ */
+export type PreviewCandidate = {
+  id: string;
+  name: string;
+  /** 元ファイルの MIME。File 復元時に渡す (HEIC 判定は name/type 両方を見るため) */
+  type: string;
+  /** 非HEIC: サムネ ObjectURL / HEIC: "" (サムネ無し、プレースホルダ表示) */
+  thumbUrl: string;
+  isHeic: boolean;
+};
+
 export type UploadFormState = {
   senderName: string;
   /** クレジット文字列のフォーマット（EXIF / 透かしの両方に適用） */

@@ -1,5 +1,13 @@
 import { useAtom } from "jotai";
-import { type ChangeEvent, type DragEvent, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type ChangeEvent,
+  type DragEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import SenderAtmosphere from "../../components/send/SenderAtmosphere";
 import WatermarkDialog from "../../components/send/WatermarkDialog";
@@ -19,7 +27,12 @@ import {
 } from "../../lib/image-processing";
 import { clearAllPhotos, deletePhotos, getPhoto, putPhoto } from "../../lib/photo-store";
 import { withKey } from "../../lib/send-url";
-import { type SelectedFile, selectedFilesAtom, uploadFormAtom } from "../../stores/sender";
+import {
+  type PreviewCandidate,
+  type SelectedFile,
+  selectedFilesAtom,
+  uploadFormAtom,
+} from "../../stores/sender";
 
 const CREDIT_FORMAT_OPTIONS: { value: CreditFormat; label: string }[] = [
   { value: "shot_by", label: CREDIT_FORMATS.shot_by.label },
@@ -68,15 +81,22 @@ function isAccepted(file: File): boolean {
   return ACCEPTED_EXTS.test(file.name);
 }
 
-// 透かしプレビュー候補の最大枚数。実体は IndexedDB から取り出すため、メモリを抑える目的で
-// 少数に絞る。WatermarkDialog が先頭から順に decode を試し、最初に成功した 1 枚を使う。
-const PREVIEW_CANDIDATE_LIMIT = 6;
-
-/** 透かしプレビュー候補を選ぶ。非HEICを優先し、上限枚数で打ち切る */
-function pickPreviewCandidates(files: SelectedFile[]): SelectedFile[] {
-  const nonHeic = files.filter((f) => !isHeic(f.file));
-  const heic = files.filter((f) => isHeic(f.file));
-  return [...nonHeic, ...heic].slice(0, PREVIEW_CANDIDATE_LIMIT);
+/**
+ * 透かしプレビュー候補を作る。非HEIC を先頭に並べ替え、ダイアログの初期自動選択が
+ * decode の軽い非HEIC から始まるようにする。サムネは生成済みの ObjectURL を渡すだけ。
+ * 実体 (File) はダイアログ側が選択時に getFile で都度取り出す。
+ */
+function buildPreviewCandidates(files: SelectedFile[]): PreviewCandidate[] {
+  const toCandidate = (f: SelectedFile): PreviewCandidate => ({
+    id: f.id,
+    name: f.file.name,
+    type: f.file.type,
+    thumbUrl: f.previewUrl,
+    isHeic: isHeic(f.file),
+  });
+  const nonHeic = files.filter((f) => !isHeic(f.file)).map(toCandidate);
+  const heic = files.filter((f) => isHeic(f.file)).map(toCandidate);
+  return [...nonHeic, ...heic];
 }
 
 export default function UploadPage() {
@@ -274,36 +294,18 @@ export default function UploadPage() {
     });
   }, [hasSenderName, exifMode, watermarkMode, setForm]);
 
-  // 透かしダイアログのライブプレビュー用。実体は IndexedDB にあるので、ダイアログを
-  // 開いている間だけ候補数枚を取り出し、名前を保持するため File に復元して渡す。
-  // id 集合のシグネチャで identity を追跡し、別タイルのプレビュー生成完了による
-  // 再 fetch を避ける。
-  const previewFilesKey = files.map((f) => f.id).join("|");
-  // biome-ignore lint/correctness/useExhaustiveDependencies: previewFilesKey が files の identity を代表する
-  const previewCandidates = useMemo(() => pickPreviewCandidates(files), [previewFilesKey]);
-  const [previewFiles, setPreviewFiles] = useState<File[]>([]);
-  useEffect(() => {
-    if (!watermarkDialogOpen) {
-      setPreviewFiles([]);
-      return;
-    }
-    let cancelled = false;
-    void (async () => {
-      const out: File[] = [];
-      for (const c of previewCandidates) {
-        try {
-          const blob = await getPhoto(c.id);
-          out.push(new File([blob], c.file.name, { type: c.file.type }));
-        } catch {
-          // 取り出せない候補はスキップし、残りの候補でプレビューを試みる
-        }
-      }
-      if (!cancelled) setPreviewFiles(out);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [watermarkDialogOpen, previewCandidates]);
+  // 透かしダイアログのライブプレビュー用候補。サムネ ObjectURL を渡すだけで実体は持たない。
+  // id とサムネ生成状態(空→URL)の両方をシグネチャに含め、サムネ完了が候補に反映される
+  // ようにする (含めないと未生成扱いのまま HEIC プレースホルダ等に誤表示される)。
+  const previewFilesKey = files.map((f) => `${f.id}:${f.previewUrl ? 1 : 0}`).join("|");
+  // biome-ignore lint/correctness/useExhaustiveDependencies: previewFilesKey が files の identity とサムネ状態を代表する
+  const previewCandidates = useMemo(() => buildPreviewCandidates(files), [previewFilesKey]);
+  // ダイアログが選択時に実体 File を取り出すためのコールバック。IndexedDB から都度復元する。
+  const getPreviewFile = useCallback(
+    async (id: string, name: string, type: string): Promise<File> =>
+      new File([await getPhoto(id)], name, { type }),
+    [],
+  );
 
   const renderDropZone = (compact: boolean) => (
     <label
@@ -623,7 +625,8 @@ export default function UploadPage() {
           options={form.watermark}
           onChange={(w) => setForm({ ...form, watermark: w })}
           text={formatCredit(form.senderName, form.creditFormat)}
-          previewFiles={previewFiles}
+          candidates={previewCandidates}
+          getFile={getPreviewFile}
         />
       </div>
     </div>
