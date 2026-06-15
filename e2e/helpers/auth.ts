@@ -36,11 +36,14 @@ export async function createEmulatorUser(): Promise<TestUser> {
   return { email, password, uid: data.localId, idToken: data.idToken };
 }
 
+type EmbedMode = "disabled" | "optional" | "required";
+
 /** Workers の /auth/register に POST してユーザー登録 (受信者登録) を済ませる */
 export async function registerReceiver(
   user: TestUser,
   handle: string,
   displayName = handle,
+  options?: { exif_embed_mode?: EmbedMode; watermark_mode?: EmbedMode },
 ): Promise<{ handle: string; sendKey: string; receiveUrl: string }> {
   const res = await fetch(`${WORKERS_URL}/auth/register`, {
     method: "POST",
@@ -48,7 +51,7 @@ export async function registerReceiver(
       "Content-Type": "application/json",
       Authorization: `Bearer ${user.idToken}`,
     },
-    body: JSON.stringify({ handle, display_name: displayName }),
+    body: JSON.stringify({ handle, display_name: displayName, ...options }),
   });
   if (!res.ok) {
     throw new Error(`/auth/register 失敗 (${res.status}): ${await res.text()}`);
