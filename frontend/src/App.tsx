@@ -1,4 +1,4 @@
-import { useSetAtom } from "jotai";
+import { useAtom } from "jotai";
 import { lazy, Suspense, useEffect } from "react";
 import { BrowserRouter, Route, Routes, useSearchParams } from "react-router";
 import AuthGuard from "./components/AuthGuard";
@@ -6,6 +6,7 @@ import AppLayout from "./components/layout/AppLayout";
 import SenderLayout from "./components/layout/SenderLayout";
 import LoadingSpinner from "./components/ui/LoadingSpinner";
 import { useAuthInit } from "./hooks/useAuthInit";
+import { setDebugEnabled } from "./lib/debug-log";
 import DashboardPage from "./pages/DashboardPage";
 import DesignPreviewPage from "./pages/DesignPreviewPage";
 import GalleryPage from "./pages/GalleryPage";
@@ -40,15 +41,22 @@ function LegalFallback() {
 /**
  * URL の `?debug=true` / `?debug=false` を検知して debugAtom に同期する。
  * クエリ不在では値を変更しないため、一度 ON にすれば遷移後も維持される（sticky）。
+ *
+ * あわせて atom の値を debug-log のモジュールフラグへミラーする。React 外の
+ * 画像処理パイプライン（image-processing.ts / runPipeline）が `debugLog.*` を
+ * 呼べるようにするため。atom が真の状態で、ここはその写し。
  */
 function DebugUrlSync() {
   const [searchParams] = useSearchParams();
-  const setDebug = useSetAtom(debugAtom);
+  const [debug, setDebug] = useAtom(debugAtom);
   useEffect(() => {
     const v = searchParams.get("debug");
     if (v === "true") setDebug(true);
     else if (v === "false") setDebug(false);
   }, [searchParams, setDebug]);
+  useEffect(() => {
+    setDebugEnabled(debug);
+  }, [debug]);
   return null;
 }
 

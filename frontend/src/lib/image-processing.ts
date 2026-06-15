@@ -1,4 +1,7 @@
 import piexif from "piexifjs";
+import { debugLog } from "./debug-log";
+
+const log = debugLog.scope("image");
 
 /**
  * 画像処理パイプライン:
@@ -156,7 +159,8 @@ export async function normalizeToJpeg(
     // まず createImageBitmap を試し、失敗時のみ heic-to にフォールバック。
     try {
       return await blobToJpegViaCanvas(blob);
-    } catch {
+    } catch (err) {
+      log.dumpError(`HEIC native decode 失敗、heic-to にフォールバック (${meta.name})`, err);
       const { heicTo } = await import("heic-to");
       return await heicTo({ blob, type: "image/jpeg", quality: 0.92 });
     }
@@ -428,6 +432,7 @@ async function decodeImage(blob: Blob): Promise<DecodedImage> {
   try {
     await img.decode();
   } catch (err) {
+    log.dumpError(`decodeImage 失敗 (type=${blob.type}, size=${blob.size}B)`, err);
     URL.revokeObjectURL(url);
     throw err;
   }
