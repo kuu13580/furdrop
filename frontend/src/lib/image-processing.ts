@@ -425,6 +425,33 @@ interface DecodedImage {
 }
 
 async function decodeImage(blob: Blob): Promise<DecodedImage> {
+  // 主経路: <img> + objectURL。iOS Safari で createImageBitmap がデコードバッファを
+  // 解放しない問題 (#75) を避けるため、こちらを優先する。
+  try {
+    return await decodeViaImgElement(blob);
+  } catch (err) {
+    // <img>.decode() は超高解像度画像 (デコード後 RGBA がブラウザの 1 枚あたりの
+    // デコード上限を超える) で EncodingError を返す。createImageBitmap は上限が緩い
+    // 別経路なのでフォールバックする。実寸は decode 成功後にしか分からないため、
+    // 原因の確定的な内訳 (画素数・デコード後バイト) は成功ログ側に出す。
+    log.warn(
+      `<img>.decode() 失敗 → createImageBitmap にフォールバック (${describeDecodeError(err)}, type=${blob.type}, file=${formatBytes(blob.size)})`,
+    );
+    try {
+      const decoded = await decodeViaCreateImageBitmap(blob);
+      log.log(
+        `createImageBitmap フォールバック成功: ${decoded.width}x${decoded.height} ${formatDecodeFootprint(decoded.width, decoded.height)} — <img> のデコード上限超過が原因`,
+      );
+      return decoded;
+    } catch (err2) {
+      log.dumpError("createImageBitmap フォールバックも失敗 (この端末ではデコード不能)", err2);
+      throw err2;
+    }
+  }
+}
+
+/** `<img>` 要素 + objectURL でデコードする (iOS のメモリ解放に優れる主経路)。 */
+async function decodeViaImgElement(blob: Blob): Promise<DecodedImage> {
   const url = URL.createObjectURL(blob);
   const img = new Image();
   img.decoding = "async";
@@ -432,7 +459,6 @@ async function decodeImage(blob: Blob): Promise<DecodedImage> {
   try {
     await img.decode();
   } catch (err) {
-    log.dumpError(`decodeImage 失敗 (type=${blob.type}, size=${blob.size}B)`, err);
     URL.revokeObjectURL(url);
     throw err;
   }
@@ -445,6 +471,46 @@ async function decodeImage(blob: Blob): Promise<DecodedImage> {
       img.src = "";
     },
   };
+}
+
+/**
+ * `createImageBitmap` でデコードする (フォールバック)。
+ * `imageOrientation: "from-image"` で EXIF 回転を適用し、`<img>` 経路と寸法を揃える。
+ */
+async function decodeViaCreateImageBitmap(blob: Blob): Promise<DecodedImage> {
+  const bitmap = await createImageBitmap(blob, { imageOrientation: "from-image" });
+  return {
+    source: bitmap,
+    width: bitmap.width,
+    height: bitmap.height,
+    close() {
+      bitmap.close();
+    },
+  };
+}
+
+/** Error を `Name: message` 形式に整形する (ログ用)。 */
+function describeDecodeError(err: unknown): string {
+  if (err instanceof Error) return `${err.name}: ${err.message}`;
+  return String(err);
+}
+
+/** バイト数を人間可読 (KiB/MiB) に整形する。 */
+function formatBytes(bytes: number): string {
+  if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)}MiB`;
+  if (bytes >= 1024) return `${Math.round(bytes / 1024)}KiB`;
+  return `${bytes}B`;
+}
+
+/**
+ * 画素数とデコード後 (RGBA) のメモリ占有量を整形する。
+ * <img>.decode() が EncodingError になる主因 = この占有量がブラウザの 1 枚あたりの
+ * デコード上限を超えること、を一目で読み取れるようにする。
+ */
+function formatDecodeFootprint(width: number, height: number): string {
+  const megapixels = (width * height) / 1_000_000;
+  const rgbaBytes = width * height * 4;
+  return `(${megapixels.toFixed(1)}MP, デコード後 ≈${formatBytes(rgbaBytes)} RGBA)`;
 }
 
 /**
