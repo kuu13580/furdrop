@@ -6,6 +6,7 @@ import Alert from "../../components/ui/Alert";
 import Button from "../../components/ui/Button";
 import { ApiError, senderApi } from "../../lib/api";
 import { runConcurrent } from "../../lib/concurrency";
+import { debugLog } from "../../lib/debug-log";
 import {
   applyWatermark,
   embedSenderInfoInExif,
@@ -278,20 +279,31 @@ async function runPipeline({
     onProgress((prev) => prev.map((p) => (p.selected.id === id ? { ...p, photoId } : p)));
   };
 
+  const plog = debugLog.scope("pipeline");
+  plog.log(
+    `開始 ${files.length}枚`,
+    files.map((f) => ({ name: f.file.name, type: f.file.type, size: f.file.size })),
+  );
+
   // --- 画像加工フェーズ ---
   onOverall("processing");
   const credit = formatCredit(form.senderName, form.creditFormat);
   const exifText = form.exifEnabled && credit ? credit : "";
   const watermarkText = form.watermarkEnabled && credit ? credit : "";
+  plog.log(`加工フェーズ開始 (exif=${!!exifText}, watermark=${!!watermarkText})`);
   const processedResults = await runConcurrent(
     files,
     PROCESS_CONCURRENCY,
     async (f): Promise<ProcessedFile> => {
+      const flog = plog.scope(f.file.name);
+      const endTimer = flog.time("加工");
       try {
         if (isHeic(f.file)) updatePhase(f.id, "converting");
         // 実体 bytes は IndexedDB に退避済み。取り出してメタ (名前/MIME) と共に渡す。
         const original = await getPhoto(f.id);
+        flog.log(`IndexedDB から取得 (${original.size}B, type=${original.type})`);
         const jpeg = await normalizeToJpeg(original, f.file);
+        flog.log(`JPEG 正規化完了 (${jpeg.size}B)`);
 
         updatePhase(f.id, "processing");
         // 透かしあり: Canvas再エンコード (既存EXIFは剥がれる)
@@ -322,6 +334,8 @@ async function runPipeline({
         const thumb = await generateThumbnail(finalBlob);
 
         updatePhase(f.id, "processed");
+        endTimer();
+        flog.log(`加工完了 (${width}x${height}, final=${finalBlob.size}B, thumb=${thumb.size}B)`);
 
         return {
           id: f.id,
@@ -333,6 +347,10 @@ async function runPipeline({
         };
       } catch (err) {
         // HEIC変換, PNG→JPEG変換, 透かし合成, EXIF埋込, GPS除去, サムネイル生成 — 一括して "convert"
+        flog.dumpError(
+          `加工失敗 (name=${f.file.name}, type=${f.file.type}, size=${f.file.size}B, heic=${isHeic(f.file)})`,
+          err,
+        );
         updatePhase(f.id, "failed", describeError(err), "convert");
         throw err;
       }
@@ -343,6 +361,7 @@ async function runPipeline({
   for (const r of processedResults) {
     if (r.status === "fulfilled") processed.push(r.value);
   }
+  plog.log(`加工フェーズ完了: 成功 ${processed.length}/${files.length}枚`);
   if (processed.length === 0) {
     onGlobalError("全ての画像の加工に失敗しました");
     onOverall("failed");
@@ -367,7 +386,9 @@ async function runPipeline({
       photo_count: processed.length,
     });
     sessionId = res.session_id;
+    plog.log(`セッション作成成功 (sessionId=${sessionId})`);
   } catch (err) {
+    plog.dumpError("セッション作成失敗", err);
     // 403 INVALID_KEY は URL の ?k= が無い/間違っているケース。専用の案内に差し替える。
     if (err instanceof ApiError && err.status === 403 && err.code === "INVALID_KEY") {
       onGlobalError(
@@ -396,7 +417,9 @@ async function runPipeline({
       })),
     });
     uploads = res.uploads;
+    plog.log(`Presigned URL 発行成功 (${uploads.length}件)`);
   } catch (err) {
+    plog.dumpError("Presigned URL 発行失敗", err);
     onGlobalError(rateLimitOrFallback(err, "URL取得に失敗"));
     onOverall("failed");
     return;
@@ -411,6 +434,8 @@ async function runPipeline({
   onOverall("uploading");
   await runConcurrent(processed, UPLOAD_CONCURRENCY, async (p, i) => {
     const up = uploads[i];
+    const flog = plog.scope(p.originalName);
+    const endTimer = flog.time("送信");
     updatePhase(p.id, "uploading");
     try {
       await Promise.all([
@@ -421,14 +446,17 @@ async function runPipeline({
         thumb_size: p.thumbBlob.size,
       });
       updatePhase(p.id, "completed");
+      endTimer();
     } catch (err) {
       // putBlob (R2 PUT) または confirmPhoto (Workers PATCH) の失敗を "upload" に集約
+      flog.dumpError(`送信失敗 (photoId=${up.photo_id}, size=${p.processedBlob.size}B)`, err);
       updatePhase(p.id, "failed", describeError(err), "upload");
     }
   });
 
   // 結果に応じてDoneへ
   onOverall("done");
+  plog.log("パイプライン完了");
   onDone(sessionId);
 }
 

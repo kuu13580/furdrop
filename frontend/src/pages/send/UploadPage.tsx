@@ -8,6 +8,7 @@ import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
 import { type EmbedMode, senderApi } from "../../lib/api";
 import { runConcurrent } from "../../lib/concurrency";
+import { debugLog } from "../../lib/debug-log";
 import { generateId } from "../../lib/id";
 import {
   CREDIT_FORMATS,
@@ -722,6 +723,12 @@ async function ingestFiles(
     });
   };
 
+  const ilog = debugLog.scope("ingest");
+  ilog.log(
+    `取り込み開始 ${items.length}枚`,
+    items.map(({ file }) => ({ name: file.name, type: file.type, size: file.size })),
+  );
+
   // Pass 1: bytes を IndexedDB へ退避し、content:// から切り離す
   const stored = await runConcurrent(items, STORE_CONCURRENCY, async ({ meta, file }) => {
     await withRetry(STORE_RETRIES, () => putPhoto(meta.id, file));
@@ -732,6 +739,7 @@ async function ingestFiles(
     if (r.status === "fulfilled") return r.value;
     // IDB 書き出しに失敗したケース。プレビュー不可として確定させる
     if (isQuotaError(r.reason)) quotaHit = true;
+    ilog.dumpError(`IndexedDB 退避失敗 (${items[i].meta.file.name})`, r.reason);
     applyUpdate(items[i].meta.id, { previewReady: true });
     return null;
   });
@@ -759,18 +767,24 @@ async function ingestFiles(
     }
     try {
       await withRetry(DECODE_RETRIES, () => renderThumb(meta));
-    } catch {
+    } catch (err) {
+      ilog.dumpError(`サムネ生成失敗 (Pass2, ${meta.file.name})、最終スイープに回す`, err);
       decodeFailed.push(meta);
     }
   });
+  if (decodeFailed.length > 0) {
+    ilog.log(`最終スイープ対象 ${decodeFailed.length}枚`);
+  }
 
   // Pass 3: 最終スイープ。並列デコードが全て終わってメモリ逼迫が解けた状態で、
   // 失敗分を逐次 (並列度1) で 1 回ずつ再試行する。
   for (const meta of decodeFailed) {
     try {
       await renderThumb(meta);
-    } catch {
+    } catch (err) {
+      ilog.dumpError(`サムネ生成失敗 (最終スイープ, ${meta.file.name})、プレビュー不可で確定`, err);
       applyUpdate(meta.id, { previewReady: true });
     }
   }
+  ilog.log("取り込み完了");
 }
