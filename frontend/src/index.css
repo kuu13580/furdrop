@@ -30,6 +30,14 @@ html::-webkit-scrollbar-thumb:hover {
 
 /* FurDrop デザインシステムのテーマ拡張 (DESIGN.md §12 準拠) */
 @theme {
+  /* タイポグラフィ (DESIGN.md §3): ラテンは Inter、日本語は Noto Sans JP。
+     どちらも Google Fonts で読み込む (index.html)。Noto Sans JP は css2 の
+     unicode-range サブセットで分割配信され、表示中のグリフ分のみ遅延ロードされる。
+     Tailwind v4 では --font-sans が --default-font-family 経由で body 既定にも反映される。 */
+  --font-sans:
+    "Inter", "Noto Sans JP", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+
   --color-brand: #d96a4a;
   --color-brand-deep: #b8502f;
   --color-brand-tint: #fcede4;
