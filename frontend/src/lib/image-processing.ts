@@ -28,7 +28,9 @@ export type WatermarkColor = "#ffffff" | "#000000" | "auto";
 
 /**
  * 透かしのフォント種別。
- * sans/serif/mono は OS 共通のシステムフォントで、和文も含めて確実に表示される。
+ * sans はデフォルト。Google Fonts の Noto Sans JP (index.html で読み込み済) を先頭に置き、
+ * OS によらず同じ字形で焼き込まれるようにする。未ロード時はシステムのゴシックにフォールバックする。
+ * serif/mono は OS 共通のシステムフォントで、和文も含めて確実に表示される。
  * pop は Google Fonts の Mochiy Pop One (index.html で読み込み済) を使い、未ロード時はシステムの丸ゴシックにフォールバックする。
  */
 export type WatermarkFontFamily = "sans" | "serif" | "mono" | "pop";
@@ -38,11 +40,44 @@ export type WatermarkFontFamily = "sans" | "serif" | "mono" | "pop";
  * mono は欧文等幅 + 和文等幅 (MS Gothic) を組み合わせて、英日混在でも揃う。
  */
 export const WATERMARK_FONT_STACKS: Record<WatermarkFontFamily, string> = {
-  sans: '"Hiragino Sans", "Yu Gothic", "Noto Sans JP", system-ui, sans-serif',
+  sans: '"Noto Sans JP", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif',
   serif: '"Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", "Times New Roman", serif',
   mono: '"SF Mono", Menlo, Consolas, "Courier New", "MS Gothic", "Osaka-Mono", monospace',
   pop: '"Mochiy Pop One", "Hiragino Maru Gothic ProN", "Yu Gothic UI", "Meiryo UI", sans-serif',
 };
+
+/**
+ * 各フォント種別の「Web フォントとして読み込む主フォント名」。
+ * Web フォントは非同期ロードのため、未ロードのまま Canvas へ焼き込むと
+ * システムフォントへ暗黙フォールバックして出力が崩れる。drawWatermark 前に
+ * ensureWatermarkFont で document.fonts.load を待つために参照する。
+ * システムフォントのみのスタック (serif / mono) はエントリを持たない＝待機不要。
+ */
+const WATERMARK_WEBFONTS: Partial<Record<WatermarkFontFamily, string>> = {
+  sans: "Noto Sans JP",
+  pop: "Mochiy Pop One",
+};
+
+/**
+ * 透かしを Canvas へ焼き込む前に、指定フォント種別の Web フォントが
+ * 描画対象の文字グリフ込みでロード済みであることを保証する。
+ * 失敗してもフォールバック描画で続行する (例外は握りつぶす)。
+ */
+export async function ensureWatermarkFont(
+  fontFamily: WatermarkFontFamily,
+  text: string,
+): Promise<void> {
+  if (typeof document === "undefined" || !document.fonts) return;
+  const family = WATERMARK_WEBFONTS[fontFamily];
+  if (!family) return;
+  try {
+    // 透かしは bold で描画するため bold 指定でロードする。text を渡して
+    // 必要な unicode-range サブセットだけを確実に取得する (CJK は分割配信のため)。
+    await document.fonts.load(`bold 64px "${family}"`, text || "あ");
+  } catch {
+    // ロード失敗時はスタックのフォールバックフォントで描画する
+  }
+}
 
 export type WatermarkOptions = {
   position: WatermarkPosition;
@@ -233,6 +268,9 @@ export async function applyWatermark(
   options: WatermarkOptions,
 ): Promise<{ blob: Blob; width: number; height: number }> {
   const img = await decodeImage(jpegBlob);
+  // 焼き込みは不可逆なので、Web フォントが未ロードのままシステムフォントへ
+  // フォールバックしないよう先にロードを待つ
+  if (text) await ensureWatermarkFont(options.fontFamily, text);
   try {
     const width = img.width;
     const height = img.height;
