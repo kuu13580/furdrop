@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   drawWatermark,
+  ensureWatermarkFont,
   tryLoadBitmap,
   WATERMARK_FONT_STACKS,
   type WatermarkFontFamily,
@@ -203,7 +204,18 @@ export default function WatermarkDialog({
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, w, h);
     ctx.drawImage(bmp, 0, 0, w, h);
-    drawWatermark(ctx, w, h, text, options);
+
+    let cancelled = false;
+    // Web フォント (Noto Sans JP / Mochiy Pop One) を待ってから描画し、
+    // 焼き込み結果とプレビューの字形を一致させる
+    (async () => {
+      if (text) await ensureWatermarkFont(options.fontFamily, text);
+      if (cancelled) return;
+      drawWatermark(ctx, w, h, text, options);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [previewReady, options, text]);
 
   // ① ズーム倍率:
