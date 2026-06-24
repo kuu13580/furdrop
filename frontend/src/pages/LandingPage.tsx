@@ -19,17 +19,18 @@ function LogoMark({ size = 28 }: { size?: number }) {
 
 function PolaroidPhoto({
   filename,
+  seed,
   rotation,
   width,
   height,
-  gradientAngle,
   position,
 }: {
   filename: string;
+  /** Lorem Picsum (picsum.photos) のシード。release-trailer と同じプレースホルダー画像源 */
+  seed: string;
   rotation: number;
   width: number;
   height: number;
-  gradientAngle: number;
   position: CSSProperties;
 }) {
   return (
@@ -42,18 +43,15 @@ function PolaroidPhoto({
         }}
       >
         <div
-          className="relative w-full overflow-hidden rounded-md border border-[#e0d6c5]"
-          style={{
-            height,
-            background: `repeating-linear-gradient(${gradientAngle}deg, transparent 0, transparent 7px, rgba(42,31,27,0.05) 7px, rgba(42,31,27,0.05) 8px) #f1e8db`,
-          }}
+          className="relative w-full overflow-hidden rounded-md border border-[#e0d6c5] bg-[#f1e8db]"
+          style={{ height }}
         >
-          <div
-            className="absolute inset-0 flex items-center justify-center text-[10px] tracking-[0.06em] text-[#a79a8c]"
-            style={{ fontFamily: MONO }}
-          >
-            {filename}
-          </div>
+          <img
+            src={`https://picsum.photos/seed/${seed}/${width * 2}/${height * 2}`}
+            alt=""
+            loading="lazy"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
         </div>
         <div
           className="mt-[10px] text-center text-[16px] text-[#6e5f52]"
@@ -438,34 +436,34 @@ export default function LandingPage() {
           <div className="relative h-[280px] min-w-0 origin-top scale-[0.72] md:h-[480px] md:scale-100">
             <PolaroidPhoto
               filename="event_001.jpg"
+              seed="mountain1"
               rotation={-6}
               width={190}
               height={230}
-              gradientAngle={20}
               position={{ top: 20, left: 40 }}
             />
             <PolaroidPhoto
               filename="stage_004.jpg"
+              seed="ocean1"
               rotation={4}
               width={180}
               height={220}
-              gradientAngle={70}
               position={{ top: 60, left: 200 }}
             />
             <PolaroidPhoto
               filename="crowd_012.jpg"
+              seed="forest1"
               rotation={-3}
               width={170}
               height={170}
-              gradientAngle={120}
               position={{ top: 240, left: 20 }}
             />
             <PolaroidPhoto
               filename="afterparty.jpg"
+              seed="sunset1"
               rotation={6}
               width={185}
               height={195}
-              gradientAngle={45}
               position={{ top: 260, left: 180 }}
             />
           </div>
