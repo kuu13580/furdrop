@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router";
 import logoUrl from "../assets/logos/logo.png";
 
 const FEEDBACK_URL = import.meta.env.VITE_FEEDBACK_URL ?? "";
-const PUBLIC_HOST = import.meta.env.VITE_PUBLIC_HOST ?? "furdrop.pages.dev";
+const PUBLIC_HOST = import.meta.env.VITE_PUBLIC_HOST ?? "furdrop.app";
 
 const MONO = "'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace";
 

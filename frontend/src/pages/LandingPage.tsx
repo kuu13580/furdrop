@@ -6,7 +6,7 @@ import logoUrl from "../assets/logos/logo.png";
 import { authAtom } from "../stores/auth";
 
 const FEEDBACK_URL = import.meta.env.VITE_FEEDBACK_URL ?? "";
-const PUBLIC_HOST = import.meta.env.VITE_PUBLIC_HOST ?? "furdrop.pages.dev";
+const PUBLIC_HOST = import.meta.env.VITE_PUBLIC_HOST ?? "furdrop.app";
 const SAMPLE_HANDLE = "photographer";
 const SAMPLE_RECEIVE_URL = `${PUBLIC_HOST}/send/${SAMPLE_HANDLE}`;
 
@@ -753,7 +753,7 @@ export default function LandingPage() {
                 {[
                   ["Camera Model", "@photographer_furdrop"],
                   ["Date Taken", "2026:04:14 19:32:08"],
-                  ["Software", "furdrop.pages.dev"],
+                  ["Software", "furdrop.app"],
                 ].map(([k, v]) => (
                   <div
                     key={k}

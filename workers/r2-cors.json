@@ -2,7 +2,7 @@
   "rules": [
     {
       "allowed": {
-        "origins": ["https://furdrop.pages.dev"],
+        "origins": ["https://furdrop.app"],
         "methods": ["GET", "PUT"],
         "headers": ["*"]
       },

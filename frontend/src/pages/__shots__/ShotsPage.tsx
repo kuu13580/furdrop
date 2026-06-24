@@ -14,7 +14,7 @@ import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
 import StorageQuotaBar from "../../components/ui/StorageQuotaBar";
 
-const PUBLIC_HOST = "furdrop.pages.dev";
+const PUBLIC_HOST = "furdrop.app";
 const SAMPLE_HANDLE = "sora_studio";
 const SAMPLE_DISPLAY = "そら写真館";
 

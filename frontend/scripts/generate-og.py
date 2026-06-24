@@ -74,7 +74,7 @@ def main():
 
     # 底部の URL バッジ
     f_url = ImageFont.truetype(FONT_REG, 22)
-    url_text = "furdrop.pages.dev"
+    url_text = "furdrop.app"
     bbox = draw.textbbox((0, 0), url_text, font=f_url)
     url_w = bbox[2] - bbox[0]
     pad_x, pad_y = 18, 10
