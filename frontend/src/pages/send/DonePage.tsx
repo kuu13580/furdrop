@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate, useParams, useSearchParams } from "reac
 import SenderAtmosphere from "../../components/send/SenderAtmosphere";
 import Alert from "../../components/ui/Alert";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
+import { onImageError } from "../../lib/analytics";
 import { ApiError, senderApi } from "../../lib/api";
 import { withKey } from "../../lib/send-url";
 
@@ -87,6 +88,7 @@ export default function DonePage() {
                         src={p.thumb_url}
                         alt={p.filename ?? ""}
                         className="max-h-full max-w-full rounded-xl object-contain"
+                        onError={onImageError("done-thumb", "thumb")}
                       />
                     ) : null}
                   </div>

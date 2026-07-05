@@ -3,6 +3,7 @@ import { Link, useParams, useSearchParams } from "react-router";
 import SenderAtmosphere from "../../components/send/SenderAtmosphere";
 import Alert from "../../components/ui/Alert";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
+import { onImageError } from "../../lib/analytics";
 import { ApiError, type EmbedMode, senderApi } from "../../lib/api";
 import { withKey } from "../../lib/send-url";
 
@@ -71,6 +72,7 @@ export default function LandingPage() {
                 <img
                   src={receiver.avatar_url}
                   alt={receiver.display_name}
+                  onError={onImageError("avatar", "avatar")}
                   className="mx-auto h-20 w-20 rounded-full border-2 border-white object-cover shadow-card"
                 />
               ) : (

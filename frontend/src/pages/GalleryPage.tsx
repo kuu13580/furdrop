@@ -6,6 +6,7 @@ import Button from "../components/ui/Button";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
 import LoadingSpinner from "../components/ui/LoadingSpinner";
 import ScrollToTopButton from "../components/ui/ScrollToTopButton";
+import { onImageError } from "../lib/analytics";
 import { receiverApi } from "../lib/api";
 import { buildZipName, downloadAsZip } from "../lib/zip-download";
 import { userAtom } from "../stores/user";
@@ -664,6 +665,7 @@ export default function GalleryPage() {
                         className="max-h-full max-w-full rounded-xl object-contain"
                         loading="lazy"
                         draggable={false}
+                        onError={onImageError("gallery-thumb", "thumb")}
                       />
                     ) : (
                       <span className="text-2xl text-ink-muted">📷</span>

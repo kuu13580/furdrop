@@ -4,6 +4,7 @@ import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
 import LoadingSpinner from "../components/ui/LoadingSpinner";
+import { onImageError } from "../lib/analytics";
 import { receiverApi } from "../lib/api";
 import { formatBytes } from "../lib/format";
 import type { Photo } from "../types/photo";
@@ -176,6 +177,7 @@ export default function PhotoDetailPage() {
                     src={photo.thumb_url}
                     alt=""
                     aria-hidden="true"
+                    onError={onImageError("photo-detail-thumb", "thumb")}
                     className={`absolute inset-0 h-full w-full object-contain blur-md transition-opacity duration-300 ${
                       viewLoaded ? "opacity-0" : "opacity-100"
                     }`}
@@ -186,6 +188,7 @@ export default function PhotoDetailPage() {
                     src={photo.view_url}
                     alt={photo.sender_name ?? "写真"}
                     onLoad={() => setViewLoaded(true)}
+                    onError={onImageError("photo-detail-view", "original")}
                     className={`absolute inset-0 h-full w-full object-contain transition-opacity duration-300 ${
                       viewLoaded ? "opacity-100" : "opacity-0"
                     }`}

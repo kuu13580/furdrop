@@ -5,6 +5,7 @@ import { Link } from "react-router";
 import Card from "../components/ui/Card";
 import LoadingSpinner from "../components/ui/LoadingSpinner";
 import StorageQuotaBar from "../components/ui/StorageQuotaBar";
+import { onImageError } from "../lib/analytics";
 import { receiverApi } from "../lib/api";
 import { userAtom } from "../stores/user";
 import type { Photo } from "../types/photo";
@@ -133,6 +134,7 @@ function RecentPhotos({ photos, loading }: { photos: Photo[]; loading: boolean }
                 alt={photo.sender_name ?? "写真"}
                 className="max-h-full max-w-full rounded-xl object-contain"
                 loading="lazy"
+                onError={onImageError("dashboard-thumb", "thumb")}
               />
             ) : (
               <svg

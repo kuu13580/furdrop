@@ -1,3 +1,4 @@
+import { logError } from "../lib/logger";
 import { subtractStorageUsage } from "../lib/quota";
 import type { Env } from "../types";
 
@@ -11,12 +12,30 @@ const BATCH_SIZE = 50;
 export async function runCleanup(env: Env): Promise<void> {
   const now = Math.floor(Date.now() / 1000);
 
-  await markFailedPhotos(env, now);
-  await expireSessions(env, now);
-  await cleanupFailedPhotos(env);
-  await cleanupExpiredPhotos(env, now);
-  await pruneOldSessionLogs(env, now);
-  await cleanupOrphanedSessions(env, now);
+  // ステップを個別に握って続行する。1 ステップの失敗で後続がスキップされると、
+  // 期限切れ写真が消えない等の副作用が積み上がるため。失敗があれば最後に集約 throw する。
+  const steps: [string, () => Promise<void>][] = [
+    ["markFailedPhotos", () => markFailedPhotos(env, now)],
+    ["expireSessions", () => expireSessions(env, now)],
+    ["cleanupFailedPhotos", () => cleanupFailedPhotos(env)],
+    ["cleanupExpiredPhotos", () => cleanupExpiredPhotos(env, now)],
+    ["pruneOldSessionLogs", () => pruneOldSessionLogs(env, now)],
+    ["cleanupOrphanedSessions", () => cleanupOrphanedSessions(env, now)],
+  ];
+
+  let failedSteps = 0;
+  for (const [name, fn] of steps) {
+    try {
+      await fn();
+    } catch (err) {
+      failedSteps++;
+      logError("cron-step", err, { step: name });
+    }
+  }
+
+  if (failedSteps > 0) {
+    throw new Error(`cleanup finished with ${failedSteps}/${steps.length} failed step(s)`);
+  }
 }
 
 /** 1. pending写真のタイムアウト (1時間経過 → failed) */
@@ -50,11 +69,16 @@ async function cleanupFailedPhotos(env: Env): Promise<void> {
     .all();
 
   for (const row of rows.results) {
-    await Promise.all([
-      env.R2_ORIGINALS.delete(row.r2_key_original as string),
-      env.R2_THUMBS.delete(row.r2_key_thumb as string),
-    ]);
-    await env.DB.prepare("DELETE FROM photos WHERE id = ?").bind(row.id).run();
+    // 1 件の R2/D1 失敗でループ全体を止めない(止めると残りは次回 cron まで持ち越し)。
+    try {
+      await Promise.all([
+        env.R2_ORIGINALS.delete(row.r2_key_original as string),
+        env.R2_THUMBS.delete(row.r2_key_thumb as string),
+      ]);
+      await env.DB.prepare("DELETE FROM photos WHERE id = ?").bind(row.id).run();
+    } catch (err) {
+      logError("cron-cleanupFailedPhotos", err, { photoId: row.id });
+    }
   }
 }
 
@@ -72,14 +96,22 @@ async function cleanupExpiredPhotos(env: Env, now: number): Promise<void> {
     .all();
 
   for (const row of rows.results) {
-    await Promise.all([
-      env.R2_ORIGINALS.delete(row.r2_key_original as string),
-      env.R2_THUMBS.delete(row.r2_key_thumb as string),
-    ]);
+    // 1 件の失敗でループ全体を止めない (cleanupFailedPhotos と同じ理由)。
+    try {
+      await Promise.all([
+        env.R2_ORIGINALS.delete(row.r2_key_original as string),
+        env.R2_THUMBS.delete(row.r2_key_thumb as string),
+      ]);
 
-    const totalSize = (row.file_size as number) + (row.thumb_size as number);
-    await subtractStorageUsage(env.DB, row.receiver_id as string, totalSize);
-    await env.DB.prepare("DELETE FROM photos WHERE id = ?").bind(row.id).run();
+      const totalSize = (row.file_size as number) + (row.thumb_size as number);
+      await subtractStorageUsage(env.DB, row.receiver_id as string, totalSize);
+      await env.DB.prepare("DELETE FROM photos WHERE id = ?").bind(row.id).run();
+    } catch (err) {
+      logError("cron-cleanupExpiredPhotos", err, {
+        photoId: row.id,
+        receiverId: row.receiver_id,
+      });
+    }
   }
 }
 

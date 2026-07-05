@@ -271,6 +271,7 @@ Content-Type: application/json
 | 413 | FILE_TOO_LARGE | ファイルサイズ超過 |
 | 415 | INVALID_FORMAT | 画像フォーマット不正（X10: マジックバイト検証失敗） |
 | 429 | RATE_LIMITED | レート制限 |
+| 500 | INTERNAL | 未捕捉例外 (app.onError が構造化して返却・Workers Logs に記録) |
 | 507 | QUOTA_EXCEEDED | ストレージクォータ超過 |
 
 ### 4.3 受信者向けエンドポイント（認証必須）

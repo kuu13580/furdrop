@@ -1,7 +1,9 @@
 import { swaggerUI } from "@hono/swagger-ui";
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { cors } from "hono/cors";
+import { HTTPException } from "hono/http-exception";
 import { runCleanup } from "./cron/cleanup";
+import { logError } from "./lib/logger";
 import auth from "./routes/auth";
 import dev from "./routes/dev";
 import receiver from "./routes/receiver";
@@ -9,6 +11,20 @@ import sender from "./routes/sender";
 import type { Env } from "./types";
 
 const app = new OpenAPIHono<{ Bindings: Env }>();
+
+// 未捕捉例外(D1/R2 例外・想定外の throw)を構造化エラーに統一しつつ Workers Logs に記録する。
+// これが無いと 500 がプレーンテキストで返り、失敗の観測もスタックトレース頼みになる。
+app.onError((err, c) => {
+  if (err instanceof HTTPException) {
+    // Hono が明示的に投げた例外はステータスを尊重。5xx のみ観測対象として記録する。
+    if (err.status >= 500) {
+      logError("http-exception", err, { method: c.req.method, path: c.req.path });
+    }
+    return err.getResponse();
+  }
+  logError("unhandled", err, { method: c.req.method, path: c.req.path });
+  return c.json({ error: { code: "INTERNAL", message: "Internal server error" } }, 500);
+});
 
 app.use("*", cors());
 
@@ -55,6 +71,14 @@ app.get("/docs", swaggerUI({ url: "/openapi.json" }));
 export default {
   fetch: app.fetch,
   async scheduled(_event: ScheduledEvent, env: Env, _ctx: ExecutionContext) {
-    await runCleanup(env);
+    try {
+      await runCleanup(env);
+    } catch (err) {
+      // runCleanup は各ステップを個別に握って続行するので、ここに来るのは
+      // 「1 つ以上のステップが失敗した」集約シグナル。再 throw で cron invocation を
+      // 失敗として Workers Logs に残す。
+      logError("cron", err);
+      throw err;
+    }
   },
 };
