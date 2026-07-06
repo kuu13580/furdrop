@@ -1,5 +1,5 @@
 import { logError } from "../lib/logger";
-import { subtractStorageUsage } from "../lib/quota";
+import { subtractStorageUsageStmt } from "../lib/quota";
 import type { Env } from "../types";
 
 const ONE_HOUR = 3600;
@@ -104,8 +104,12 @@ async function cleanupExpiredPhotos(env: Env, now: number): Promise<void> {
       ]);
 
       const totalSize = (row.file_size as number) + (row.thumb_size as number);
-      await subtractStorageUsage(env.DB, row.receiver_id as string, totalSize);
-      await env.DB.prepare("DELETE FROM photos WHERE id = ?").bind(row.id).run();
+      // storage_used 減算と photos 削除は原子的に実行する (partial failure で
+      // 使用量が再減算されたり戻らなかったりする不整合を防ぐ)。
+      await env.DB.batch([
+        subtractStorageUsageStmt(env.DB, row.receiver_id as string, totalSize),
+        env.DB.prepare("DELETE FROM photos WHERE id = ?").bind(row.id),
+      ]);
     } catch (err) {
       logError("cron-cleanupExpiredPhotos", err, {
         photoId: row.id,

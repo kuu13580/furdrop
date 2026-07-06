@@ -137,7 +137,7 @@ export function trackClientError(input: ClientErrorInput): void {
     if (params[k] === undefined) delete params[k];
   }
 
-  const dedupeKey = `${params.error_kind}|${params.context}|${params.error_name ?? ""}|${params.error_message ?? ""}`;
+  const dedupeKey = `${params.error_kind}|${params.context}|${params.target ?? ""}|${params.http_status ?? ""}|${params.error_name ?? ""}|${params.error_message ?? ""}`;
   const count = sentCounts.get(dedupeKey) ?? 0;
 
   // 上限超過分も含め、送信内容は常に debugLog に出す(実機デバッグ用)

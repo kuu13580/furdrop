@@ -475,6 +475,8 @@ async function putBlob(url: string, blob: Blob, target: UploadTarget): Promise<v
       method: "PUT",
       body: blob,
       headers: { "Content-Type": "image/jpeg" },
+      // モバイル回線で失敗しないまま長時間ハングするのを防ぐ (20MB 画像を考慮した猶予)
+      signal: AbortSignal.timeout(120_000),
     });
   } catch (err) {
     // ネットワーク断 / CORS プリフライト失敗など (fetch 自体が reject)
