@@ -4,6 +4,7 @@ import { useNavigate, useParams, useSearchParams } from "react-router";
 import SenderAtmosphere from "../../components/send/SenderAtmosphere";
 import Alert from "../../components/ui/Alert";
 import Button from "../../components/ui/Button";
+import { extractError, trackClientError, type UploadTarget } from "../../lib/analytics";
 import { ApiError, senderApi } from "../../lib/api";
 import { runConcurrent } from "../../lib/concurrency";
 import { debugLog } from "../../lib/debug-log";
@@ -351,6 +352,12 @@ async function runPipeline({
           `加工失敗 (name=${f.file.name}, type=${f.file.type}, size=${f.file.size}B, heic=${isHeic(f.file)})`,
           err,
         );
+        // API に出ないクライアント側の変換失敗 (iOS OOM デコード / canvas OOM / HEIC 変換失敗等) を計測
+        trackClientError({
+          error_kind: "image_processing",
+          context: "pipeline",
+          ...extractError(err),
+        });
         updatePhase(f.id, "failed", describeError(err), "convert");
         throw err;
       }
@@ -439,8 +446,8 @@ async function runPipeline({
     updatePhase(p.id, "uploading");
     try {
       await Promise.all([
-        putBlob(up.upload_url, p.processedBlob),
-        putBlob(up.thumb_upload_url, p.thumbBlob),
+        putBlob(up.upload_url, p.processedBlob, "original"),
+        putBlob(up.thumb_upload_url, p.thumbBlob, "thumb"),
       ]);
       await senderApi.confirmPhoto(handle, sessionId, up.photo_id, {
         thumb_size: p.thumbBlob.size,
@@ -460,14 +467,31 @@ async function runPipeline({
   onDone(sessionId);
 }
 
-async function putBlob(url: string, blob: Blob): Promise<void> {
-  const res = await fetch(url, {
-    method: "PUT",
-    body: blob,
-    headers: { "Content-Type": "image/jpeg" },
-  });
+async function putBlob(url: string, blob: Blob, target: UploadTarget): Promise<void> {
+  // R2 への直 PUT は Workers を経由しないため、失敗は API ログに出ない。GA で計測する。
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: "PUT",
+      body: blob,
+      headers: { "Content-Type": "image/jpeg" },
+      // モバイル回線で失敗しないまま長時間ハングするのを防ぐ (20MB 画像を考慮した猶予)
+      signal: AbortSignal.timeout(120_000),
+    });
+  } catch (err) {
+    // ネットワーク断 / CORS プリフライト失敗など (fetch 自体が reject)
+    trackClientError({ error_kind: "upload_put", context: "r2-put", target, ...extractError(err) });
+    throw err;
+  }
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
+    // presigned URL の期限切れ(403)・署名不一致など
+    trackClientError({
+      error_kind: "upload_put",
+      context: "r2-put",
+      target,
+      http_status: res.status,
+    });
     throw new Error(`PUT failed: ${res.status} ${txt.slice(0, 120)}`);
   }
 }

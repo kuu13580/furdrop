@@ -1,4 +1,5 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
+import { logError } from "../lib/logger";
 import { ErrorSchema } from "../lib/schema";
 import { generateSendKey } from "../lib/send-key";
 import { requireAuth } from "../middleware/auth";
@@ -379,7 +380,18 @@ auth.openapi(deleteAccountRoute, async (c) => {
       Promise.allSettled([
         ...photos.results.map((p) => c.env.R2_ORIGINALS.delete(p.r2_key_original)),
         ...photos.results.map((p) => c.env.R2_THUMBS.delete(p.r2_key_thumb)),
-      ]).then(() => undefined),
+      ]).then((results) => {
+        // 背景削除の失敗はレスポンスに影響しないが、孤立オブジェクトの発生源になる。
+        // サイレントにせず件数を記録して検知できるようにする。
+        const failures = results.filter((r) => r.status === "rejected");
+        if (failures.length > 0) {
+          logError("account-delete-r2", (failures[0] as PromiseRejectedResult).reason, {
+            uid,
+            failed: failures.length,
+            total: results.length,
+          });
+        }
+      }),
     );
   }
 

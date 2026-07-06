@@ -14,6 +14,7 @@ import WatermarkDialog from "../../components/send/WatermarkDialog";
 import Alert from "../../components/ui/Alert";
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
+import { extractError, trackClientError } from "../../lib/analytics";
 import { type EmbedMode, senderApi } from "../../lib/api";
 import { runConcurrent } from "../../lib/concurrency";
 import { debugLog } from "../../lib/debug-log";
@@ -786,6 +787,12 @@ async function ingestFiles(
       await renderThumb(meta);
     } catch (err) {
       ilog.dumpError(`サムネ生成失敗 (最終スイープ, ${meta.file.name})、プレビュー不可で確定`, err);
+      // 再試行しても生成できなかった確定失敗のみ計測 (iOS OOM デコード等の予兆)
+      trackClientError({
+        error_kind: "image_processing",
+        context: "preview",
+        ...extractError(err),
+      });
       applyUpdate(meta.id, { previewReady: true });
     }
   }
