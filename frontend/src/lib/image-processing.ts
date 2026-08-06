@@ -1,5 +1,10 @@
 import piexif from "piexifjs";
 import { debugLog } from "./debug-log";
+import {
+  drawWatermarkElements,
+  ensureWatermarkFonts,
+  type WatermarkRenderElement,
+} from "./watermark";
 
 const log = debugLog.scope("image");
 
@@ -12,127 +17,7 @@ const log = debugLog.scope("image");
 
 export const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 
-export type WatermarkPosition =
-  | "top-left"
-  | "top-center"
-  | "top-right"
-  | "middle-left"
-  | "middle-center"
-  | "middle-right"
-  | "bottom-left"
-  | "bottom-center"
-  | "bottom-right";
-
-/** 白固定 / 黒固定 / 描画領域の明るさから自動選択 */
-export type WatermarkColor = "#ffffff" | "#000000" | "auto";
-
-/**
- * 透かしのフォント種別。
- * sans はデフォルト。Google Fonts の Noto Sans JP (index.html で読み込み済) を先頭に置き、
- * OS によらず同じ字形で焼き込まれるようにする。未ロード時はシステムのゴシックにフォールバックする。
- * serif/mono は OS 共通のシステムフォントで、和文も含めて確実に表示される。
- * pop は Google Fonts の Mochiy Pop One (index.html で読み込み済) を使い、未ロード時はシステムの丸ゴシックにフォールバックする。
- */
-export type WatermarkFontFamily = "sans" | "serif" | "mono" | "pop";
-
-/**
- * Canvas の ctx.font に渡すフォントスタック。
- * mono は欧文等幅 + 和文等幅 (MS Gothic) を組み合わせて、英日混在でも揃う。
- */
-export const WATERMARK_FONT_STACKS: Record<WatermarkFontFamily, string> = {
-  sans: '"Noto Sans JP", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif',
-  serif: '"Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", "Times New Roman", serif',
-  mono: '"SF Mono", Menlo, Consolas, "Courier New", "MS Gothic", "Osaka-Mono", monospace',
-  pop: '"Mochiy Pop One", "Hiragino Maru Gothic ProN", "Yu Gothic UI", "Meiryo UI", sans-serif',
-};
-
-/**
- * 各フォント種別の「Web フォントとして読み込む主フォント名」。
- * Web フォントは非同期ロードのため、未ロードのまま Canvas へ焼き込むと
- * システムフォントへ暗黙フォールバックして出力が崩れる。drawWatermark 前に
- * ensureWatermarkFont で document.fonts.load を待つために参照する。
- * システムフォントのみのスタック (serif / mono) はエントリを持たない＝待機不要。
- */
-const WATERMARK_WEBFONTS: Partial<Record<WatermarkFontFamily, string>> = {
-  sans: "Noto Sans JP",
-  pop: "Mochiy Pop One",
-};
-
-/**
- * 透かしを Canvas へ焼き込む前に、指定フォント種別の Web フォントが
- * 描画対象の文字グリフ込みでロード済みであることを保証する。
- * 失敗してもフォールバック描画で続行する (例外は握りつぶす)。
- */
-export async function ensureWatermarkFont(
-  fontFamily: WatermarkFontFamily,
-  text: string,
-): Promise<void> {
-  if (typeof document === "undefined" || !document.fonts) return;
-  const family = WATERMARK_WEBFONTS[fontFamily];
-  if (!family) return;
-  try {
-    // 透かしは bold で描画するため bold 指定でロードする。text を渡して
-    // 必要な unicode-range サブセットだけを確実に取得する (CJK は分割配信のため)。
-    await document.fonts.load(`bold 64px "${family}"`, text || "あ");
-  } catch {
-    // ロード失敗時はスタックのフォールバックフォントで描画する
-  }
-}
-
-export type WatermarkOptions = {
-  position: WatermarkPosition;
-  /** 画像長辺に対するフォントサイズ比 (0.01 〜 0.05) */
-  fontSizeRatio: number;
-  /** 透明度 (0.1 〜 1.0) */
-  opacity: number;
-  color: WatermarkColor;
-  fontFamily: WatermarkFontFamily;
-  /** 縁取り (反対色のアウトライン)。視認性は上がるが主張が強くなる */
-  stroke: boolean;
-};
-
-export const DEFAULT_WATERMARK: WatermarkOptions = {
-  position: "bottom-right",
-  fontSizeRatio: 0.02,
-  opacity: 0.8,
-  color: "auto",
-  fontFamily: "sans",
-  stroke: false,
-};
-
 type AnyCanvas = OffscreenCanvas | HTMLCanvasElement;
-
-/** EXIF / 透かしに埋め込むクレジット文字列のフォーマット種別 */
-export type CreditFormat = "shot_by" | "photo_by" | "copyright" | "name_only";
-
-/**
- * 各フォーマットの表示用ラベルと、senderName を受け取って実際の文字列を返すフォーマッタ。
- * UI のラベル/プレビュー表示と実際の埋め込み文字列の整合を一箇所で保つためにここに集約する。
- */
-export const CREDIT_FORMATS: Record<
-  CreditFormat,
-  { label: string; preview: string; format: (name: string) => string }
-> = {
-  shot_by: { label: "撮影：〜", preview: "撮影：〜", format: (n) => `撮影：${n}` },
-  photo_by: { label: "Photo by 〜", preview: "Photo by 〜", format: (n) => `Photo by ${n}` },
-  copyright: { label: "© 〜", preview: "© 〜", format: (n) => `© ${n}` },
-  name_only: { label: "名前のみ", preview: "〜", format: (n) => n },
-};
-
-export const DEFAULT_CREDIT_FORMAT: CreditFormat = "shot_by";
-
-/**
- * EXIF/透かしに埋め込むクレジット文字列を生成する。
- * senderName が空の場合は空文字を返す。
- */
-export function formatCredit(
-  senderName: string,
-  format: CreditFormat = DEFAULT_CREDIT_FORMAT,
-): string {
-  const trimmed = senderName.trim();
-  if (!trimmed) return "";
-  return CREDIT_FORMATS[format].format(trimmed);
-}
 
 /** 入力がHEIC系か判定 (MIME / 拡張子)。File も SelectedFileMeta も渡せる */
 export function isHeic(meta: { name: string; type: string }): boolean {
@@ -259,18 +144,15 @@ export async function stripExifGps(jpegBlob: Blob): Promise<Blob> {
 }
 
 /**
- * Canvas 2D APIで透かしを描画した加工済みJPEGを返す。
+ * Canvas 2D APIで透かし要素群を描画した加工済みJPEGを返す。
  * 副産物として寸法も返す（サーバー側に送るため）
  */
 export async function applyWatermark(
   jpegBlob: Blob,
-  text: string,
-  options: WatermarkOptions,
+  elements: WatermarkRenderElement[],
 ): Promise<{ blob: Blob; width: number; height: number }> {
   const img = await decodeImage(jpegBlob);
-  // 焼き込みは不可逆なので、Web フォントが未ロードのままシステムフォントへ
-  // フォールバックしないよう先にロードを待つ
-  if (text) await ensureWatermarkFont(options.fontFamily, text);
+  await ensureWatermarkFonts(elements);
   try {
     const width = img.width;
     const height = img.height;
@@ -280,7 +162,7 @@ export async function applyWatermark(
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, width, height);
       ctx.drawImage(img.source, 0, 0);
-      if (text) drawWatermark(ctx, width, height, text, options);
+      drawWatermarkElements(ctx, width, height, elements);
       const blob = await canvasToBlob(canvas, "image/jpeg", 0.92);
       return { blob, width, height };
     });
@@ -315,124 +197,6 @@ export async function generateThumbnail(jpegBlob: Blob): Promise<Blob> {
   } finally {
     img.close();
   }
-}
-
-/** Canvas に直接透かしを描画する。プレビュー用に export */
-export function drawWatermark(
-  ctx: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D,
-  w: number,
-  h: number,
-  text: string,
-  options: WatermarkOptions,
-) {
-  if (!text) return;
-  const { position, fontSizeRatio, opacity, color, fontFamily, stroke } = options;
-  const fontSize = Math.max(12, Math.round(Math.max(w, h) * fontSizeRatio));
-  const pad = Math.round(fontSize * 0.6);
-
-  ctx.save();
-  ctx.font = `bold ${fontSize}px ${WATERMARK_FONT_STACKS[fontFamily]}`;
-  ctx.textBaseline = "middle";
-
-  const [vertical, horizontal] = position.split("-") as [
-    "top" | "middle" | "bottom",
-    "left" | "center" | "right",
-  ];
-
-  let x: number;
-  switch (horizontal) {
-    case "left":
-      x = pad;
-      ctx.textAlign = "left";
-      break;
-    case "center":
-      x = w / 2;
-      ctx.textAlign = "center";
-      break;
-    case "right":
-      x = w - pad;
-      ctx.textAlign = "right";
-      break;
-  }
-
-  let y: number;
-  switch (vertical) {
-    case "top":
-      y = pad + fontSize / 2;
-      break;
-    case "middle":
-      y = h / 2;
-      break;
-    case "bottom":
-      y = h - pad - fontSize / 2;
-      break;
-  }
-
-  // "auto" は描画予定領域の平均輝度から色を決定
-  let resolvedColor: "#ffffff" | "#000000";
-  if (color === "auto") {
-    const textWidth = ctx.measureText(text).width;
-    const box = textBoundingBox(x, y, textWidth, fontSize, horizontal, w, h);
-    resolvedColor = pickContrastColor(ctx, box);
-  } else {
-    resolvedColor = color;
-  }
-
-  ctx.globalAlpha = opacity;
-  ctx.fillStyle = resolvedColor;
-  if (stroke) {
-    ctx.strokeStyle = resolvedColor === "#ffffff" ? "#000000" : "#ffffff";
-    ctx.lineWidth = Math.max(1, fontSize * 0.08);
-    ctx.lineJoin = "round";
-    ctx.strokeText(text, x, y);
-  }
-  ctx.fillText(text, x, y);
-  ctx.restore();
-}
-
-/** テキストの描画予定領域を Canvas 座標系で算出 (画面外クランプ込み) */
-function textBoundingBox(
-  anchorX: number,
-  anchorY: number,
-  textWidth: number,
-  fontSize: number,
-  horizontal: "left" | "center" | "right",
-  canvasW: number,
-  canvasH: number,
-): { x: number; y: number; w: number; h: number } {
-  let rx: number;
-  switch (horizontal) {
-    case "left":
-      rx = anchorX;
-      break;
-    case "center":
-      rx = anchorX - textWidth / 2;
-      break;
-    case "right":
-      rx = anchorX - textWidth;
-      break;
-  }
-  const ry = anchorY - fontSize / 2;
-  const x = Math.max(0, Math.floor(rx));
-  const y = Math.max(0, Math.floor(ry));
-  const w = Math.max(1, Math.min(Math.ceil(textWidth), canvasW - x));
-  const h = Math.max(1, Math.min(Math.ceil(fontSize), canvasH - y));
-  return { x, y, w, h };
-}
-
-/** 描画領域の平均輝度から視認性の高い色を選ぶ (Rec. 601) */
-function pickContrastColor(
-  ctx: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D,
-  box: { x: number; y: number; w: number; h: number },
-): "#ffffff" | "#000000" {
-  const data = ctx.getImageData(box.x, box.y, box.w, box.h).data;
-  let total = 0;
-  const pixels = box.w * box.h;
-  for (let i = 0; i < data.length; i += 4) {
-    total += 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-  }
-  const mean = total / pixels; // 0-255
-  return mean < 128 ? "#ffffff" : "#000000";
 }
 
 // ========== internal helpers ==========

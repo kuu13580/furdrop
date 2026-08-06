@@ -53,6 +53,7 @@ CREATE TABLE users (
     -- 'required' は送信者に必ず埋め込みを行わせる(サーバ側でも必須検証)
     exif_embed_mode   TEXT NOT NULL DEFAULT 'disabled',
     watermark_mode    TEXT NOT NULL DEFAULT 'disabled',  -- 透かしは不可逆のため慎重に
+    require_sender_name INTEGER NOT NULL DEFAULT 0,      -- 送信者名の入力を必須にする (0=任意, 1=必須)
     -- プッシュ通知 (R09): Phase 2 で導入予定。MVP の DB スキーマには含めない
     -- fcm_token         TEXT,
     -- push_enabled      INTEGER NOT NULL DEFAULT 1,
@@ -129,7 +130,7 @@ CREATE TABLE photos (
     -- 送信者メタデータ
     sender_name       TEXT,                   -- 送信者名 / TwitterID
     camera_model      TEXT,                   -- EXIFカメラモデル欄に埋め込んだ送信者情報
-    watermark_text    TEXT,                   -- 適用したウォーターマーク (記録用)
+    watermark_text    TEXT,                   -- 適用したウォーターマーク (記録用)。要素配列を serialize した JSON 文字列 ({"v":1,"elements":[...]})
     original_filename TEXT,                   -- 元ファイル名
 
     -- ファイル情報
@@ -430,7 +431,8 @@ Response: 200
     "is_accepting": true,
     "options": {
       "exif_embed_mode": "optional",
-      "watermark_mode": "disabled"
+      "watermark_mode": "disabled",
+      "require_sender_name": false
     }
   }
 }
@@ -463,6 +465,7 @@ Response: 201
 }
 
 エラー:
+- 400 INVALID_REQUEST: 受信者が送信者名必須 (require_sender_name=1) なのに sender_name 未指定
 - 403 INVALID_KEY: key が受信者のいずれのキーとも一致しない
 - 403 FORBIDDEN: 受信者が受付停止中 (is_active=0)
 - 507 QUOTA_EXCEEDED: 受信者のクォータ超過
@@ -483,7 +486,7 @@ Request:
       "width": 6000,
       "height": 4000,
       "camera_model": "@hanako_photo",
-      "watermark_text": "#FurDrop"
+      "watermark_text": "{\"v\":1,\"elements\":[{\"text\":\"撮影：@hanako_photo\",\"font\":\"noto-sans\",\"size\":0.02,\"opacity\":0.8,\"color\":\"mono\",\"stroke\":false,\"anchor\":[1,1],\"offset\":[-0.02,-0.02]}]}"
     }
   ]
 }

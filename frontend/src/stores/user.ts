@@ -13,6 +13,7 @@ export type UserProfile = {
   receive_url: string;
   exif_embed_mode: EmbedMode;
   watermark_mode: EmbedMode;
+  require_sender_name: boolean;
 };
 
 export const userAtom = atom<UserProfile | null>(null);

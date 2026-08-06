@@ -1,10 +1,10 @@
 import { atom } from "jotai";
+import { atomWithStorage, createJSONStorage } from "jotai/utils";
 import {
-  type CreditFormat,
-  DEFAULT_CREDIT_FORMAT,
-  DEFAULT_WATERMARK,
-  type WatermarkOptions,
-} from "../lib/image-processing";
+  createDefaultWatermarkElements,
+  sanitizeWatermarkElements,
+  type WatermarkElement,
+} from "../lib/watermark";
 
 /** 元ファイルのメタ情報。実体 (bytes) は IndexedDB に id をキーに保存する。 */
 export type SelectedFileMeta = {
@@ -43,21 +43,64 @@ export type PreviewCandidate = {
 
 export type UploadFormState = {
   senderName: string;
-  /** クレジット文字列のフォーマット（EXIF / 透かしの両方に適用） */
-  creditFormat: CreditFormat;
   /** EXIFカメラモデル欄に senderName を埋め込む */
   exifEnabled: boolean;
-  /** 透かしを入れる。テキストは senderName を使う */
+  /** 透かしを入れる */
   watermarkEnabled: boolean;
-  watermark: WatermarkOptions;
+  /** 透かし要素 (最大5) */
+  watermarkElements: WatermarkElement[];
 };
 
 export const selectedFilesAtom = atom<SelectedFile[]>([]);
 
-export const uploadFormAtom = atom<UploadFormState>({
-  senderName: "",
-  creditFormat: DEFAULT_CREDIT_FORMAT,
-  exifEnabled: false,
-  watermarkEnabled: false,
-  watermark: { ...DEFAULT_WATERMARK },
-});
+function defaultUploadForm(): UploadFormState {
+  return {
+    senderName: "",
+    exifEnabled: false,
+    watermarkEnabled: false,
+    watermarkElements: createDefaultWatermarkElements(),
+  };
+}
+
+/** localStorage から復元した値を検証・正規化する (旧形式・破損データはデフォルトへ) */
+function sanitizeUploadForm(raw: unknown): UploadFormState {
+  const base = defaultUploadForm();
+  if (typeof raw !== "object" || raw === null) return base;
+  const r = raw as Record<string, unknown>;
+  const elements = sanitizeWatermarkElements(r.watermarkElements);
+  return {
+    senderName: typeof r.senderName === "string" ? r.senderName.slice(0, 100) : base.senderName,
+    exifEnabled: r.exifEnabled === true,
+    watermarkEnabled: r.watermarkEnabled === true,
+    watermarkElements: elements.length > 0 ? elements : base.watermarkElements,
+  };
+}
+
+const uploadFormBaseStorage = createJSONStorage<UploadFormState>(() => localStorage);
+
+let uploadFormWriteTimer: number | undefined;
+
+/**
+ * 送信者名・受信設定・透かしデザインを localStorage に永続化する。
+ * 名刺やSNSのURLから繰り返し送るリピート送信者が、前回の設定をそのまま使えるようにする。
+ */
+export const uploadFormAtom = atomWithStorage<UploadFormState>(
+  "furdrop.uploadForm",
+  defaultUploadForm(),
+  {
+    ...uploadFormBaseStorage,
+    getItem: (key, initialValue) =>
+      sanitizeUploadForm(uploadFormBaseStorage.getItem(key, initialValue)),
+    // 透かし要素のドラッグ中は毎フレーム set が走るため、同期 I/O である
+    // localStorage.setItem をデバウンスしてホットパスから外す
+    setItem: (key, value) => {
+      window.clearTimeout(uploadFormWriteTimer);
+      uploadFormWriteTimer = window.setTimeout(
+        () => uploadFormBaseStorage.setItem(key, value),
+        300,
+      );
+    },
+  },
+  // 起動直後の描画から保存値を使う (デフォルト→保存値のちらつき防止)
+  { getOnInit: true },
+);

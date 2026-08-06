@@ -11,7 +11,6 @@ import { debugLog } from "../../lib/debug-log";
 import {
   applyWatermark,
   embedSenderInfoInExif,
-  formatCredit,
   generateThumbnail,
   getImageDimensions,
   isHeic,
@@ -20,6 +19,7 @@ import {
 } from "../../lib/image-processing";
 import { deletePhotos, getPhoto } from "../../lib/photo-store";
 import { withKey } from "../../lib/send-url";
+import { resolveWatermarkElements, serializeWatermark } from "../../lib/watermark";
 import { debugAtom } from "../../stores/debug";
 import { type SelectedFile, selectedFilesAtom, uploadFormAtom } from "../../stores/sender";
 
@@ -288,10 +288,14 @@ async function runPipeline({
 
   // --- 画像加工フェーズ ---
   onOverall("processing");
-  const credit = formatCredit(form.senderName, form.creditFormat);
+  const credit = form.senderName.trim();
   const exifText = form.exifEnabled && credit ? credit : "";
-  const watermarkText = form.watermarkEnabled && credit ? credit : "";
-  plog.log(`加工フェーズ開始 (exif=${!!exifText}, watermark=${!!watermarkText})`);
+  const watermarkElements = form.watermarkEnabled
+    ? resolveWatermarkElements(form.watermarkElements, credit)
+    : [];
+  const hasWatermark = watermarkElements.length > 0;
+  const watermarkText = hasWatermark ? serializeWatermark(watermarkElements) : "";
+  plog.log(`加工フェーズ開始 (exif=${!!exifText}, watermark=${hasWatermark})`);
   const processedResults = await runConcurrent(
     files,
     PROCESS_CONCURRENCY,
@@ -312,8 +316,8 @@ async function runPipeline({
         let afterWatermark: Blob;
         let width: number;
         let height: number;
-        if (watermarkText) {
-          const r = await applyWatermark(jpeg, watermarkText, form.watermark);
+        if (hasWatermark) {
+          const r = await applyWatermark(jpeg, watermarkElements);
           afterWatermark = r.blob;
           width = r.width;
           height = r.height;

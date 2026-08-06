@@ -1,4 +1,5 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
+import { asBool } from "../lib/d1";
 import { logError } from "../lib/logger";
 import { ErrorSchema } from "../lib/schema";
 import { generateSendKey } from "../lib/send-key";
@@ -18,6 +19,7 @@ const UserSchema = z.object({
   receive_url: z.string(),
   exif_embed_mode: EmbedModeSchema,
   watermark_mode: EmbedModeSchema,
+  require_sender_name: z.boolean(),
 });
 
 type EmbedMode = z.infer<typeof EmbedModeSchema>;
@@ -66,6 +68,7 @@ const registerRoute = createRoute({
             display_name: z.string().min(1).max(50),
             exif_embed_mode: EmbedModeSchema.optional(),
             watermark_mode: EmbedModeSchema.optional(),
+            require_sender_name: z.boolean().optional(),
           }),
         },
       },
@@ -86,11 +89,12 @@ const registerRoute = createRoute({
 auth.openapi(registerRoute, async (c) => {
   const uid = c.get("uid");
   const email = c.get("email");
-  const { handle, display_name, exif_embed_mode, watermark_mode } = c.req.valid("json");
+  const { handle, display_name, exif_embed_mode, watermark_mode, require_sender_name } =
+    c.req.valid("json");
 
   // UID重複チェック (べき等性: 既存ユーザーをそのまま返す)
   const existing = await c.env.DB.prepare(
-    "SELECT id, handle, display_name, storage_used, storage_quota, exif_embed_mode, watermark_mode FROM users WHERE id = ?",
+    "SELECT id, handle, display_name, storage_used, storage_quota, exif_embed_mode, watermark_mode, require_sender_name FROM users WHERE id = ?",
   )
     .bind(uid)
     .first();
@@ -108,6 +112,7 @@ auth.openapi(registerRoute, async (c) => {
           receive_url: receiveUrl,
           exif_embed_mode: asMode(existing.exif_embed_mode),
           watermark_mode: asMode(existing.watermark_mode),
+          require_sender_name: asBool(existing.require_sender_name),
         },
       },
       201,
@@ -118,14 +123,26 @@ auth.openapi(registerRoute, async (c) => {
   const avatarUrl = c.get("picture") ?? null;
   const exifMode: EmbedMode = exif_embed_mode ?? "optional";
   const watermarkMode: EmbedMode = watermark_mode ?? "disabled";
+  const requireSenderName = require_sender_name === true;
 
   // INSERT first — UNIQUE制約違反でhandle重複を検出 (レースコンディション防止)
   try {
     await c.env.DB.prepare(
-      `INSERT INTO users (id, handle, display_name, email, avatar_url, storage_used, storage_quota, is_active, exif_embed_mode, watermark_mode, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, 0, 10737418240, 1, ?, ?, ?, ?)`,
+      `INSERT INTO users (id, handle, display_name, email, avatar_url, storage_used, storage_quota, is_active, exif_embed_mode, watermark_mode, require_sender_name, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, 0, 10737418240, 1, ?, ?, ?, ?, ?)`,
     )
-      .bind(uid, handle, display_name, email, avatarUrl, exifMode, watermarkMode, now, now)
+      .bind(
+        uid,
+        handle,
+        display_name,
+        email,
+        avatarUrl,
+        exifMode,
+        watermarkMode,
+        requireSenderName ? 1 : 0,
+        now,
+        now,
+      )
       .run();
   } catch (e) {
     if (String(e).includes("UNIQUE constraint failed: users.handle")) {
@@ -158,6 +175,7 @@ auth.openapi(registerRoute, async (c) => {
         receive_url: `/send/${handle}?k=${keyValue}`,
         exif_embed_mode: exifMode,
         watermark_mode: watermarkMode,
+        require_sender_name: requireSenderName,
       },
     },
     201,
@@ -187,7 +205,7 @@ auth.openapi(meRoute, async (c) => {
   const uid = c.get("uid");
 
   const user = await c.env.DB.prepare(
-    "SELECT id, handle, display_name, storage_used, storage_quota, exif_embed_mode, watermark_mode FROM users WHERE id = ?",
+    "SELECT id, handle, display_name, storage_used, storage_quota, exif_embed_mode, watermark_mode, require_sender_name FROM users WHERE id = ?",
   )
     .bind(uid)
     .first();
@@ -209,6 +227,7 @@ auth.openapi(meRoute, async (c) => {
         receive_url: receiveUrl,
         exif_embed_mode: asMode(user.exif_embed_mode),
         watermark_mode: asMode(user.watermark_mode),
+        require_sender_name: asBool(user.require_sender_name),
       },
     },
     200,
@@ -229,6 +248,7 @@ const updateOptionsRoute = createRoute({
           schema: z.object({
             exif_embed_mode: EmbedModeSchema.optional(),
             watermark_mode: EmbedModeSchema.optional(),
+            require_sender_name: z.boolean().optional(),
           }),
         },
       },
@@ -251,9 +271,9 @@ auth.openapi(updateOptionsRoute, async (c) => {
   const body = c.req.valid("json");
 
   // 現在値を取得し、未指定フィールドのデフォルトとして使う
-  // (動的SQL組み立てを避けるため、UPDATE は常に両カラム + updated_at を固定SQLで書く)
+  // (動的SQL組み立てを避けるため、UPDATE は常に全カラム + updated_at を固定SQLで書く)
   const current = await c.env.DB.prepare(
-    "SELECT id, handle, display_name, storage_used, storage_quota, exif_embed_mode, watermark_mode FROM users WHERE id = ?",
+    "SELECT id, handle, display_name, storage_used, storage_quota, exif_embed_mode, watermark_mode, require_sender_name FROM users WHERE id = ?",
   )
     .bind(uid)
     .first();
@@ -264,17 +284,19 @@ auth.openapi(updateOptionsRoute, async (c) => {
 
   const nextExif = body.exif_embed_mode ?? asMode(current.exif_embed_mode);
   const nextWatermark = body.watermark_mode ?? asMode(current.watermark_mode);
+  const nextRequireName = body.require_sender_name ?? asBool(current.require_sender_name);
 
   const noChange =
     nextExif === asMode(current.exif_embed_mode) &&
-    nextWatermark === asMode(current.watermark_mode);
+    nextWatermark === asMode(current.watermark_mode) &&
+    nextRequireName === asBool(current.require_sender_name);
 
   if (!noChange) {
     const now = Math.floor(Date.now() / 1000);
     await c.env.DB.prepare(
-      "UPDATE users SET exif_embed_mode = ?, watermark_mode = ?, updated_at = ? WHERE id = ?",
+      "UPDATE users SET exif_embed_mode = ?, watermark_mode = ?, require_sender_name = ?, updated_at = ? WHERE id = ?",
     )
-      .bind(nextExif, nextWatermark, now, uid)
+      .bind(nextExif, nextWatermark, nextRequireName ? 1 : 0, now, uid)
       .run();
   }
 
@@ -291,6 +313,7 @@ auth.openapi(updateOptionsRoute, async (c) => {
         receive_url: receiveUrl,
         exif_embed_mode: nextExif,
         watermark_mode: nextWatermark,
+        require_sender_name: nextRequireName,
       },
     },
     200,

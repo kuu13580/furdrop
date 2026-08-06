@@ -13,6 +13,7 @@ type SeedUserOptions = {
   is_active?: 0 | 1;
   exif_embed_mode?: "disabled" | "optional" | "required";
   watermark_mode?: "disabled" | "optional" | "required";
+  require_sender_name?: 0 | 1;
 };
 
 /** users + send_keys を 1 件ずつ作って key_value を返す。register 後の状態を再現 */
@@ -23,8 +24,8 @@ export async function seedUser(
   const sendKey = generateSendKey();
   await env.DB.batch([
     env.DB.prepare(
-      `INSERT INTO users (id, handle, display_name, email, avatar_url, storage_used, storage_quota, is_active, exif_embed_mode, watermark_mode, created_at, updated_at)
-       VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO users (id, handle, display_name, email, avatar_url, storage_used, storage_quota, is_active, exif_embed_mode, watermark_mode, require_sender_name, created_at, updated_at)
+       VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).bind(
       opts.uid,
       opts.handle,
@@ -35,6 +36,7 @@ export async function seedUser(
       opts.is_active ?? 1,
       opts.exif_embed_mode ?? "optional",
       opts.watermark_mode ?? "disabled",
+      opts.require_sender_name ?? 0,
       now,
       now,
     ),

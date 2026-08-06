@@ -2,6 +2,7 @@ import { useAtom } from "jotai";
 import {
   type ChangeEvent,
   type DragEvent,
+  memo,
   useCallback,
   useEffect,
   useMemo,
@@ -19,29 +20,16 @@ import { type EmbedMode, senderApi } from "../../lib/api";
 import { runConcurrent } from "../../lib/concurrency";
 import { debugLog } from "../../lib/debug-log";
 import { generateId } from "../../lib/id";
-import {
-  CREDIT_FORMATS,
-  type CreditFormat,
-  formatCredit,
-  generateThumbnail,
-  isHeic,
-  MAX_FILE_SIZE,
-} from "../../lib/image-processing";
+import { generateThumbnail, isHeic, MAX_FILE_SIZE } from "../../lib/image-processing";
 import { clearAllPhotos, deletePhotos, getPhoto, putPhoto } from "../../lib/photo-store";
 import { withKey } from "../../lib/send-url";
+import { resolveWatermarkElements } from "../../lib/watermark";
 import {
   type PreviewCandidate,
   type SelectedFile,
   selectedFilesAtom,
   uploadFormAtom,
 } from "../../stores/sender";
-
-const CREDIT_FORMAT_OPTIONS: { value: CreditFormat; label: string }[] = [
-  { value: "shot_by", label: CREDIT_FORMATS.shot_by.label },
-  { value: "photo_by", label: CREDIT_FORMATS.photo_by.label },
-  { value: "copyright", label: CREDIT_FORMATS.copyright.label },
-  { value: "name_only", label: CREDIT_FORMATS.name_only.label },
-];
 
 const ACCEPT = "image/jpeg,image/png,image/heic,image/heif,.heic,.heif";
 const MAX_PHOTOS_PER_SESSION = 100;
@@ -116,6 +104,7 @@ export default function UploadPage() {
   const [receiverOptions, setReceiverOptions] = useState<{
     exif_embed_mode: EmbedMode;
     watermark_mode: EmbedMode;
+    require_sender_name: boolean;
   } | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -225,12 +214,15 @@ export default function UploadPage() {
     }
   };
 
-  const removeFile = (id: string) => {
-    const target = files.find((f) => f.id === id);
-    if (target?.previewUrl) URL.revokeObjectURL(target.previewUrl);
-    setFiles(files.filter((f) => f.id !== id));
-    void deletePhotos([id]);
-  };
+  const removeFile = useCallback(
+    (id: string) => {
+      const target = files.find((f) => f.id === id);
+      if (target?.previewUrl) URL.revokeObjectURL(target.previewUrl);
+      setFiles(files.filter((f) => f.id !== id));
+      void deletePhotos([id]);
+    },
+    [files, setFiles],
+  );
 
   const handleLabelClick = () => {
     // モバイルでは写真ピッカーが閉じてから change が発火するまでに「無の期間」がある。
@@ -261,16 +253,22 @@ export default function UploadPage() {
     if (e.dataTransfer.files) addFiles(e.dataTransfer.files);
   };
 
-  const hasSenderName = form.senderName.trim().length > 0;
+  const credit = form.senderName.trim();
+  const hasSenderName = credit.length > 0;
   const exifMode: EmbedMode = receiverOptions?.exif_embed_mode ?? "disabled";
   const watermarkMode: EmbedMode = receiverOptions?.watermark_mode ?? "disabled";
-  const anyRequired = exifMode === "required" || watermarkMode === "required";
-  // ヘルパーテキストとチェックボックス説明で同じプレビュー文字列を使う
-  const creditPreview =
-    formatCredit(form.senderName, form.creditFormat) || CREDIT_FORMATS[form.creditFormat].preview;
-  // 必須モードがある場合は senderName が必須。そうでなければ送信者名なし同意で代替可
+  // 送信者名が必須になる条件:
+  // - 受信者が「送信者名の入力を必須」に設定 (R14 require_sender_name、サーバ側でも400)
+  // - EXIF埋め込みが required (埋め込む内容が送信者名そのものなので名前なしでは成立しない)
+  // 透かし required は自由テキストで成立するため名前は要求しない (非空要素のみ要求)
+  const nameRequired = (receiverOptions?.require_sender_name ?? false) || exifMode === "required";
+  const watermarkRequiredEmpty =
+    watermarkMode === "required" &&
+    resolveWatermarkElements(form.watermarkElements, credit).length === 0;
   const canSubmit =
-    files.length > 0 && (anyRequired ? hasSenderName : hasSenderName || noCreditConsent);
+    files.length > 0 &&
+    (nameRequired ? hasSenderName : hasSenderName || noCreditConsent) &&
+    !watermarkRequiredEmpty;
 
   const handleSubmit = () => {
     if (!canSubmit) return;
@@ -278,16 +276,15 @@ export default function UploadPage() {
   };
 
   // フォームと受信者モードの整合を取る
-  // - mode='disabled' or senderName 空: フラグを落とす
-  // - mode='required' で senderName あり: フラグを強制 ON
-  // - mode='optional': 送信者の選択を尊重
+  // - EXIF はクレジット (送信者名) しか埋め込めないため senderName 空でフラグを落とす
+  // - 透かしは自由テキストで成立するため senderName には依存しない
   useEffect(() => {
     setForm((prev) => {
       let exifEnabled = prev.exifEnabled;
       let watermarkEnabled = prev.watermarkEnabled;
       if (!hasSenderName || exifMode === "disabled") exifEnabled = false;
       else if (exifMode === "required") exifEnabled = true;
-      if (!hasSenderName || watermarkMode === "disabled") watermarkEnabled = false;
+      if (watermarkMode === "disabled") watermarkEnabled = false;
       else if (watermarkMode === "required") watermarkEnabled = true;
       if (exifEnabled === prev.exifEnabled && watermarkEnabled === prev.watermarkEnabled) {
         return prev;
@@ -412,7 +409,7 @@ export default function UploadPage() {
               </div>
               <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
                 {files.map((f) => (
-                  <PreviewTile key={f.id} file={f} onRemove={() => removeFile(f.id)} />
+                  <PreviewTile key={f.id} file={f} onRemove={removeFile} />
                 ))}
               </div>
             </div>
@@ -445,8 +442,12 @@ export default function UploadPage() {
             <Card>
               <div className="space-y-4">
                 <div className="space-y-1.5">
-                  <label htmlFor="senderName" className="block text-[14px] font-medium text-ink">
+                  <label
+                    htmlFor="senderName"
+                    className="flex items-center gap-1.5 text-[14px] font-medium text-ink"
+                  >
                     送信者名 / TwitterID
+                    {nameRequired && <RequiredBadge />}
                   </label>
                   <input
                     id="senderName"
@@ -457,45 +458,14 @@ export default function UploadPage() {
                     className="block w-full rounded-xl border border-surface-sand-deep bg-surface px-4 py-3 text-[14px] text-ink placeholder:text-ink-muted transition-all focus:border-brand focus:outline-none focus:ring-3 focus:ring-brand/15"
                   />
                   <p className="text-[13px] text-ink-soft">
-                    受信者に表示されます。EXIF・透かしには
-                    <code className="mx-0.5 rounded bg-surface-sand px-1.5 py-0.5 font-mono text-[0.95em] text-ink">
-                      {creditPreview}
-                    </code>
-                    の形式で埋め込まれます
+                    受信者に表示されます
+                    {exifMode !== "disabled" && "。EXIF埋め込みにもこの名前が使われます"}
                   </p>
-                </div>
-
-                <div className="space-y-1.5">
-                  <p className="block text-[13px] font-medium text-ink-soft">クレジット表記</p>
-                  <div
-                    role="radiogroup"
-                    aria-label="クレジット表記"
-                    className="grid grid-cols-2 gap-1 rounded-xl bg-surface-sand p-1 sm:grid-cols-4"
-                  >
-                    {CREDIT_FORMAT_OPTIONS.map((opt) => {
-                      const active = form.creditFormat === opt.value;
-                      return (
-                        <label
-                          key={opt.value}
-                          className={`flex cursor-pointer items-center justify-center rounded-lg px-2 py-1.5 text-center text-[13px] transition-colors ${
-                            active
-                              ? "bg-surface text-ink shadow-card"
-                              : "text-ink-soft hover:text-ink"
-                          }`}
-                        >
-                          <input
-                            type="radio"
-                            name="credit-format"
-                            value={opt.value}
-                            checked={active}
-                            onChange={() => setForm({ ...form, creditFormat: opt.value })}
-                            className="sr-only"
-                          />
-                          {opt.label}
-                        </label>
-                      );
-                    })}
-                  </div>
+                  {nameRequired && !hasSenderName && (
+                    <p className="text-[13px] text-status-warn">
+                      この受信者への送信には送信者名の入力が必要です
+                    </p>
+                  )}
                 </div>
 
                 {(exifMode !== "disabled" || watermarkMode !== "disabled") && (
@@ -517,7 +487,13 @@ export default function UploadPage() {
                             {exifMode === "required" && <RequiredBadge />}
                           </span>
                           <span className="mt-0.5 block text-[13px] text-ink-soft">
-                            メタデータに「{creditPreview}」を書き込みます（元のカメラ情報は上書き）
+                            メタデータに送信者名
+                            {credit && (
+                              <code className="mx-0.5 rounded bg-surface-sand px-1.5 py-0.5 font-mono text-[0.95em] text-ink">
+                                {credit}
+                              </code>
+                            )}
+                            を書き込みます（元のカメラ情報は上書き）
                           </span>
                         </span>
                       </label>
@@ -525,16 +501,18 @@ export default function UploadPage() {
 
                     {watermarkMode !== "disabled" && (
                       <div>
-                        <label
-                          className={`flex items-start gap-2.5 text-[14px] ${hasSenderName ? "" : "opacity-50"}`}
-                        >
+                        <label className="flex items-start gap-2.5 text-[14px]">
                           <input
                             type="checkbox"
                             checked={form.watermarkEnabled}
-                            disabled={!hasSenderName || watermarkMode === "required"}
-                            onChange={(e) =>
-                              setForm({ ...form, watermarkEnabled: e.target.checked })
-                            }
+                            disabled={watermarkMode === "required"}
+                            onChange={(e) => {
+                              const enabled = e.target.checked;
+                              setForm({ ...form, watermarkEnabled: enabled });
+                              // ON にしたら必ず編集ダイアログを開き、
+                              // 何がどこに焼き込まれるかをその場で確認・調整させる
+                              if (enabled) setWatermarkDialogOpen(true);
+                            }}
                             className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
                           />
                           <span>
@@ -543,11 +521,11 @@ export default function UploadPage() {
                               {watermarkMode === "required" && <RequiredBadge />}
                             </span>
                             <span className="mt-0.5 block text-[13px] text-ink-soft">
-                              画像に「{creditPreview}」を描き込みます（不可逆）
+                              画像に文字や四角形を描き込みます（不可逆）。初期設定では送信者名が右下に入り、内容・位置・フォントは自由に編集できます
                             </span>
                           </span>
                         </label>
-                        {form.watermarkEnabled && hasSenderName && (
+                        {form.watermarkEnabled && (
                           <div className="mt-2 pl-6">
                             <Button
                               size="sm"
@@ -558,13 +536,12 @@ export default function UploadPage() {
                             </Button>
                           </div>
                         )}
+                        {watermarkRequiredEmpty && (
+                          <p className="mt-2 pl-6 text-[13px] text-status-warn">
+                            透かしに表示できる文字がありません。「透かしを編集」から文字を入力してください。
+                          </p>
+                        )}
                       </div>
-                    )}
-
-                    {anyRequired && !hasSenderName && (
-                      <p className="text-[13px] text-status-warn">
-                        この受信者は埋め込みを必須に設定しています。送信者名を入力してください。
-                      </p>
                     )}
                   </div>
                 )}
@@ -573,7 +550,7 @@ export default function UploadPage() {
           </div>
         )}
 
-        {files.length > 0 && !hasSenderName && !anyRequired && (
+        {files.length > 0 && !hasSenderName && !nameRequired && (
           <label className="mx-auto flex w-full max-w-3xl items-start gap-2.5 rounded-2xl border border-status-warn/30 bg-status-warn/10 p-4 text-[13px]">
             <input
               type="checkbox"
@@ -624,9 +601,9 @@ export default function UploadPage() {
         <WatermarkDialog
           open={watermarkDialogOpen}
           onClose={() => setWatermarkDialogOpen(false)}
-          options={form.watermark}
-          onChange={(w) => setForm({ ...form, watermark: w })}
-          text={formatCredit(form.senderName, form.creditFormat)}
+          elements={form.watermarkElements}
+          onChange={(els) => setForm((prev) => ({ ...prev, watermarkElements: els }))}
+          credit={credit}
           candidates={previewCandidates}
           getFile={getPreviewFile}
         />
@@ -643,7 +620,14 @@ function RequiredBadge() {
   );
 }
 
-function PreviewTile({ file, onRemove }: { file: SelectedFile; onRemove: () => void }) {
+/** memo: 透かしドラッグ中はフォーム atom が毎フレーム更新されるため、タイル再調停を避ける */
+const PreviewTile = memo(function PreviewTile({
+  file,
+  onRemove,
+}: {
+  file: SelectedFile;
+  onRemove: (id: string) => void;
+}) {
   const heic = isHeic(file.file);
   const hasPreview = file.previewUrl.length > 0;
   const generating = !file.previewReady;
@@ -678,7 +662,7 @@ function PreviewTile({ file, onRemove }: { file: SelectedFile; onRemove: () => v
         type="button"
         onClick={(e) => {
           e.stopPropagation();
-          onRemove();
+          onRemove(file.id);
         }}
         className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-ink/55 text-[13px] text-white backdrop-blur-sm transition-colors hover:bg-ink/75"
         aria-label={`${file.file.name} を削除`}
@@ -687,7 +671,7 @@ function PreviewTile({ file, onRemove }: { file: SelectedFile; onRemove: () => v
       </button>
     </div>
   );
-}
+});
 
 type SetFiles = (update: SelectedFile[] | ((prev: SelectedFile[]) => SelectedFile[])) => void;
 
