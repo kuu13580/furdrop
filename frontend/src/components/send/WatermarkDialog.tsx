@@ -644,6 +644,8 @@ export default function WatermarkDialog({
               <>
                 <canvas
                   ref={canvasRef}
+                  role="img"
+                  aria-label="透かしのプレビュー。要素をドラッグして配置できます"
                   onPointerDown={handlePointerDown}
                   onPointerMove={handlePointerMove}
                   onPointerUp={handlePointerUp}

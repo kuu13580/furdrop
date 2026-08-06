@@ -79,6 +79,20 @@ function sanitizeUploadForm(raw: unknown): UploadFormState {
 const uploadFormBaseStorage = createJSONStorage<UploadFormState>(() => localStorage);
 
 let uploadFormWriteTimer: number | undefined;
+let pendingUploadFormWrite: (() => void) | null = null;
+
+const flushUploadFormWrite = () => {
+  if (!pendingUploadFormWrite) return;
+  window.clearTimeout(uploadFormWriteTimer);
+  const write = pendingUploadFormWrite;
+  pendingUploadFormWrite = null;
+  write();
+};
+
+if (typeof window !== "undefined") {
+  // タブ閉じ・ページ遷移時にデバウンス中の書き込みを失わない (bfcache 対応のため pagehide)
+  window.addEventListener("pagehide", flushUploadFormWrite);
+}
 
 /**
  * 送信者名・受信設定・透かしデザインを localStorage に永続化する。
@@ -95,10 +109,14 @@ export const uploadFormAtom = atomWithStorage<UploadFormState>(
     // localStorage.setItem をデバウンスしてホットパスから外す
     setItem: (key, value) => {
       window.clearTimeout(uploadFormWriteTimer);
-      uploadFormWriteTimer = window.setTimeout(
-        () => uploadFormBaseStorage.setItem(key, value),
-        300,
-      );
+      pendingUploadFormWrite = () => uploadFormBaseStorage.setItem(key, value);
+      uploadFormWriteTimer = window.setTimeout(flushUploadFormWrite, 300);
+    },
+    // デバウンス中の書き込みが削除後に復活しないよう、保留分を破棄してから消す
+    removeItem: (key) => {
+      window.clearTimeout(uploadFormWriteTimer);
+      pendingUploadFormWrite = null;
+      uploadFormBaseStorage.removeItem(key);
     },
   },
   // 起動直後の描画から保存値を使う (デフォルト→保存値のちらつき防止)

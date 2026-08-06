@@ -133,7 +133,7 @@ test("四角形要素を追加してサイズ・角丸を調整でき、削除�
 
   // 「＋ 四角形を追加」で四角形要素が増え、選択が移る
   await page.getByRole("button", { name: "四角形を追加" }).click();
-  await expect(page.getByRole("button", { name: "四角形" }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "四角形", exact: true })).toBeVisible();
 
   // 四角形の編集パネル: 幅・高さ・角丸スライダーが出て、テキスト欄・フォントは出ない
   await expect(page.getByLabel(/幅/)).toBeVisible();

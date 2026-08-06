@@ -152,8 +152,8 @@ export async function applyWatermark(
   elements: WatermarkRenderElement[],
 ): Promise<{ blob: Blob; width: number; height: number }> {
   const img = await decodeImage(jpegBlob);
-  await ensureWatermarkFonts(elements);
   try {
+    await ensureWatermarkFonts(elements);
     const width = img.width;
     const height = img.height;
     return await withCanvas(width, height, async (canvas) => {

@@ -262,9 +262,10 @@ export default function UploadPage() {
   // - EXIF埋め込みが required (埋め込む内容が送信者名そのものなので名前なしでは成立しない)
   // 透かし required は自由テキストで成立するため名前は要求しない (非空要素のみ要求)
   const nameRequired = (receiverOptions?.require_sender_name ?? false) || exifMode === "required";
+  // required が強制するのは「非空テキストの要素が1つ以上」(R14)。四角形だけでは満たさない
   const watermarkRequiredEmpty =
     watermarkMode === "required" &&
-    resolveWatermarkElements(form.watermarkElements, credit).length === 0;
+    !resolveWatermarkElements(form.watermarkElements, credit).some((el) => el.kind === "text");
   const canSubmit =
     files.length > 0 &&
     (nameRequired ? hasSenderName : hasSenderName || noCreditConsent) &&

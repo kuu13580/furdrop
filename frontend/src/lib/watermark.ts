@@ -293,20 +293,31 @@ export function watermarkCtxFont(fontId: string, fontSizePx: number): string {
 
 const FONT_CSS_LINK_ID = "watermark-fonts-css";
 
+let fontCssPromise: Promise<void> | null = null;
+
 /**
  * 全透かしフォントの Google Fonts CSS を 1 リクエストで読み込む (初回のみ)。
  * CSS 自体は unicode-range の宣言集で、実フォントのダウンロードは
  * グリフが実際に必要になった時 (DOM 表示 / document.fonts.load) まで発生しない。
+ *
+ * 返り値の Promise はスタイルシートの読み込み完了で解決する。@font-face が登録される前に
+ * document.fonts.load を呼ぶと「未知のフォント」として即座に空解決してしまうため、
+ * グリフのロード前に必ずこれを await する。失敗時も resolve する (フォールバック描画で続行)。
  */
-export function ensureWatermarkFontCss(): void {
-  if (typeof document === "undefined") return;
-  if (document.getElementById(FONT_CSS_LINK_ID)) return;
-  const families = WATERMARK_FONTS.map((f) => `family=${f.query}`).join("&");
-  const link = document.createElement("link");
-  link.id = FONT_CSS_LINK_ID;
-  link.rel = "stylesheet";
-  link.href = `https://fonts.googleapis.com/css2?${families}&display=swap`;
-  document.head.appendChild(link);
+export function ensureWatermarkFontCss(): Promise<void> {
+  if (typeof document === "undefined") return Promise.resolve();
+  if (fontCssPromise) return fontCssPromise;
+  fontCssPromise = new Promise((resolve) => {
+    const families = WATERMARK_FONTS.map((f) => `family=${f.query}`).join("&");
+    const link = document.createElement("link");
+    link.id = FONT_CSS_LINK_ID;
+    link.rel = "stylesheet";
+    link.href = `https://fonts.googleapis.com/css2?${families}&display=swap`;
+    link.onload = () => resolve();
+    link.onerror = () => resolve();
+    document.head.appendChild(link);
+  });
+  return fontCssPromise;
 }
 
 /**
@@ -316,7 +327,7 @@ export function ensureWatermarkFontCss(): void {
  */
 async function ensureWatermarkFontLoaded(fontId: string, text: string): Promise<void> {
   if (typeof document === "undefined" || !document.fonts) return;
-  ensureWatermarkFontCss();
+  await ensureWatermarkFontCss();
   const def = getWatermarkFont(fontId);
   try {
     await document.fonts.load(`${def.weight} 64px "${def.family}"`, text || "あ");
@@ -340,10 +351,11 @@ export async function ensureWatermarkFonts(elements: WatermarkRenderElement[]): 
 /** ピッカー表示用に各フォントのラベル分グリフを先読みする (fire-and-forget) */
 export function preloadWatermarkFontLabels(): void {
   if (typeof document === "undefined" || !document.fonts) return;
-  ensureWatermarkFontCss();
-  for (const def of WATERMARK_FONTS) {
-    document.fonts.load(`${def.weight} 16px "${def.family}"`, def.label).catch(() => {});
-  }
+  void ensureWatermarkFontCss().then(() => {
+    for (const def of WATERMARK_FONTS) {
+      document.fonts.load(`${def.weight} 16px "${def.family}"`, def.label).catch(() => {});
+    }
+  });
 }
 
 // ========== カラーパレット ==========
