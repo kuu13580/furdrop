@@ -1,12 +1,14 @@
 import { type ReactNode, useEffect } from "react";
 
-type DialogSize = "sm" | "md" | "lg";
+type DialogSize = "sm" | "md" | "lg" | "4xl";
 
 /** size はダイアログの最大幅のみを制御する。縦の制限は親ラッパーの padding に任せる */
 const SIZE_CLASS: Record<DialogSize, string> = {
   sm: "max-w-sm",
   md: "max-w-md",
   lg: "max-w-lg",
+  // 2カラムレイアウトを組む広いダイアログ用 (例: 透かしエディタ)
+  "4xl": "max-w-4xl",
 };
 
 type Props = {

@@ -86,6 +86,40 @@ function EmbedModeRadioGroup({
   );
 }
 
+/** 送信者名必須のトグル (R14)。登録フォームと設定画面で共用する */
+function RequireSenderNameField({
+  name,
+  checked,
+  onChange,
+  disabled,
+}: {
+  name: string;
+  checked: boolean;
+  onChange: (next: boolean) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <label
+      className={`flex items-start gap-2.5 ${disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
+    >
+      <input
+        type="checkbox"
+        name={name}
+        checked={checked}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.checked)}
+        className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
+      />
+      <span>
+        <span className="block text-[14px] font-medium text-ink">送信者名の入力を必須にする</span>
+        <span className="mt-0.5 block text-[13px] text-ink-soft">
+          送信者は名前 (TwitterID等) を入力しないと写真を送れなくなります
+        </span>
+      </span>
+    </label>
+  );
+}
+
 function RegisterForm() {
   const [authState, setAuth] = useAtom(authAtom);
   const [, setUser] = useAtom(userAtom);
@@ -101,6 +135,7 @@ function RegisterForm() {
   const [handleError, setHandleError] = useState<string | null>(null);
   const [exifEmbedMode, setExifEmbedMode] = useState<EmbedMode>("optional");
   const [watermarkMode, setWatermarkMode] = useState<EmbedMode>("disabled");
+  const [requireSenderName, setRequireSenderName] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const validateHandle = useCallback((value: string) => {
@@ -137,6 +172,7 @@ function RegisterForm() {
           display_name: displayName.trim(),
           exif_embed_mode: exifEmbedMode,
           watermark_mode: watermarkMode,
+          require_sender_name: requireSenderName,
         });
         // registerのレスポンスはUserProfileの全フィールドを含まないのでgetMeで取得
         const { user: profile } = await authApi.getMe();
@@ -163,6 +199,7 @@ function RegisterForm() {
       displayName,
       exifEmbedMode,
       watermarkMode,
+      requireSenderName,
       agreedToTerms,
       validateHandle,
       authState,
@@ -211,6 +248,11 @@ function RegisterForm() {
             <p className="text-[13px] text-ink-soft">
               送信者に提示するオプションを設定します。あとから設定ページで変更できます。
             </p>
+            <RequireSenderNameField
+              name="register-require-name"
+              checked={requireSenderName}
+              onChange={setRequireSenderName}
+            />
             <EmbedModeRadioGroup
               name="register-exif"
               title="EXIF埋め込み"
@@ -277,13 +319,17 @@ function ReceiveOptionsCard({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const updateMode = useCallback(
-    async (field: "exif_embed_mode" | "watermark_mode", value: EmbedMode) => {
+  const updateOption = useCallback(
+    async (patch: {
+      exif_embed_mode?: EmbedMode;
+      watermark_mode?: EmbedMode;
+      require_sender_name?: boolean;
+    }) => {
       setSaving(true);
       setError(null);
       try {
-        await authApi.updateOptions({ [field]: value });
-        setUser({ ...user, [field]: value });
+        await authApi.updateOptions(patch);
+        setUser({ ...user, ...patch });
       } catch (err) {
         setError(err instanceof Error ? err.message : "更新に失敗しました");
       } finally {
@@ -304,12 +350,18 @@ function ReceiveOptionsCard({
         </Alert>
       )}
       <div className="space-y-5">
+        <RequireSenderNameField
+          name="settings-require-name"
+          checked={user.require_sender_name}
+          onChange={(v) => updateOption({ require_sender_name: v })}
+          disabled={saving}
+        />
         <EmbedModeRadioGroup
           name="settings-exif"
           title="EXIF埋め込み"
           description="送信者がカメラモデル欄に名前を書き込みます（メタデータのみ、除去可能）"
           value={user.exif_embed_mode}
-          onChange={(v) => updateMode("exif_embed_mode", v)}
+          onChange={(v) => updateOption({ exif_embed_mode: v })}
           disabled={saving}
         />
         <EmbedModeRadioGroup
@@ -317,7 +369,7 @@ function ReceiveOptionsCard({
           title="透かし"
           description="送信者が画像にクレジットテキストを描き込みます（不可逆）"
           value={user.watermark_mode}
-          onChange={(v) => updateMode("watermark_mode", v)}
+          onChange={(v) => updateOption({ watermark_mode: v })}
           disabled={saving}
         />
       </div>

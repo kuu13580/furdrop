@@ -1,4 +1,5 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
+import { asBool } from "../lib/d1";
 import { addStorageUsage } from "../lib/quota";
 import { buildR2Key, createThumbUploadUrl, createThumbViewUrl, createUploadUrl } from "../lib/r2";
 import { ErrorSchema, HandleParam, PhotoIdParam, SessionIdParam } from "../lib/schema";
@@ -37,6 +38,7 @@ const getReceiverRoute = createRoute({
               options: z.object({
                 exif_embed_mode: EmbedModeSchema,
                 watermark_mode: EmbedModeSchema,
+                require_sender_name: z.boolean(),
               }),
             }),
           }),
@@ -55,7 +57,7 @@ sender.openapi(getReceiverRoute, async (c) => {
   const { handle } = c.req.valid("param");
 
   const user = await c.env.DB.prepare(
-    "SELECT handle, display_name, avatar_url, is_active, storage_used, storage_quota, exif_embed_mode, watermark_mode FROM users WHERE handle = ?",
+    "SELECT handle, display_name, avatar_url, is_active, storage_used, storage_quota, exif_embed_mode, watermark_mode, require_sender_name FROM users WHERE handle = ?",
   )
     .bind(handle)
     .first();
@@ -77,6 +79,7 @@ sender.openapi(getReceiverRoute, async (c) => {
         options: {
           exif_embed_mode: asMode(user.exif_embed_mode),
           watermark_mode: asMode(user.watermark_mode),
+          require_sender_name: asBool(user.require_sender_name),
         },
       },
     },
@@ -117,6 +120,10 @@ const createSessionRoute = createRoute({
         },
       },
       description: "セッション作成成功",
+    },
+    400: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "送信者名必須の受信者に対して sender_name 未指定",
     },
     403: {
       content: { "application/json": { schema: ErrorSchema } },
@@ -160,7 +167,7 @@ sender.openapi(createSessionRoute, async (c) => {
   // handle + key の JOIN で受信者を解決する。
   // key が一致しない / handle が存在しない の双方で 403 (キーの有無を漏らさないため一律 INVALID_KEY)。
   const user = await c.env.DB.prepare(
-    `SELECT u.id, u.is_active, u.storage_used, u.storage_quota
+    `SELECT u.id, u.is_active, u.storage_used, u.storage_quota, u.require_sender_name
        FROM users u
        JOIN send_keys k ON k.receiver_id = u.id
        WHERE u.handle = ? AND k.key_value = ?`,
@@ -176,6 +183,20 @@ sender.openapi(createSessionRoute, async (c) => {
     return c.json(
       { error: { code: "FORBIDDEN", message: "This user is not accepting photos" } },
       403,
+    );
+  }
+
+  // R14: 受信者が送信者名を必須にしている場合、未指定のセッション開始を拒否 (UIバイパス防止)。
+  // EXIF required 由来の名前必須は createPhotos 側の camera_model 検証で担保される
+  if (asBool(user.require_sender_name) && !body.sender_name?.trim()) {
+    return c.json(
+      {
+        error: {
+          code: "INVALID_REQUEST",
+          message: "Sender name is required by this receiver",
+        },
+      },
+      400,
     );
   }
 
@@ -225,7 +246,7 @@ const PhotoInput = z.object({
   width: z.number().int().optional(),
   height: z.number().int().optional(),
   camera_model: z.string().optional(),
-  watermark_text: z.string().optional(),
+  watermark_text: z.string().max(4000).optional(),
 });
 
 const createPhotosRoute = createRoute({

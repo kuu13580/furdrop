@@ -33,6 +33,34 @@ describe("POST /send/:handle/sessions", () => {
     expect(body.error.code).toBe("INVALID_KEY");
   });
 
+  it("require_sender_name=1 の受信者に sender_name なしで開始すると 400 (R14: 名前必須の UI バイパス防止)", async () => {
+    const { handle, sendKey } = await seedUser({
+      uid: "uid-sess-reqname",
+      handle: "sess_reqname",
+      require_sender_name: 1,
+    });
+    const noName = await apiJson<{ error: { code: string } }>(`/send/${handle}/sessions`, {
+      method: "POST",
+      body: { key: sendKey, photo_count: 1 },
+    });
+    expect(noName.status).toBe(400);
+    expect(noName.body.error.code).toBe("INVALID_REQUEST");
+
+    // 空白のみの名前も拒否
+    const blank = await apiJson<{ error: { code: string } }>(`/send/${handle}/sessions`, {
+      method: "POST",
+      body: { key: sendKey, sender_name: "   ", photo_count: 1 },
+    });
+    expect(blank.status).toBe(400);
+
+    // 名前ありなら 201
+    const named = await apiJson<{ session_id: string }>(`/send/${handle}/sessions`, {
+      method: "POST",
+      body: { key: sendKey, sender_name: "@hanako", photo_count: 1 },
+    });
+    expect(named.status).toBe(201);
+  });
+
   it("受信者のクォータが満杯なら 507 QUOTA_EXCEEDED (満杯時に送信開始すらできない)", async () => {
     const { handle, sendKey } = await seedUser({
       uid: "uid-sess-3",

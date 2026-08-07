@@ -23,6 +23,24 @@ describe("PATCH /auth/options", () => {
     expect(profile.body.receiver.options.exif_embed_mode).toBe("required");
   });
 
+  it("require_sender_name を更新すると /auth/options のレスポンスと /send/:handle の options に反映される (R14 名前必須設定)", async () => {
+    const { idToken, uid } = await createEmulatorUser();
+    await seedUser({ uid, handle: "carol_opts" });
+
+    const updated = await apiJson<{ user: { require_sender_name: boolean } }>("/auth/options", {
+      method: "PATCH",
+      headers: authHeader(idToken),
+      body: { require_sender_name: true },
+    });
+    expect(updated.status).toBe(200);
+    expect(updated.body.user.require_sender_name).toBe(true);
+
+    const profile = await apiJson<{
+      receiver: { options: { require_sender_name: boolean } };
+    }>("/send/carol_opts");
+    expect(profile.body.receiver.options.require_sender_name).toBe(true);
+  });
+
   it("PATCH なので未指定フィールドは既存値が維持される (PUT セマンティクスではない)", async () => {
     const { idToken, uid } = await createEmulatorUser();
     await seedUser({

@@ -43,7 +43,11 @@ export async function registerReceiver(
   user: TestUser,
   handle: string,
   displayName = handle,
-  options?: { exif_embed_mode?: EmbedMode; watermark_mode?: EmbedMode },
+  options?: {
+    exif_embed_mode?: EmbedMode;
+    watermark_mode?: EmbedMode;
+    require_sender_name?: boolean;
+  },
 ): Promise<{ handle: string; sendKey: string; receiveUrl: string }> {
   const res = await fetch(`${WORKERS_URL}/auth/register`, {
     method: "POST",

@@ -19,12 +19,13 @@ async function openWatermarkDialog(
 
   await page.getByLabel("送信者名 / TwitterID").fill(senderName);
 
-  // optional は手動でチェック、required は senderName 入力で自動 ON になる
   if (!required) {
+    // optional は手動でチェック → チェックと同時に編集ダイアログが自動で開く
     await page.locator('label:has-text("透かしを入れる")').getByRole("checkbox").check();
+  } else {
+    // required は自動 ON (手動チェックではない) なのでダイアログは開かない → 編集ボタンから開く
+    await page.getByRole("button", { name: "透かしを編集" }).click();
   }
-
-  await page.getByRole("button", { name: "透かしを編集" }).click();
   await expect(page.getByRole("heading", { name: "透かしの設定" })).toBeVisible();
 }
 
@@ -39,8 +40,8 @@ test("透かし optional: 編集ダイアログを開いて有効化し送信完
 
   await openWatermarkDialog(page, handle, sendKey, [tinyJpeg()]);
 
-  // プレビューが読み込めるとズームボタン (透かし箇所をズーム) が出る
-  await expect(page.getByRole("button", { name: "透かし箇所をズーム" })).toBeVisible();
+  // プレビューが読み込めると操作ヒント (ドラッグ/ズーム) が出る
+  await expect(page.getByText("ドラッグで配置、ピンチ / ホイールでズーム")).toBeVisible();
 
   // ダイアログを閉じて送信 → 完了画面
   await page.getByRole("button", { name: "完了" }).click();
@@ -73,29 +74,103 @@ test("複数画像でプレビュー候補セレクタが表示され、別画�
   await expect(first).toHaveAttribute("aria-pressed", "false");
 });
 
-test("ズームボタンにヒントが出て、トグルでズーム状態が切り替わる (目的: ズーム UX)", async ({
+test("テキストを編集すると送信者名連動が解除され、自由入力が透かしに使われる (目的: 自由テキスト入力)", async ({
   page,
 }) => {
   const user = await createEmulatorUser();
-  const handle = `e2e_wm_zoom_${Date.now()}`;
-  const { sendKey } = await registerReceiver(user, handle, "WM Zoom", {
+  const handle = `e2e_wm_text_${Date.now()}`;
+  const { sendKey } = await registerReceiver(user, handle, "WM Text", {
     watermark_mode: "optional",
   });
 
   await openWatermarkDialog(page, handle, sendKey, [tinyJpeg()]);
 
-  // 開いて最初の数秒だけ「ズームできます」ヒントが出て、その後消える
-  await expect(page.getByText("ズームできます")).toBeVisible();
-  await expect(page.getByText("ズームできます")).toBeHidden({ timeout: 5_000 });
+  // 初期要素は送信者名クレジットに連動 (autoText)
+  const textarea = page.getByLabel("テキスト");
+  await expect(textarea).toHaveValue("@e2e_wm");
+  await expect(page.getByText("送信者名に連動中（編集すると解除）")).toBeVisible();
 
-  // ズームボタンを押すと ON (aria-pressed=true) になり、もう一度で OFF に戻る
-  const zoomBtn = page.getByRole("button", { name: "透かし箇所をズーム" });
-  await expect(zoomBtn).toHaveAttribute("aria-pressed", "false");
-  await zoomBtn.click();
-  const zoomOffBtn = page.getByRole("button", { name: "ズーム解除" });
-  await expect(zoomOffBtn).toHaveAttribute("aria-pressed", "true");
-  await zoomOffBtn.click();
-  await expect(page.getByRole("button", { name: "透かし箇所をズーム" })).toBeVisible();
+  // 編集すると連動が解除され、入力値がそのまま使われる
+  await textarea.fill("桜まつり2026");
+  await expect(page.getByText("送信者名に連動中（編集すると解除）")).toBeHidden();
+  await expect(textarea).toHaveValue("桜まつり2026");
+  // 要素チップにも反映される
+  await expect(page.getByRole("button", { name: "桜まつり2026" })).toBeVisible();
+});
+
+test("文字の追加と削除ができる (目的: 複数要素の管理 UI)", async ({ page }) => {
+  const user = await createEmulatorUser();
+  const handle = `e2e_wm_multi_el_${Date.now()}`;
+  const { sendKey } = await registerReceiver(user, handle, "WM Elements", {
+    watermark_mode: "optional",
+  });
+
+  await openWatermarkDialog(page, handle, sendKey, [tinyJpeg()]);
+
+  // 「＋ 文字を追加」で 2 つ目の要素が増え、選択が移る (テキストは空)
+  await page.getByRole("button", { name: "文字を追加" }).click();
+  const textarea = page.getByLabel("テキスト");
+  await expect(textarea).toHaveValue("");
+  await textarea.fill("#event");
+  await expect(page.getByRole("button", { name: "#event" })).toBeVisible();
+
+  // 削除すると要素が消え、選択は残った要素へフォールバック
+  await page.getByRole("button", { name: "この要素を削除" }).click();
+  await expect(page.getByRole("button", { name: "#event" })).toBeHidden();
+  await expect(textarea).toHaveValue("@e2e_wm");
+});
+
+test("四角形要素を追加してサイズ・角丸を調整でき、削除もできる (目的: 四角形要素の管理 UI)", async ({
+  page,
+}) => {
+  const user = await createEmulatorUser();
+  const handle = `e2e_wm_rect_${Date.now()}`;
+  const { sendKey } = await registerReceiver(user, handle, "WM Rect", {
+    watermark_mode: "optional",
+  });
+
+  await openWatermarkDialog(page, handle, sendKey, [tinyJpeg()]);
+
+  // 「＋ 四角形を追加」で四角形要素が増え、選択が移る
+  await page.getByRole("button", { name: "四角形を追加" }).click();
+  await expect(page.getByRole("button", { name: "四角形", exact: true })).toBeVisible();
+
+  // 四角形の編集パネル: 幅・高さ・角丸スライダーが出て、テキスト欄・フォントは出ない
+  await expect(page.getByLabel(/幅/)).toBeVisible();
+  await expect(page.getByLabel(/高さ/)).toBeVisible();
+  await expect(page.getByLabel(/角丸/)).toBeVisible();
+  await expect(page.getByLabel("テキスト")).toBeHidden();
+
+  // スライダーで幅を変更できる
+  await page.getByLabel(/幅/).fill("0.8");
+  await expect(page.getByLabel(/幅 \(長辺の80%\)/)).toBeVisible();
+
+  // 削除するとテキスト要素へ選択が戻る
+  await page.getByRole("button", { name: "この要素を削除" }).click();
+  await expect(page.getByLabel("テキスト")).toHaveValue("@e2e_wm");
+});
+
+test("送信者名なしでも透かしを有効化・編集できる (目的: 自由テキストは送信者名に依存しない)", async ({
+  page,
+}) => {
+  const user = await createEmulatorUser();
+  const handle = `e2e_wm_noname_${Date.now()}`;
+  const { sendKey } = await registerReceiver(user, handle, "WM NoName", {
+    watermark_mode: "optional",
+  });
+
+  await page.goto(`/send/${handle}/upload?k=${sendKey}`);
+  await page.locator("input[type=file]").setInputFiles([tinyJpeg()]);
+  await expect(page.getByText("1枚選択中")).toBeVisible();
+
+  // 送信者名を入れずにチェックできる (チェックと同時に編集ダイアログが開く)
+  const wmCheckbox = page.locator('label:has-text("透かしを入れる")').getByRole("checkbox");
+  await expect(wmCheckbox).toBeEnabled();
+  await wmCheckbox.check();
+  await expect(page.getByRole("heading", { name: "透かしの設定" })).toBeVisible();
+
+  // autoText 要素は送信者名未入力の警告を出す
+  await expect(page.getByText(/送信者名が未入力です/)).toBeVisible();
 });
 
 test("透かし required: チェックが強制 ON になり外せず、編集ダイアログを開ける (目的: required 強制)", async ({

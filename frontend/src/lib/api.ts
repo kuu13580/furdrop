@@ -69,6 +69,7 @@ export const senderApi = {
         options: {
           exif_embed_mode: EmbedMode;
           watermark_mode: EmbedMode;
+          require_sender_name: boolean;
         };
       };
     }>(`/send/${handle}`),
@@ -140,6 +141,7 @@ export const authApi = {
     display_name: string;
     exif_embed_mode?: EmbedMode;
     watermark_mode?: EmbedMode;
+    require_sender_name?: boolean;
   }) =>
     request<{
       user: {
@@ -151,6 +153,7 @@ export const authApi = {
         receive_url: string;
         exif_embed_mode: EmbedMode;
         watermark_mode: EmbedMode;
+        require_sender_name: boolean;
       };
     }>("/auth/register", { method: "POST", body: JSON.stringify(body) }, true),
 
@@ -168,10 +171,15 @@ export const authApi = {
         receive_url: string;
         exif_embed_mode: EmbedMode;
         watermark_mode: EmbedMode;
+        require_sender_name: boolean;
       };
     }>("/auth/me", {}, true),
 
-  updateOptions: (body: { exif_embed_mode?: EmbedMode; watermark_mode?: EmbedMode }) =>
+  updateOptions: (body: {
+    exif_embed_mode?: EmbedMode;
+    watermark_mode?: EmbedMode;
+    require_sender_name?: boolean;
+  }) =>
     request<{
       user: {
         id: string;
@@ -182,6 +190,7 @@ export const authApi = {
         receive_url: string;
         exif_embed_mode: EmbedMode;
         watermark_mode: EmbedMode;
+        require_sender_name: boolean;
       };
     }>("/auth/options", { method: "PATCH", body: JSON.stringify(body) }, true),
 

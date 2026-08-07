@@ -15,6 +15,7 @@ type Receiver = {
   options: {
     exif_embed_mode: EmbedMode;
     watermark_mode: EmbedMode;
+    require_sender_name: boolean;
   };
 };
 
