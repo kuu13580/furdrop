@@ -2,13 +2,13 @@ import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { asBool } from "../lib/d1";
 import { addStorageUsage } from "../lib/quota";
 import { buildR2Key, createThumbUploadUrl, createThumbViewUrl, createUploadUrl } from "../lib/r2";
-import { ErrorSchema, HandleParam, PhotoIdParam, SessionIdParam } from "../lib/schema";
+import { defaultHook, ErrorSchema, HandleParam, PhotoIdParam, SessionIdParam } from "../lib/schema";
 import type { Env } from "../types";
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 const MAX_PHOTOS_PER_SESSION = 100;
 
-const sender = new OpenAPIHono<{ Bindings: Env }>();
+const sender = new OpenAPIHono<{ Bindings: Env }>({ defaultHook });
 
 const EmbedModeSchema = z.enum(["disabled", "optional", "required"]);
 type EmbedMode = z.infer<typeof EmbedModeSchema>;

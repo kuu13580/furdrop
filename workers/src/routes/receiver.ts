@@ -1,11 +1,11 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { subtractStorageUsage } from "../lib/quota";
 import { createDownloadUrl, createThumbViewUrl, createViewUrl } from "../lib/r2";
-import { ErrorSchema } from "../lib/schema";
+import { defaultHook, ErrorSchema } from "../lib/schema";
 import { requireAuth } from "../middleware/auth";
 import type { AuthEnv } from "../types";
 
-const receiver = new OpenAPIHono<AuthEnv>();
+const receiver = new OpenAPIHono<AuthEnv>({ defaultHook });
 
 receiver.use("*", requireAuth);
 

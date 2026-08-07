@@ -263,7 +263,7 @@ Content-Type: application/json
 
 | HTTP | code | 説明 |
 |---|---|---|
-| 400 | INVALID_REQUEST | バリデーション失敗 |
+| 400 | INVALID_REQUEST | バリデーション失敗 (zod の失敗も `lib/schema.ts` の `defaultHook` でこの形式に揃える) |
 | 401 | UNAUTHORIZED | トークンなし/期限切れ |
 | 403 | FORBIDDEN | 権限なし |
 | 403 | INVALID_KEY | 送信URLのアクセスキー (R16) が不一致 |
