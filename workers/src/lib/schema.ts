@@ -35,6 +35,9 @@ export const defaultHook: Hook<unknown, any, string, unknown> = (result, c) => {
   return c.json({ error: { code: "INVALID_REQUEST", message } }, 400);
 };
 
+/** 未指定・値なしのときの既定オフセット (JST)。i18n 対応前の挙動との後方互換 */
+const DEFAULT_TZ_OFFSET_MIN = 540;
+
 /**
  * クライアントのタイムゾーンオフセット (UTC からの分数、東が正)。
  * ブラウザは `-new Date().getTimezoneOffset()` で得る。
@@ -46,9 +49,6 @@ export const defaultHook: Hook<unknown, any, string, unknown> = (result, c) => {
  * 境界が 1 時間ずれる。日付見出しの粒度では許容する (IANA タイムゾーンでの
  * 厳密な変換は SQLite の strftime では表現できない)。
  */
-/** 未指定・値なしのときの既定オフセット (JST)。i18n 対応前の挙動との後方互換 */
-const DEFAULT_TZ_OFFSET_MIN = 540;
-
 export const TzOffsetMinQuery = z
   // 未指定 (undefined) と値なし (`?tz_offset_min=` → 空文字) の両方を既定値に寄せる。
   // `.default()` を外側に付けても空文字には効かず、`z.coerce.number()` は空文字を
@@ -57,7 +57,16 @@ export const TzOffsetMinQuery = z
     (v) => (v === undefined || v === "" ? DEFAULT_TZ_OFFSET_MIN : v),
     z.coerce.number().int().min(-720).max(840),
   )
-  .openapi({ param: { name: "tz_offset_min", in: "query" }, example: DEFAULT_TZ_OFFSET_MIN });
+  .openapi({
+    param: { name: "tz_offset_min", in: "query" },
+    // preprocess 経由だと zod-openapi が制約と既定値を推論できないので明示する
+    // (required: false は推論済み)
+    type: "integer",
+    minimum: -720,
+    maximum: 840,
+    default: DEFAULT_TZ_OFFSET_MIN,
+    example: DEFAULT_TZ_OFFSET_MIN,
+  });
 
 /** handle パスパラメータ */
 export const HandleParam = z.object({

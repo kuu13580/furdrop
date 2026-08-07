@@ -25,12 +25,10 @@ type PhotoGroup = {
   items: { photo: Photo; index: number }[];
 };
 
-function buildGroups(photos: Photo[], mode: GroupMode): PhotoGroup[] {
+function buildGroups(photos: Photo[], mode: GroupMode, tzOffsetMin: number): PhotoGroup[] {
   if (mode === "none") {
     return [{ key: "all", label: null, items: photos.map((photo, index) => ({ photo, index })) }];
   }
-  // グルーピング 1 回のあいだオフセットを固定する (写真ごとに読み直すとずれ得る)
-  const tzOffsetMin = getTzOffsetMin();
   const map = new Map<string, PhotoGroup>();
   photos.forEach((photo, index) => {
     let key: string;
@@ -65,6 +63,15 @@ export default function GalleryPage() {
     date: Map<string, number>;
     sender: Map<string, number>;
   } | null>(null);
+  /**
+   * このページが使うタイムゾーンオフセット。マウント時に 1 回だけ確定させる。
+   *
+   * サーバーの集計 (date_counts) は初回フェッチ時のオフセットで日境界が切られている。
+   * 以降のページング・グルーピング・削除差分が別のオフセットを読むと、見出しの件数と
+   * 中身が食い違う。夏時間の切り替えや端末の TZ 変更を跨いでもここは動かないので、
+   * ページを開いているあいだ一貫性が保たれる (再取得したければリロードすればよい)。
+   */
+  const [tzOffsetMin] = useState(getTzOffsetMin);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false);
   const user = useAtomValue(userAtom);
@@ -95,33 +102,39 @@ export default function GalleryPage() {
   const startPointerRef = useRef<{ x: number; y: number } | null>(null);
   const dragIntentRef = useRef<"pending" | "select" | "scroll">("pending");
 
-  const fetchPhotos = useCallback(async (nextCursor?: string) => {
-    if (loadingRef.current) return null;
-    loadingRef.current = true;
-    try {
-      const res = await receiverApi.listPhotos({
-        limit: PAGE_SIZE,
-        cursor: nextCursor,
-      });
-      setPhotos((prev) => (nextCursor ? [...prev, ...res.photos] : res.photos));
-      setCursor(res.next_cursor);
-      setHasMore(res.next_cursor !== null);
-      setTotalCount(res.total);
-      // date_counts / sender_counts は初回フェッチでのみ返ってくる
-      if (res.date_counts && res.sender_counts) {
-        setGroupCounts({
-          date: new Map(res.date_counts.map((c) => [c.key, c.count])),
-          sender: new Map(res.sender_counts.map((c) => [c.key, c.count])),
+  const fetchPhotos = useCallback(
+    async (nextCursor?: string) => {
+      if (loadingRef.current) return null;
+      loadingRef.current = true;
+      try {
+        const res = await receiverApi.listPhotos({
+          limit: PAGE_SIZE,
+          cursor: nextCursor,
+          tzOffsetMin,
         });
+        setPhotos((prev) => (nextCursor ? [...prev, ...res.photos] : res.photos));
+        setCursor(res.next_cursor);
+        setHasMore(res.next_cursor !== null);
+        setTotalCount(res.total);
+        // date_counts / sender_counts は初回フェッチでのみ返ってくる
+        if (res.date_counts && res.sender_counts) {
+          setGroupCounts({
+            date: new Map(res.date_counts.map((c) => [c.key, c.count])),
+            sender: new Map(res.sender_counts.map((c) => [c.key, c.count])),
+          });
+        }
+        return res;
+      } catch {
+        return null;
+      } finally {
+        setLoading(false);
+        loadingRef.current = false;
       }
-      return res;
-    } catch {
-      return null;
-    } finally {
-      setLoading(false);
-      loadingRef.current = false;
-    }
-  }, []);
+      // tzOffsetMin はマウント時に確定して以降変わらないが、依存に含めて
+      // 「このページのオフセットで取得している」ことを明示する
+    },
+    [tzOffsetMin],
+  );
 
   useEffect(() => {
     fetchPhotos();
@@ -340,9 +353,6 @@ export default function GalleryPage() {
       const deleted = photos.filter((p) => selected.has(p.id));
       const dateDelta = new Map<string, number>();
       const senderDelta = new Map<string, number>();
-      // groupCounts のキーは初回フェッチ時のオフセットで作られている。差分計算も
-      // 同じオフセットで揃える必要がある (buildGroups と同じ理由)
-      const tzOffsetMin = getTzOffsetMin();
       for (const p of deleted) {
         const dk = buildDateKeyAndLabel(p.created_at, tzOffsetMin).key;
         dateDelta.set(dk, (dateDelta.get(dk) ?? 0) + 1);
@@ -374,9 +384,12 @@ export default function GalleryPage() {
       setDeleting(false);
       setDeleteConfirmOpen(false);
     }
-  }, [selected, exitSelectMode, photos]);
+  }, [selected, exitSelectMode, photos, tzOffsetMin]);
 
-  const groups = useMemo(() => buildGroups(photos, groupMode), [photos, groupMode]);
+  const groups = useMemo(
+    () => buildGroups(photos, groupMode, tzOffsetMin),
+    [photos, groupMode, tzOffsetMin],
+  );
 
   const [groupLoadingKey, setGroupLoadingKey] = useState<string | null>(null);
 
@@ -431,8 +444,6 @@ export default function GalleryPage() {
 
       if (!hasMore || !cursor) return;
 
-      // このループのあいだオフセットを固定する (buildGroups と同じ理由)
-      const tzOffsetMin = getTzOffsetMin();
       const keyOf = (p: Photo): string => buildDateKeyAndLabel(p.created_at, tzOffsetMin).key;
 
       setGroupLoadingKey(targetKey);
@@ -468,7 +479,7 @@ export default function GalleryPage() {
         setGroupLoadingKey(null);
       }
     },
-    [groupMode, cursor, hasMore, selected, fetchPhotos],
+    [groupMode, cursor, hasMore, selected, fetchPhotos, tzOffsetMin],
   );
 
   const handleBatchDownload = useCallback(async () => {

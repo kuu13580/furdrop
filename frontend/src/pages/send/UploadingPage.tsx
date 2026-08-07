@@ -6,7 +6,7 @@ import Alert from "../../components/ui/Alert";
 import Button from "../../components/ui/Button";
 import { extractError, trackClientError, type UploadTarget } from "../../lib/analytics";
 import { senderApi } from "../../lib/api";
-import { resolveApiError } from "../../lib/api-error";
+import { type ErrorContext, resolveApiError } from "../../lib/api-error";
 import { runConcurrent } from "../../lib/concurrency";
 import { debugLog } from "../../lib/debug-log";
 import {
@@ -363,7 +363,7 @@ async function runPipeline({
           context: "pipeline",
           ...extractError(err),
         });
-        updatePhase(f.id, "failed", describeError(err), "convert");
+        updatePhase(f.id, "failed", describeError(err, "processImage"), "convert");
         throw err;
       }
     },
@@ -401,9 +401,9 @@ async function runPipeline({
     plog.log(`セッション作成成功 (sessionId=${sessionId})`);
   } catch (err) {
     plog.dumpError("セッション作成失敗", err);
-    // INVALID_KEY (?k= が無い/間違っている) を含め、文言は api-error.ts の upload
-    // コンテキストに集約している
-    onGlobalError(describeError(err));
+    // INVALID_KEY (?k= が無い/間違っている) を含め、文言は api-error.ts の
+    // createSession コンテキストに集約している
+    onGlobalError(describeError(err, "createSession"));
     onOverall("failed");
     return;
   }
@@ -426,7 +426,7 @@ async function runPipeline({
     plog.log(`Presigned URL 発行成功 (${uploads.length}件)`);
   } catch (err) {
     plog.dumpError("Presigned URL 発行失敗", err);
-    onGlobalError(describeError(err));
+    onGlobalError(describeError(err, "createPhotos"));
     onOverall("failed");
     return;
   }
@@ -456,7 +456,7 @@ async function runPipeline({
     } catch (err) {
       // putBlob (R2 PUT) または confirmPhoto (Workers PATCH) の失敗を "upload" に集約
       flog.dumpError(`送信失敗 (photoId=${up.photo_id}, size=${p.processedBlob.size}B)`, err);
-      updatePhase(p.id, "failed", describeError(err), "upload");
+      updatePhase(p.id, "failed", describeError(err, "uploadPhoto"), "upload");
     }
   });
 
@@ -497,9 +497,11 @@ async function putBlob(url: string, blob: Blob, target: UploadTarget): Promise<v
 
 /**
  * 送信フローのエラーをユーザー向け文言に解決する。
- * サーバーの英語メッセージは画面に出さず、error.code から組み立てる
- * (レート制限の詳しい案内も api-error.ts の upload コンテキストに持たせている)。
+ * サーバーの英語メッセージは画面に出さず、error.code から組み立てる。
+ *
+ * どの段階で失敗したかを渡すのは、sender.ts が同じ code を段階ごとに別の意味で
+ * 返すため (例: INVALID_REQUEST は「送信者名が必須」にも「サイズ不一致」にもなる)。
  */
-function describeError(err: unknown): string {
-  return resolveApiError(err, "upload");
+function describeError(err: unknown, stage: ErrorContext): string {
+  return resolveApiError(err, stage);
 }
