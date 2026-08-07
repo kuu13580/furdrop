@@ -1,5 +1,6 @@
 import { ApiError } from "./api-error";
 import { auth } from "./firebase";
+import { getTzOffsetMin } from "./timezone";
 
 const configuredBase = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -194,6 +195,8 @@ export const receiverApi = {
     const query = new URLSearchParams();
     if (params?.limit) query.set("limit", String(params.limit));
     if (params?.cursor) query.set("cursor", params.cursor);
+    // date_counts の日境界をクライアントのタイムゾーンに合わせる
+    query.set("tz_offset_min", String(getTzOffsetMin()));
     const qs = query.toString();
     return request<{
       photos: {
@@ -239,12 +242,15 @@ export const receiverApi = {
     }>(`/receiver/photos/${photoId}${qs}`, {}, true);
   },
 
-  downloadPhoto: (photoId: string) =>
-    request<{
+  downloadPhoto: (photoId: string) => {
+    // DL ファイル名の日時もクライアントのタイムゾーン基準にする
+    const query = new URLSearchParams({ tz_offset_min: String(getTzOffsetMin()) });
+    return request<{
       download_url: string;
       filename: string | null;
       file_size: number;
-    }>(`/receiver/photos/${photoId}/download`, {}, true),
+    }>(`/receiver/photos/${photoId}/download?${query.toString()}`, {}, true);
+  },
 
   deletePhoto: (photoId: string) =>
     request<void>(`/receiver/photos/${photoId}`, { method: "DELETE" }, true),

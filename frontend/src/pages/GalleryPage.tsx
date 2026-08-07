@@ -8,6 +8,7 @@ import LoadingSpinner from "../components/ui/LoadingSpinner";
 import ScrollToTopButton from "../components/ui/ScrollToTopButton";
 import { onImageError } from "../lib/analytics";
 import { receiverApi } from "../lib/api";
+import { buildDateKeyAndLabel, getTzOffsetMin } from "../lib/timezone";
 import { buildZipName, downloadAsZip } from "../lib/zip-download";
 import { userAtom } from "../stores/user";
 import type { Photo } from "../types/photo";
@@ -24,29 +25,18 @@ type PhotoGroup = {
   items: { photo: Photo; index: number }[];
 };
 
-/**
- * date のキーは JST 基準の ISO `YYYY-MM-DD`。サーバー集計 (date_counts) と揃えるため、
- * UTC 秒に +9h して getUTC* で取り出す (ブラウザのローカル TZ に依存しない)
- */
-function buildDateKeyAndLabel(createdAt: number): { key: string; label: string } {
-  const jst = new Date((createdAt + 9 * 3600) * 1000);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const y = jst.getUTCFullYear();
-  const m = pad(jst.getUTCMonth() + 1);
-  const d = pad(jst.getUTCDate());
-  return { key: `${y}-${m}-${d}`, label: `${y}/${m}/${d}` };
-}
-
 function buildGroups(photos: Photo[], mode: GroupMode): PhotoGroup[] {
   if (mode === "none") {
     return [{ key: "all", label: null, items: photos.map((photo, index) => ({ photo, index })) }];
   }
+  // グルーピング 1 回のあいだオフセットを固定する (写真ごとに読み直すとずれ得る)
+  const tzOffsetMin = getTzOffsetMin();
   const map = new Map<string, PhotoGroup>();
   photos.forEach((photo, index) => {
     let key: string;
     let label: string;
     if (mode === "date") {
-      ({ key, label } = buildDateKeyAndLabel(photo.created_at));
+      ({ key, label } = buildDateKeyAndLabel(photo.created_at, tzOffsetMin));
     } else {
       key = photo.sender_name ?? "__anonymous__";
       label = photo.sender_name ?? "(匿名)";
@@ -350,8 +340,11 @@ export default function GalleryPage() {
       const deleted = photos.filter((p) => selected.has(p.id));
       const dateDelta = new Map<string, number>();
       const senderDelta = new Map<string, number>();
+      // groupCounts のキーは初回フェッチ時のオフセットで作られている。差分計算も
+      // 同じオフセットで揃える必要がある (buildGroups と同じ理由)
+      const tzOffsetMin = getTzOffsetMin();
       for (const p of deleted) {
-        const dk = buildDateKeyAndLabel(p.created_at).key;
+        const dk = buildDateKeyAndLabel(p.created_at, tzOffsetMin).key;
         dateDelta.set(dk, (dateDelta.get(dk) ?? 0) + 1);
         const sk = p.sender_name ?? "__anonymous__";
         senderDelta.set(sk, (senderDelta.get(sk) ?? 0) + 1);
@@ -438,7 +431,9 @@ export default function GalleryPage() {
 
       if (!hasMore || !cursor) return;
 
-      const keyOf = (p: Photo): string => buildDateKeyAndLabel(p.created_at).key;
+      // このループのあいだオフセットを固定する (buildGroups と同じ理由)
+      const tzOffsetMin = getTzOffsetMin();
+      const keyOf = (p: Photo): string => buildDateKeyAndLabel(p.created_at, tzOffsetMin).key;
 
       setGroupLoadingKey(targetKey);
       try {

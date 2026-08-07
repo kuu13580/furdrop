@@ -1,7 +1,7 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { subtractStorageUsage } from "../lib/quota";
 import { createDownloadUrl, createThumbViewUrl, createViewUrl } from "../lib/r2";
-import { defaultHook, ErrorSchema } from "../lib/schema";
+import { defaultHook, ErrorSchema, TzOffsetMinQuery } from "../lib/schema";
 import { requireAuth } from "../middleware/auth";
 import type { AuthEnv } from "../types";
 
@@ -20,6 +20,7 @@ const listPhotosRoute = createRoute({
     query: z.object({
       limit: z.coerce.number().int().min(1).max(100).default(50),
       cursor: z.string().optional(),
+      tz_offset_min: TzOffsetMinQuery,
     }),
   },
   responses: {
@@ -42,7 +43,7 @@ const listPhotosRoute = createRoute({
             next_cursor: z.string().nullable(),
             /** 受信者の completed photos の合計件数。ページに関わらず常に同じ値 */
             total: z.number(),
-            /** 日付別件数 (JST)。初回フェッチ (cursor なし) のみ非 null */
+            /** 日付別件数 (tz_offset_min のタイムゾーン基準)。初回フェッチ (cursor なし) のみ非 null */
             date_counts: z.array(z.object({ key: z.string(), count: z.number() })).nullable(),
             /** 送信者別件数。匿名は key="__anonymous__"。初回フェッチ (cursor なし) のみ非 null */
             sender_counts: z.array(z.object({ key: z.string(), count: z.number() })).nullable(),
@@ -56,7 +57,7 @@ const listPhotosRoute = createRoute({
 
 receiver.openapi(listPhotosRoute, async (c) => {
   const uid = c.get("uid");
-  const { limit, cursor } = c.req.valid("query");
+  const { limit, cursor, tz_offset_min: tzOffsetMin } = c.req.valid("query");
 
   let query =
     "SELECT id, sender_name, camera_model, file_size, width, height, r2_key_thumb, batch_index, created_at FROM photos WHERE receiver_id = ? AND upload_status = 'completed'";
@@ -97,12 +98,12 @@ receiver.openapi(listPhotosRoute, async (c) => {
     cursor
       ? null
       : c.env.DB.prepare(
-          // JST 日付 (UTC+9) で集計し、ISO 8601 'YYYY-MM-DD' をキーにする
-          "SELECT strftime('%Y-%m-%d', datetime(created_at + 9*3600, 'unixepoch')) AS key, " +
+          // クライアントのタイムゾーンで日付を切り、ISO 8601 'YYYY-MM-DD' をキーにする
+          "SELECT strftime('%Y-%m-%d', datetime(created_at + ?*60, 'unixepoch')) AS key, " +
             "COUNT(*) AS count FROM photos " +
             "WHERE receiver_id = ? AND upload_status = 'completed' GROUP BY key ORDER BY key DESC",
         )
-          .bind(uid)
+          .bind(tzOffsetMin, uid)
           .all<{ key: string; count: number }>(),
     cursor
       ? null
@@ -373,6 +374,9 @@ const downloadRoute = createRoute({
         .uuid({ version: "v4" })
         .openapi({ param: { name: "photoId", in: "path" } }),
     }),
+    query: z.object({
+      tz_offset_min: TzOffsetMinQuery,
+    }),
   },
   responses: {
     200: {
@@ -397,6 +401,7 @@ const downloadRoute = createRoute({
 receiver.openapi(downloadRoute, async (c) => {
   const uid = c.get("uid");
   const { photoId } = c.req.valid("param");
+  const { tz_offset_min: tzOffsetMin } = c.req.valid("query");
 
   // session_index: 同一セッション内でこの写真が何枚目か (1-based)
   const photo = await c.env.DB.prepare(
@@ -421,6 +426,7 @@ receiver.openapi(downloadRoute, async (c) => {
   const filename = buildDownloadFilename(
     photo.created_at as number,
     (photo.session_index as number) || 1,
+    tzOffsetMin,
   );
   const downloadUrl = await createDownloadUrl(c.env, photo.r2_key_original as string, filename);
 
@@ -434,12 +440,16 @@ receiver.openapi(downloadRoute, async (c) => {
   );
 });
 
-/** 受信日時_連番.jpg 形式のファイル名を生成 (JST基準) */
-function buildDownloadFilename(createdAt: number, sessionIndex: number): string {
-  const jst = new Date((createdAt + 9 * 3600) * 1000);
+/** 受信日時_連番.jpg 形式のファイル名を生成 (tzOffsetMin のタイムゾーン基準) */
+function buildDownloadFilename(
+  createdAt: number,
+  sessionIndex: number,
+  tzOffsetMin: number,
+): string {
+  const local = new Date((createdAt + tzOffsetMin * 60) * 1000);
   const pad = (n: number) => String(n).padStart(2, "0");
-  const date = `${jst.getUTCFullYear()}${pad(jst.getUTCMonth() + 1)}${pad(jst.getUTCDate())}`;
-  const time = `${pad(jst.getUTCHours())}${pad(jst.getUTCMinutes())}${pad(jst.getUTCSeconds())}`;
+  const date = `${local.getUTCFullYear()}${pad(local.getUTCMonth() + 1)}${pad(local.getUTCDate())}`;
+  const time = `${pad(local.getUTCHours())}${pad(local.getUTCMinutes())}${pad(local.getUTCSeconds())}`;
   const idx = String(sessionIndex).padStart(2, "0");
   return `${date}-${time}_${idx}.jpg`;
 }

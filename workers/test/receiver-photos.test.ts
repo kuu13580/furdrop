@@ -92,4 +92,90 @@ describe("GET /receiver/photos", () => {
     expect(second.body.photos).toHaveLength(2);
     expect(second.body.date_counts).toBeNull(); // 後続ページは集計を省略
   });
+
+  // 目的: 海外の受信者が「JST の日付見出し」を見せられないこと。
+  // date_counts の日境界はクライアントが送る tz_offset_min で切られる。
+  it("tz_offset_min のタイムゾーンで date_counts の日境界が切られる", async () => {
+    const { idToken, uid } = await createEmulatorUser();
+    await seedUser({ uid, handle: "rcv_tz" });
+    // 2026-01-15 20:00 UTC — JST(+540) では 01-16、ハワイ(-600) では 01-15
+    await seedPhoto({
+      receiverId: uid,
+      handle: "rcv_tz",
+      status: "completed",
+      createdAt: Date.UTC(2026, 0, 15, 20, 0, 0) / 1000,
+    });
+
+    const jst = await apiJson<{ date_counts: { key: string }[] }>(
+      "/receiver/photos?tz_offset_min=540",
+      { headers: authHeader(idToken) },
+    );
+    expect(jst.body.date_counts[0].key).toBe("2026-01-16");
+
+    const hawaii = await apiJson<{ date_counts: { key: string }[] }>(
+      "/receiver/photos?tz_offset_min=-600",
+      { headers: authHeader(idToken) },
+    );
+    expect(hawaii.body.date_counts[0].key).toBe("2026-01-15");
+  });
+
+  it("tz_offset_min 未指定では従来どおり JST (+540) で集計する (後方互換)", async () => {
+    const { idToken, uid } = await createEmulatorUser();
+    await seedUser({ uid, handle: "rcv_tz_def" });
+    await seedPhoto({
+      receiverId: uid,
+      handle: "rcv_tz_def",
+      status: "completed",
+      createdAt: Date.UTC(2026, 0, 15, 20, 0, 0) / 1000,
+    });
+
+    const { body } = await apiJson<{ date_counts: { key: string }[] }>("/receiver/photos", {
+      headers: authHeader(idToken),
+    });
+    expect(body.date_counts[0].key).toBe("2026-01-16");
+  });
+
+  // 目的: zod バリデーション失敗も共通エラー形式 (defaultHook) で返ること。
+  // これが素通りするとクライアントの resolveApiError が code を拾えない。
+  it("不正なクエリは { error: { code: INVALID_REQUEST } } 形式の 400 を返す", async () => {
+    const { idToken, uid } = await createEmulatorUser();
+    await seedUser({ uid, handle: "rcv_badq" });
+
+    const { status, body } = await apiJson<{ error: { code: string; message: string } }>(
+      "/receiver/photos?limit=9999",
+      { headers: authHeader(idToken) },
+    );
+    expect(status).toBe(400);
+    expect(body.error.code).toBe("INVALID_REQUEST");
+    expect(body.error.message).toBeTruthy();
+  });
+
+  it("範囲外の tz_offset_min は 400 で弾く (実在しないオフセット)", async () => {
+    const { idToken, uid } = await createEmulatorUser();
+    await seedUser({ uid, handle: "rcv_tz_range" });
+
+    const { status, body } = await apiJson<{ error: { code: string } }>(
+      "/receiver/photos?tz_offset_min=9999",
+      { headers: authHeader(idToken) },
+    );
+    expect(status).toBe(400);
+    expect(body.error.code).toBe("INVALID_REQUEST");
+  });
+
+  it("tz_offset_min が値なし (?tz_offset_min=) でも UTC ではなく既定の JST に落ちる", async () => {
+    const { idToken, uid } = await createEmulatorUser();
+    await seedUser({ uid, handle: "rcv_tz_empty" });
+    await seedPhoto({
+      receiverId: uid,
+      handle: "rcv_tz_empty",
+      status: "completed",
+      createdAt: Date.UTC(2026, 0, 15, 20, 0, 0) / 1000,
+    });
+
+    const { body } = await apiJson<{ date_counts: { key: string }[] }>(
+      "/receiver/photos?tz_offset_min=",
+      { headers: authHeader(idToken) },
+    );
+    expect(body.date_counts[0].key).toBe("2026-01-16"); // UTC(0) なら 01-15 になる
+  });
 });
