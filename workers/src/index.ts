@@ -4,13 +4,14 @@ import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import { runCleanup } from "./cron/cleanup";
 import { logError } from "./lib/logger";
+import { defaultHook } from "./lib/schema";
 import auth from "./routes/auth";
 import dev from "./routes/dev";
 import receiver from "./routes/receiver";
 import sender from "./routes/sender";
 import type { Env } from "./types";
 
-const app = new OpenAPIHono<{ Bindings: Env }>();
+const app = new OpenAPIHono<{ Bindings: Env }>({ defaultHook });
 
 // 未捕捉例外(D1/R2 例外・想定外の throw)を構造化エラーに統一しつつ Workers Logs に記録する。
 // これが無いと 500 がプレーンテキストで返り、失敗の観測もスタックトレース頼みになる。

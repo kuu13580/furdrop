@@ -106,7 +106,7 @@ export default function App() {
           </Route>
         </Route>
 
-        {/* ⚠️ 確認用プレビュー (削除予定): DesignPreviewPage + このルートを消せば削除完了 */}
+        {/* デザイン規約 (DESIGN.md) の生きたカナリア */}
         <Route path="/design-preview" element={<DesignPreviewPage />} />
 
         {/* 使い方ガイド (認証不要) */}

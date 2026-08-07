@@ -5,7 +5,8 @@ import SenderAtmosphere from "../../components/send/SenderAtmosphere";
 import Alert from "../../components/ui/Alert";
 import Button from "../../components/ui/Button";
 import { extractError, trackClientError, type UploadTarget } from "../../lib/analytics";
-import { ApiError, senderApi } from "../../lib/api";
+import { senderApi } from "../../lib/api";
+import { type ErrorContext, resolveApiError } from "../../lib/api-error";
 import { runConcurrent } from "../../lib/concurrency";
 import { debugLog } from "../../lib/debug-log";
 import {
@@ -362,7 +363,7 @@ async function runPipeline({
           context: "pipeline",
           ...extractError(err),
         });
-        updatePhase(f.id, "failed", describeError(err), "convert");
+        updatePhase(f.id, "failed", describeError(err, "processImage"), "convert");
         throw err;
       }
     },
@@ -400,15 +401,9 @@ async function runPipeline({
     plog.log(`セッション作成成功 (sessionId=${sessionId})`);
   } catch (err) {
     plog.dumpError("セッション作成失敗", err);
-    // 403 INVALID_KEY は URL の ?k= が無い/間違っているケース。専用の案内に差し替える。
-    if (err instanceof ApiError && err.status === 403 && err.code === "INVALID_KEY") {
-      onGlobalError(
-        "受信URLが無効です。送信者本人から最新の受信URL（?k=... 付き）を受け取ってください。",
-      );
-      onOverall("failed");
-      return;
-    }
-    onGlobalError(rateLimitOrFallback(err, "セッション作成に失敗"));
+    // INVALID_KEY (?k= が無い/間違っている) を含め、文言は api-error.ts の
+    // createSession コンテキストに集約している
+    onGlobalError(describeError(err, "createSession"));
     onOverall("failed");
     return;
   }
@@ -431,7 +426,7 @@ async function runPipeline({
     plog.log(`Presigned URL 発行成功 (${uploads.length}件)`);
   } catch (err) {
     plog.dumpError("Presigned URL 発行失敗", err);
-    onGlobalError(rateLimitOrFallback(err, "URL取得に失敗"));
+    onGlobalError(describeError(err, "createPhotos"));
     onOverall("failed");
     return;
   }
@@ -461,7 +456,7 @@ async function runPipeline({
     } catch (err) {
       // putBlob (R2 PUT) または confirmPhoto (Workers PATCH) の失敗を "upload" に集約
       flog.dumpError(`送信失敗 (photoId=${up.photo_id}, size=${p.processedBlob.size}B)`, err);
-      updatePhase(p.id, "failed", describeError(err), "upload");
+      updatePhase(p.id, "failed", describeError(err, "uploadPhoto"), "upload");
     }
   });
 
@@ -500,19 +495,13 @@ async function putBlob(url: string, blob: Blob, target: UploadTarget): Promise<v
   }
 }
 
-function describeError(err: unknown): string {
-  if (err instanceof ApiError) return err.message || err.code;
-  if (err instanceof Error) return err.message;
-  return String(err);
-}
-
 /**
- * 429（レート制限）のときはユーザー向けに「制限と原因と再試行案内」を返す。
- * それ以外のエラーは prefix を付けてそのまま返す。
+ * 送信フローのエラーをユーザー向け文言に解決する。
+ * サーバーの英語メッセージは画面に出さず、error.code から組み立てる。
+ *
+ * どの段階で失敗したかを渡すのは、sender.ts が同じ code を段階ごとに別の意味で
+ * 返すため (例: INVALID_REQUEST は「送信者名が必須」にも「サイズ不一致」にもなる)。
  */
-function rateLimitOrFallback(err: unknown, prefix: string): string {
-  if (err instanceof ApiError && err.status === 429) {
-    return "短時間に多くのリクエストが集中したため、不正利用（bot 等）対策により一時的に送信を制限しています。1〜2分ほど時間をおいてからもう一度お試しください。";
-  }
-  return `${prefix}: ${describeError(err)}`;
+function describeError(err: unknown, stage: ErrorContext): string {
+  return resolveApiError(err, stage);
 }

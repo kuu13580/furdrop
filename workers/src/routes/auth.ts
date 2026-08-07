@@ -1,7 +1,7 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { asBool } from "../lib/d1";
 import { logError } from "../lib/logger";
-import { ErrorSchema } from "../lib/schema";
+import { defaultHook, ErrorSchema } from "../lib/schema";
 import { generateSendKey } from "../lib/send-key";
 import { requireAuth } from "../middleware/auth";
 import type { AuthEnv } from "../types";
@@ -48,7 +48,7 @@ async function buildReceiveUrl(
   return `/send/${handle}?k=${row.key_value}`;
 }
 
-const auth = new OpenAPIHono<AuthEnv>();
+const auth = new OpenAPIHono<AuthEnv>({ defaultHook });
 
 auth.use("*", requireAuth);
 
@@ -364,7 +364,7 @@ auth.openapi(deleteAccountRoute, async (c) => {
 
   if (confirm_handle !== user.handle) {
     return c.json(
-      { error: { code: "INVALID_REQUEST", message: "確認用ハンドルが一致しません" } },
+      { error: { code: "INVALID_REQUEST", message: "Confirm handle does not match" } },
       400,
     );
   }

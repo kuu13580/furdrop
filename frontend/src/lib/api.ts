@@ -1,4 +1,6 @@
+import { ApiError } from "./api-error";
 import { auth } from "./firebase";
+import { getTzOffsetMin } from "./timezone";
 
 const configuredBase = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -12,18 +14,6 @@ const BASE_URL =
     : configuredBase;
 
 export type EmbedMode = "disabled" | "optional" | "required";
-
-class ApiError extends Error {
-  status: number;
-  code: string;
-
-  constructor(status: number, code: string, message: string) {
-    super(message);
-    this.name = "ApiError";
-    this.status = status;
-    this.code = code;
-  }
-}
 
 async function request<T>(
   path: string,
@@ -201,10 +191,14 @@ export const authApi = {
 // ========== 受信者 API ==========
 
 export const receiverApi = {
-  listPhotos: (params?: { limit?: number; cursor?: string }) => {
+  listPhotos: (params?: { limit?: number; cursor?: string; tzOffsetMin?: number }) => {
     const query = new URLSearchParams();
     if (params?.limit) query.set("limit", String(params.limit));
     if (params?.cursor) query.set("cursor", params.cursor);
+    // date_counts の日境界をクライアントのタイムゾーンに合わせる。
+    // 呼び出し元が固定したオフセットを渡せるようにしているのは、初回フェッチの
+    // 集計とその後のページ・クライアント側の日付キーを必ず同じ境界に揃えるため
+    query.set("tz_offset_min", String(params?.tzOffsetMin ?? getTzOffsetMin()));
     const qs = query.toString();
     return request<{
       photos: {
@@ -250,12 +244,17 @@ export const receiverApi = {
     }>(`/receiver/photos/${photoId}${qs}`, {}, true);
   },
 
-  downloadPhoto: (photoId: string) =>
-    request<{
+  downloadPhoto: (photoId: string, tzOffsetMin?: number) => {
+    // DL ファイル名の日時もクライアントのタイムゾーン基準にする
+    const query = new URLSearchParams({
+      tz_offset_min: String(tzOffsetMin ?? getTzOffsetMin()),
+    });
+    return request<{
       download_url: string;
       filename: string | null;
       file_size: number;
-    }>(`/receiver/photos/${photoId}/download`, {}, true),
+    }>(`/receiver/photos/${photoId}/download?${query.toString()}`, {}, true);
+  },
 
   deletePhoto: (photoId: string) =>
     request<void>(`/receiver/photos/${photoId}`, { method: "DELETE" }, true),

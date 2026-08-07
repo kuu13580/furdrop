@@ -8,6 +8,7 @@ import LoadingSpinner from "../components/ui/LoadingSpinner";
 import ScrollToTopButton from "../components/ui/ScrollToTopButton";
 import { onImageError } from "../lib/analytics";
 import { receiverApi } from "../lib/api";
+import { buildDateKeyAndLabel, getTzOffsetMin } from "../lib/timezone";
 import { buildZipName, downloadAsZip } from "../lib/zip-download";
 import { userAtom } from "../stores/user";
 import type { Photo } from "../types/photo";
@@ -24,20 +25,7 @@ type PhotoGroup = {
   items: { photo: Photo; index: number }[];
 };
 
-/**
- * date のキーは JST 基準の ISO `YYYY-MM-DD`。サーバー集計 (date_counts) と揃えるため、
- * UTC 秒に +9h して getUTC* で取り出す (ブラウザのローカル TZ に依存しない)
- */
-function buildDateKeyAndLabel(createdAt: number): { key: string; label: string } {
-  const jst = new Date((createdAt + 9 * 3600) * 1000);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const y = jst.getUTCFullYear();
-  const m = pad(jst.getUTCMonth() + 1);
-  const d = pad(jst.getUTCDate());
-  return { key: `${y}-${m}-${d}`, label: `${y}/${m}/${d}` };
-}
-
-function buildGroups(photos: Photo[], mode: GroupMode): PhotoGroup[] {
+function buildGroups(photos: Photo[], mode: GroupMode, tzOffsetMin: number): PhotoGroup[] {
   if (mode === "none") {
     return [{ key: "all", label: null, items: photos.map((photo, index) => ({ photo, index })) }];
   }
@@ -46,7 +34,7 @@ function buildGroups(photos: Photo[], mode: GroupMode): PhotoGroup[] {
     let key: string;
     let label: string;
     if (mode === "date") {
-      ({ key, label } = buildDateKeyAndLabel(photo.created_at));
+      ({ key, label } = buildDateKeyAndLabel(photo.created_at, tzOffsetMin));
     } else {
       key = photo.sender_name ?? "__anonymous__";
       label = photo.sender_name ?? "(匿名)";
@@ -75,6 +63,15 @@ export default function GalleryPage() {
     date: Map<string, number>;
     sender: Map<string, number>;
   } | null>(null);
+  /**
+   * このページが使うタイムゾーンオフセット。マウント時に 1 回だけ確定させる。
+   *
+   * サーバーの集計 (date_counts) は初回フェッチ時のオフセットで日境界が切られている。
+   * 以降のページング・グルーピング・削除差分が別のオフセットを読むと、見出しの件数と
+   * 中身が食い違う。夏時間の切り替えや端末の TZ 変更を跨いでもここは動かないので、
+   * ページを開いているあいだ一貫性が保たれる (再取得したければリロードすればよい)。
+   */
+  const [tzOffsetMin] = useState(getTzOffsetMin);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false);
   const user = useAtomValue(userAtom);
@@ -105,33 +102,39 @@ export default function GalleryPage() {
   const startPointerRef = useRef<{ x: number; y: number } | null>(null);
   const dragIntentRef = useRef<"pending" | "select" | "scroll">("pending");
 
-  const fetchPhotos = useCallback(async (nextCursor?: string) => {
-    if (loadingRef.current) return null;
-    loadingRef.current = true;
-    try {
-      const res = await receiverApi.listPhotos({
-        limit: PAGE_SIZE,
-        cursor: nextCursor,
-      });
-      setPhotos((prev) => (nextCursor ? [...prev, ...res.photos] : res.photos));
-      setCursor(res.next_cursor);
-      setHasMore(res.next_cursor !== null);
-      setTotalCount(res.total);
-      // date_counts / sender_counts は初回フェッチでのみ返ってくる
-      if (res.date_counts && res.sender_counts) {
-        setGroupCounts({
-          date: new Map(res.date_counts.map((c) => [c.key, c.count])),
-          sender: new Map(res.sender_counts.map((c) => [c.key, c.count])),
+  const fetchPhotos = useCallback(
+    async (nextCursor?: string) => {
+      if (loadingRef.current) return null;
+      loadingRef.current = true;
+      try {
+        const res = await receiverApi.listPhotos({
+          limit: PAGE_SIZE,
+          cursor: nextCursor,
+          tzOffsetMin,
         });
+        setPhotos((prev) => (nextCursor ? [...prev, ...res.photos] : res.photos));
+        setCursor(res.next_cursor);
+        setHasMore(res.next_cursor !== null);
+        setTotalCount(res.total);
+        // date_counts / sender_counts は初回フェッチでのみ返ってくる
+        if (res.date_counts && res.sender_counts) {
+          setGroupCounts({
+            date: new Map(res.date_counts.map((c) => [c.key, c.count])),
+            sender: new Map(res.sender_counts.map((c) => [c.key, c.count])),
+          });
+        }
+        return res;
+      } catch {
+        return null;
+      } finally {
+        setLoading(false);
+        loadingRef.current = false;
       }
-      return res;
-    } catch {
-      return null;
-    } finally {
-      setLoading(false);
-      loadingRef.current = false;
-    }
-  }, []);
+      // tzOffsetMin はマウント時に確定して以降変わらないが、依存に含めて
+      // 「このページのオフセットで取得している」ことを明示する
+    },
+    [tzOffsetMin],
+  );
 
   useEffect(() => {
     fetchPhotos();
@@ -351,7 +354,7 @@ export default function GalleryPage() {
       const dateDelta = new Map<string, number>();
       const senderDelta = new Map<string, number>();
       for (const p of deleted) {
-        const dk = buildDateKeyAndLabel(p.created_at).key;
+        const dk = buildDateKeyAndLabel(p.created_at, tzOffsetMin).key;
         dateDelta.set(dk, (dateDelta.get(dk) ?? 0) + 1);
         const sk = p.sender_name ?? "__anonymous__";
         senderDelta.set(sk, (senderDelta.get(sk) ?? 0) + 1);
@@ -381,9 +384,12 @@ export default function GalleryPage() {
       setDeleting(false);
       setDeleteConfirmOpen(false);
     }
-  }, [selected, exitSelectMode, photos]);
+  }, [selected, exitSelectMode, photos, tzOffsetMin]);
 
-  const groups = useMemo(() => buildGroups(photos, groupMode), [photos, groupMode]);
+  const groups = useMemo(
+    () => buildGroups(photos, groupMode, tzOffsetMin),
+    [photos, groupMode, tzOffsetMin],
+  );
 
   const [groupLoadingKey, setGroupLoadingKey] = useState<string | null>(null);
 
@@ -438,7 +444,7 @@ export default function GalleryPage() {
 
       if (!hasMore || !cursor) return;
 
-      const keyOf = (p: Photo): string => buildDateKeyAndLabel(p.created_at).key;
+      const keyOf = (p: Photo): string => buildDateKeyAndLabel(p.created_at, tzOffsetMin).key;
 
       setGroupLoadingKey(targetKey);
       try {
@@ -473,7 +479,7 @@ export default function GalleryPage() {
         setGroupLoadingKey(null);
       }
     },
-    [groupMode, cursor, hasMore, selected, fetchPhotos],
+    [groupMode, cursor, hasMore, selected, fetchPhotos, tzOffsetMin],
   );
 
   const handleBatchDownload = useCallback(async () => {

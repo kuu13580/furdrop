@@ -6,18 +6,8 @@ import ConfirmDialog from "../components/ui/ConfirmDialog";
 import LoadingSpinner from "../components/ui/LoadingSpinner";
 import { onImageError } from "../lib/analytics";
 import { receiverApi } from "../lib/api";
-import { formatBytes } from "../lib/format";
+import { formatBytes, formatDateTime } from "../lib/format";
 import type { Photo } from "../types/photo";
-
-function formatDate(unix: number): string {
-  return new Date(unix * 1000).toLocaleString("ja-JP", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 export default function PhotoDetailPage() {
   const { photoId } = useParams();
@@ -276,7 +266,7 @@ export default function PhotoDetailPage() {
           )}
           <div className="flex justify-between">
             <dt className="text-ink-soft">受信日</dt>
-            <dd className="font-mono text-ink">{formatDate(photo.created_at)}</dd>
+            <dd className="font-mono text-ink">{formatDateTime(photo.created_at)}</dd>
           </div>
         </dl>
       </Card>

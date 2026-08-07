@@ -9,6 +9,7 @@ import Dialog from "../components/ui/Dialog";
 import FormField from "../components/ui/FormField";
 import StorageQuotaBar from "../components/ui/StorageQuotaBar";
 import { ApiError, authApi, type EmbedMode } from "../lib/api";
+import { resolveApiError } from "../lib/api-error";
 import { auth } from "../lib/firebase";
 import { authAtom } from "../stores/auth";
 import { suggestedHandleAtom } from "../stores/signup";
@@ -186,9 +187,7 @@ function RegisterForm() {
         if (err instanceof ApiError && err.code === "HANDLE_TAKEN") {
           setHandleError("このハンドルは既に使われています");
         } else {
-          setError(
-            err instanceof Error ? err.message : "登録に失敗しました。もう一度お試しください",
-          );
+          setError(resolveApiError(err, "register"));
         }
       } finally {
         setLoading(false);
@@ -331,7 +330,7 @@ function ReceiveOptionsCard({
         await authApi.updateOptions(patch);
         setUser({ ...user, ...patch });
       } catch (err) {
-        setError(err instanceof Error ? err.message : "更新に失敗しました");
+        setError(resolveApiError(err, "updateOptions"));
       } finally {
         setSaving(false);
       }
@@ -416,11 +415,7 @@ function AccountDeletionCard({ user }: { user: UserProfile }) {
 
       navigate("/login", { replace: true });
     } catch (err) {
-      if (err instanceof ApiError && err.code === "INVALID_REQUEST") {
-        setError("確認用ハンドルが一致しません");
-      } else {
-        setError(err instanceof Error ? err.message : "削除に失敗しました");
-      }
+      setError(resolveApiError(err, "deleteAccount"));
       setLoading(false);
     }
   }, [confirmHandle, user.handle, setUser, navigate]);

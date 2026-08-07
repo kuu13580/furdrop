@@ -263,7 +263,7 @@ Content-Type: application/json
 
 | HTTP | code | 説明 |
 |---|---|---|
-| 400 | INVALID_REQUEST | バリデーション失敗 |
+| 400 | INVALID_REQUEST | バリデーション失敗 (zod の失敗も `lib/schema.ts` の `defaultHook` でこの形式に揃える) |
 | 401 | UNAUTHORIZED | トークンなし/期限切れ |
 | 403 | FORBIDDEN | 権限なし |
 | 403 | INVALID_KEY | 送信URLのアクセスキー (R16) が不一致 |
@@ -347,7 +347,7 @@ Response: 204 No Content
 受信写真一覧（カーソルベースページネーション）。
 
 ```
-Query: ?limit=50&cursor=xxx
+Query: ?limit=50&cursor=xxx&tz_offset_min=540
 
 Response: 200
 {
@@ -370,18 +370,33 @@ Response: 200
 
 `thumb_url` はWorkers内でPresigned GETを生成して返す。
 
+`tz_offset_min` は日付グルーピング (`date_counts`) の日境界を決めるクライアントの
+タイムゾーンオフセット (UTC からの分数、東が正、−720〜840)。省略時は `540` (JST) で、
+これは i18n 対応前の挙動との後方互換のため。クライアントは
+`-new Date().getTimezoneOffset()` を送る (`frontend/src/lib/timezone.ts` が単一のソース。
+ギャラリーのクライアント側日付キーも同じ値を使うので、見出しと中身がずれない)。
+
+なおリクエスト時点の固定オフセットなので、夏時間の切り替わりを跨ぐ写真は日境界が 1 時間
+ずれる。日付見出しの粒度では許容する (IANA タイムゾーンでの厳密な変換は SQLite の
+`strftime` では表現できない)。
+
 #### GET /receiver/photos/:photoId/download
 
 オリジナルDL用Presigned URL発行。
 
 ```
+Query: ?tz_offset_min=540
+
 Response: 200
 {
   "download_url": "https://...presigned...",
-  "filename": "IMG_0042.JPG",
+  "filename": "20260410-153000_01.jpg",
   "file_size": 9437184
 }
 ```
+
+`filename` は `受信日時_連番.jpg` = `YYYYMMDD-HHMMSS_NN.jpg` 形式 (元のファイル名ではない)。
+日時は `tz_offset_min` のタイムゾーン基準 (省略時 JST)。
 
 #### DELETE /receiver/photos/:photoId
 

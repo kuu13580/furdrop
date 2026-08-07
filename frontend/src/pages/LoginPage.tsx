@@ -3,6 +3,7 @@ import { useAtomValue, useSetAtom } from "jotai";
 import { useCallback, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router";
 import logoUrl from "../assets/logos/logo.png";
+import { resolveAuthError } from "../lib/api-error";
 import { auth } from "../lib/firebase";
 import { authAtom } from "../stores/auth";
 import { sanitizeHandle, suggestedHandleAtom } from "../stores/signup";
@@ -28,7 +29,7 @@ export default function LoginPage() {
       // 認証成功 → ダッシュボードへ (未登録の場合は AuthGuard が /settings に誘導)
       navigate("/dashboard", { replace: true });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "ログインに失敗しました");
+      setError(resolveAuthError(e));
     } finally {
       setLoading(false);
     }
