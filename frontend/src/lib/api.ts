@@ -1,3 +1,4 @@
+import { ApiError } from "./api-error";
 import { auth } from "./firebase";
 
 const configuredBase = import.meta.env.VITE_API_BASE_URL ?? "";
@@ -12,18 +13,6 @@ const BASE_URL =
     : configuredBase;
 
 export type EmbedMode = "disabled" | "optional" | "required";
-
-class ApiError extends Error {
-  status: number;
-  code: string;
-
-  constructor(status: number, code: string, message: string) {
-    super(message);
-    this.name = "ApiError";
-    this.status = status;
-    this.code = code;
-  }
-}
 
 async function request<T>(
   path: string,
