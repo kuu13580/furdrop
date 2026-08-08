@@ -3,6 +3,7 @@ import type { CSSProperties } from "react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import logoUrl from "../assets/logos/logo.png";
+import LocaleToggle from "../components/ui/LocaleToggle";
 import { authAtom } from "../stores/auth";
 
 const FEEDBACK_URL = import.meta.env.VITE_FEEDBACK_URL ?? "";
@@ -292,6 +293,7 @@ export default function LandingPage() {
             <LogoMark size={32} />
           </Link>
           <div className="flex items-center gap-3">
+            <LocaleToggle />
             <nav className="hidden items-center gap-[26px] text-[13px] text-ink-soft md:flex">
               <Link to="/guide" className="cursor-pointer">
                 使い方

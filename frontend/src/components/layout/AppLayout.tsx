@@ -4,6 +4,7 @@ import { Link, NavLink, Outlet, useLocation } from "react-router";
 import logoUrl from "../../assets/logos/logo.png";
 import { auth } from "../../lib/firebase";
 import ConfirmDialog from "../ui/ConfirmDialog";
+import LocaleToggle from "../ui/LocaleToggle";
 import AppFooter from "./AppFooter";
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -81,43 +82,49 @@ export default function AppLayout() {
             >
               ログアウト
             </button>
+            <LocaleToggle />
           </nav>
 
-          {/* モバイルハンバーガー (sm未満) */}
-          <button
-            type="button"
-            aria-label={menuOpen ? "メニューを閉じる" : "メニューを開く"}
-            aria-expanded={menuOpen}
-            aria-controls="app-mobile-menu"
-            onClick={() => setMenuOpen((v) => !v)}
-            className="flex h-11 w-11 items-center justify-center rounded-full text-ink transition-colors hover:bg-surface-sand sm:hidden"
-          >
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              role="img"
-              aria-hidden="true"
+          {/* モバイル: トグルはドロワーに入れず常時見える位置に置く */}
+          <div className="flex items-center gap-1 sm:hidden">
+            <LocaleToggle />
+
+            {/* モバイルハンバーガー (sm未満) */}
+            <button
+              type="button"
+              aria-label={menuOpen ? "メニューを閉じる" : "メニューを開く"}
+              aria-expanded={menuOpen}
+              aria-controls="app-mobile-menu"
+              onClick={() => setMenuOpen((v) => !v)}
+              className="flex h-11 w-11 items-center justify-center rounded-full text-ink transition-colors hover:bg-surface-sand"
             >
-              {menuOpen ? (
-                <>
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </>
-              ) : (
-                <>
-                  <line x1="3" y1="6" x2="21" y2="6" />
-                  <line x1="3" y1="12" x2="21" y2="12" />
-                  <line x1="3" y1="18" x2="21" y2="18" />
-                </>
-              )}
-            </svg>
-          </button>
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                role="img"
+                aria-hidden="true"
+              >
+                {menuOpen ? (
+                  <>
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </>
+                ) : (
+                  <>
+                    <line x1="3" y1="6" x2="21" y2="6" />
+                    <line x1="3" y1="12" x2="21" y2="12" />
+                    <line x1="3" y1="18" x2="21" y2="18" />
+                  </>
+                )}
+              </svg>
+            </button>
+          </div>
         </div>
       </header>
 

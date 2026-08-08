@@ -3,6 +3,7 @@ import ReactMarkdown from "react-markdown";
 import { Link, useNavigate } from "react-router";
 import remarkGfm from "remark-gfm";
 import logoUrl from "../assets/logos/logo.png";
+import LocaleToggle from "../components/ui/LocaleToggle";
 import privacyMd from "../content/legal/privacy.md?raw";
 import termsMd from "../content/legal/terms.md?raw";
 
@@ -103,16 +104,19 @@ export default function LegalPage({ doc }: { doc: Doc }) {
           <Link to="/" className="flex shrink-0 items-center">
             <img src={logoUrl} alt="FurDrop" className="h-9" />
           </Link>
-          <button
-            type="button"
-            onClick={() => {
-              if (window.history.length > 1) navigate(-1);
-              else navigate("/");
-            }}
-            className="rounded-lg px-3 py-2 text-[14px] text-ink-soft transition-colors hover:bg-surface-sand hover:text-ink"
-          >
-            戻る
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                if (window.history.length > 1) navigate(-1);
+                else navigate("/");
+              }}
+              className="rounded-lg px-3 py-2 text-[14px] text-ink-soft transition-colors hover:bg-surface-sand hover:text-ink"
+            >
+              戻る
+            </button>
+            <LocaleToggle />
+          </div>
         </div>
       </header>
 
