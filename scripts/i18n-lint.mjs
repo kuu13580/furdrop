@@ -23,11 +23,10 @@ const BASELINE = join(ROOT, "frontend/i18n-baseline.json");
 const EXCLUDE = ["pages/DesignPreviewPage.tsx", "pages/__shots__/", "lib/debug-log.ts"];
 
 const JAPANESE = /[぀-ヿ一-鿿]/;
-/** この行の日本語はマクロが拾っているとみなす */
-const MACRO = /<Trans[\s>]|\bt`|\bmsg`|\bplural\(|\bselect\(|\bselectOrdinal\(/;
-const TRANS_OPEN = /<Trans[\s>]/g;
-const TRANS_CLOSE = /<\/Trans>/g;
-const TRANS_SELF_CLOSING = /<Trans[^>]*\/>/g;
+/** 関数形式のマクロ。これがある行の日本語は拾えているとみなす */
+const MACRO_CALL = /\bt`|\bmsg`|\bplural\(|\bselect\(|\bselectOrdinal\(/;
+/** JSX 形式のマクロ。要素が占める行はまとめて除外する */
+const MACRO_JSX = /<(Trans|Plural|Select|SelectOrdinal)\b/g;
 
 /** `//` コメントと `/* *\/` ブロックを落とす (URL の `://` は残す) */
 function stripComments(source) {
@@ -38,23 +37,98 @@ function stripComments(source) {
     .join("\n");
 }
 
-const countOf = (line, re) => (line.match(re) ?? []).length;
+/**
+ * `<Tag ...>` / `<Tag ... />` の開始タグを読み飛ばし、終端位置と自己閉じかを返す。
+ * 属性内の文字列と `{...}` を飛ばすので、`onClick={() => x}` の `>` で誤検知しない。
+ */
+function scanOpenTag(src, from) {
+  let i = from;
+  let brace = 0;
+  while (i < src.length) {
+    const c = src[i];
+    if (c === '"' || c === "'" || c === "`") {
+      const end = src.indexOf(c, i + 1);
+      i = end === -1 ? src.length : end + 1;
+      continue;
+    }
+    if (c === "{") brace++;
+    else if (c === "}") brace--;
+    else if (c === ">" && brace === 0) {
+      return { end: i + 1, selfClosing: src[i - 1] === "/" };
+    }
+    i++;
+  }
+  return { end: src.length, selfClosing: true };
+}
+
+/** マクロ JSX 要素が占める [開始, 終了] のオフセット範囲を列挙する */
+function* macroJsxRanges(src) {
+  MACRO_JSX.lastIndex = 0;
+  let m = MACRO_JSX.exec(src);
+  while (m) {
+    const tag = m[1];
+    const { end, selfClosing } = scanOpenTag(src, m.index);
+    let stop = end;
+    if (!selfClosing) {
+      // 同名タグの入れ子を数えながら閉じタグを探す
+      const open = new RegExp(`<${tag}\\b`, "g");
+      const close = `</${tag}>`;
+      let depth = 1;
+      let cursor = end;
+      while (depth > 0) {
+        const iClose = src.indexOf(close, cursor);
+        if (iClose === -1) break;
+        open.lastIndex = cursor;
+        const nested = open.exec(src);
+        if (nested && nested.index < iClose) {
+          depth++;
+          cursor = nested.index + tag.length;
+          continue;
+        }
+        depth--;
+        cursor = iClose + close.length;
+      }
+      stop = cursor;
+    }
+    yield [m.index, stop];
+    MACRO_JSX.lastIndex = stop;
+    m = MACRO_JSX.exec(src);
+  }
+}
+
+/** オフセット → 行番号 (0 始まり) */
+function lineIndex(src) {
+  const starts = [0];
+  for (let i = 0; i < src.length; i++) if (src[i] === "\n") starts.push(i + 1);
+  return (offset) => {
+    let lo = 0;
+    let hi = starts.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi + 1) >> 1;
+      if (starts[mid] <= offset) lo = mid;
+      else hi = mid - 1;
+    }
+    return lo;
+  };
+}
 
 /**
- * 複数行の `<Trans>` は開始行にしかマクロが出ないので、要素の中にいる間は
- * まとめて除外する。これが無いと、正しく国際化した長文で逆に検出が増える。
+ * マクロで包まれていない日本語の「行数」を数える。
+ * 複数行の `<Trans>` / `<Plural>` は開始行にしかマクロが出ないので、
+ * 要素が占める行をまとめて除外する。これが無いと、正しく国際化した長文で逆に検出が増える。
  */
 function countInFile(source) {
-  let depth = 0;
-  let count = 0;
-  for (const line of stripComments(source).split("\n")) {
-    const insideTrans = depth > 0;
-    depth +=
-      countOf(line, TRANS_OPEN) - countOf(line, TRANS_CLOSE) - countOf(line, TRANS_SELF_CLOSING);
-    if (depth < 0) depth = 0;
-    if (insideTrans || MACRO.test(line)) continue;
-    if (JAPANESE.test(line)) count++;
+  const src = stripComments(source);
+  const toLine = lineIndex(src);
+  const covered = new Set();
+  for (const [start, stop] of macroJsxRanges(src)) {
+    for (let l = toLine(start); l <= toLine(stop); l++) covered.add(l);
   }
+  let count = 0;
+  src.split("\n").forEach((line, i) => {
+    if (covered.has(i) || MACRO_CALL.test(line)) return;
+    if (JAPANESE.test(line)) count++;
+  });
   return count;
 }
 
