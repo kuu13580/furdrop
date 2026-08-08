@@ -3,8 +3,10 @@ name: CI
 on:
   push:
     branches: [main]
+  # feature/i18n は多言語化の統合ブランチ。ここへの PR でも CI を回さないと、
+  # 統合ブランチにマージされるまで i18n ガードが効かない
   pull_request:
-    branches: [main]
+    branches: [main, feature/i18n]
 
 jobs:
   check:

@@ -49,6 +49,7 @@ export type ErrorContext =
   | "pipeline" // 送信時の本加工パイプライン
   | "preview" // 送信前のサムネプレビュー生成
   | "r2-put"
+  | "i18n-catalog"
   | "global";
 
 /** image_render 用: 壊れた画像の種別。 */

@@ -2,6 +2,7 @@ import { msg } from "@lingui/core/macro";
 import { I18nProvider as LinguiProvider } from "@lingui/react";
 import { useAtomValue } from "jotai";
 import { type ReactNode, useEffect, useState } from "react";
+import { extractError, trackClientError } from "../lib/analytics";
 import { activateLocale, i18n } from "../lib/i18n";
 import { localeAtom } from "../stores/locale";
 
@@ -18,12 +19,23 @@ export default function I18nProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    activateLocale(locale).then(() => {
-      if (cancelled) return;
-      document.documentElement.lang = locale;
-      document.title = i18n._(APP_TITLE);
-      setReady(true);
-    });
+    activateLocale(locale)
+      .catch((err) => {
+        // カタログのチャンクロードに失敗しても描画は続ける。ここで止めると
+        // 画面が真っ白になり、言語が読めない以前にアプリが使えなくなる。
+        // 未ロード時の Lingui は msgid (= 日本語の原文) にフォールバックする
+        trackClientError({
+          error_kind: "chunk_load",
+          context: "i18n-catalog",
+          ...extractError(err),
+        });
+      })
+      .finally(() => {
+        if (cancelled) return;
+        document.documentElement.lang = locale;
+        document.title = i18n._(APP_TITLE);
+        setReady(true);
+      });
     return () => {
       cancelled = true;
     };
