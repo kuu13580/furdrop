@@ -62,6 +62,30 @@ msgstr "Send to {receiverName}"
 msgid "「＋ 文字を追加」「＋ 四角形を追加」から透かしの要素を追加できます"
 msgstr "Use “+ Add text” or “+ Add shape” to add a watermark element"
 
+#: src/pages/GuidePage.tsx
+msgid "「ダウンロード期限」を過ぎる前に必要な写真をローカル保存"
+msgstr "Save the photos you need locally before the download deadline passes"
+
+#: src/pages/LandingPage.tsx
+msgid "「写真を受け取る」ことに、特化しています。"
+msgstr "Built for one thing: receiving photos."
+
+#: src/pages/LandingPage.tsx
+msgid "「写真送るね」と言ったまま、半年"
+msgstr "\"I'll send you the photos\" — six months ago"
+
+#: src/pages/GuidePage.tsx
+msgid "「選択」モードで複数枚をまとめてダウンロードまたは削除"
+msgstr "Use selection mode to download or delete several at once"
+
+#: src/pages/LandingPage.tsx
+msgid "@{SAMPLE_HANDLE} に写真を送る"
+msgstr "Send photos to @{SAMPLE_HANDLE}"
+
+#: src/pages/GuidePage.tsx
+msgid "※ アカウント登録やログインは必要ありません。"
+msgstr "* No sign-up or sign-in required."
+
 #: src/components/send/WatermarkDialog.tsx
 msgid "＋ 四角形を追加"
 msgstr "+ Add shape"
@@ -74,17 +98,125 @@ msgstr "+ Add text"
 msgid "< 戻る"
 msgstr "< Back"
 
+#: src/pages/GuidePage.tsx
+msgid "<0>EXIFカメラモデル欄に埋め込む</0>：写真のメタデータに名前を残します（あとから消すことも可能）"
+msgstr "<0>Embed in the EXIF camera model field</0>: leaves your name in the photo's metadata (removable later)"
+
+#: src/pages/GuidePage.tsx
+msgid "<0>EXIF埋め込み</0>：メタデータのみなので画像は変わりません。あとから除去も可能。"
+msgstr "<0>EXIF embed</0>: metadata only, so the image itself is unchanged. Can be stripped later."
+
+#: src/pages/GuidePage.tsx
+msgid "<0>QR</0>：QRコードを表示・ダウンロード。名刺やイベントポスターへの掲載に"
+msgstr "<0>QR</0>: show and download a QR code — for business cards or event posters"
+
+#: src/pages/GuidePage.tsx
+msgid "<0>Shot by ...</0>／<1>Photo by ...</1>／<2>© ...</2>／<3>名前のみ</3>の4種類から選べます。"
+msgstr "Choose from four formats: <0>Shot by ...</0>, <1>Photo by ...</1>, <2>© ...</2>, or <3>name only</3>."
+
+#: src/pages/GuidePage.tsx
+msgid "<0>オレンジ</0>：そろそろ整理どき（80〜94%）"
+msgstr "<0>Orange</0>: time to tidy up (80–94%)"
+
+#: src/pages/GuidePage.tsx
+msgid "<0>コピー</0>：URLをクリップボードにコピーして、SNSやメッセージに貼れます"
+msgstr "<0>Copy</0>: copy the URL to your clipboard and paste it into social posts or messages"
+
+#: src/pages/GuidePage.tsx
+msgid "<0>シェア</0>：スマホの共有メニュー（または X 投稿フォーム）が立ち上がります"
+msgstr "<0>Share</0>: opens your phone's share sheet (or the X post composer)"
+
+#: src/pages/GuidePage.tsx
+msgid "<0>緑</0>：余裕あり（〜79%）"
+msgstr "<0>Green</0>: plenty of room (up to 79%)"
+
+#: src/pages/GuidePage.tsx
+msgid "<0>赤</0>：満タン間近（95%以上）"
+msgstr "<0>Red</0>: nearly full (95% or more)"
+
+#: src/pages/GuidePage.tsx
+msgid "<0>送信者名 / Twitter ID</0> を入力すると、その情報を写真に残せるようになります。"
+msgstr "Enter <0>your name / Twitter ID</0> and you can leave that information on the photos themselves."
+
+#: src/pages/GuidePage.tsx
+msgid "<0>透かし</0>：画像本体に焼き込まれるため<1>取り消せません</1>。「必須」にする場合は慎重に。"
+msgstr "<0>Watermark</0>: burned into the image itself, so it <1>cannot be undone</1>. Think twice before setting it to \"Required\"."
+
+#: src/pages/GuidePage.tsx
+msgid "<0>透かしを入れる</0>：画像そのものに名前を描き込みます。位置・サイズ・透明度・色は <1>「透かしを編集」</1> から細かく調整できます（一度入れると消せません）"
+msgstr "<0>Add a watermark</0>: draws your name onto the image itself. Position, size, opacity and color can be fine-tuned from <1>\"Edit watermark\"</1> (once applied, it cannot be removed)"
+
+#: src/pages/GuidePage.tsx
+msgid "⚠️ 受け取る人が「必須」に設定している場合は、送信者名の入力が必須となり、対応する埋め込みも自動でONになります。"
+msgstr "⚠️ If the recipient has set an option to \"Required\", entering your name becomes mandatory and the matching embed is switched on automatically."
+
+#: src/pages/GuidePage.tsx
+msgid "1枚あたり最大 <0>20MB</0> ／ 1度に最大 <1>100枚</1>"
+msgstr "Up to <0>20MB</0> per photo / up to <1>100 photos</1> at a time"
+
+#: src/pages/LandingPage.tsx
+msgid "2026年4月14日のイベント"
+msgstr "Event on April 14, 2026"
+
+#: src/pages/LandingPage.tsx
+msgid "DMは知り合いにしか許可したくない"
+msgstr "I only want DMs open to people I know"
+
+#: src/pages/LandingPage.tsx
+msgid "Driveの招待でメアドを知られたくない"
+msgstr "A Drive invite would expose my email address"
+
 #: src/pages/send/UploadPage.tsx
 msgid "EXIFカメラモデル欄に埋め込む"
 msgstr "Embed in the EXIF camera model field"
+
+#: src/pages/LandingPage.tsx
+msgid "EXIFのカメラモデル欄や目立たない透かしで、撮影者情報を写真ファイル自体に埋め込み可能。 匿名性と「誰が撮ったか」の追跡可能性を両立できます。"
+msgstr "The EXIF camera model field or a subtle watermark can carry the photographer's details inside the photo file itself — anonymity and \"who took this\" at the same time."
+
+#: src/pages/LandingPage.tsx
+msgid "EXIF埋め込み (Camera Model欄)"
+msgstr "EXIF embed (Camera Model field)"
 
 #: src/components/I18nProvider.tsx
 msgid "FurDrop — 撮ってもらった写真を、ちゃんと受け取る。"
 msgstr "FurDrop — Get the photos taken of you."
 
+#: src/pages/GuidePage.tsx
+msgid "FurDrop ホーム"
+msgstr "FurDrop home"
+
+#: src/pages/LandingPage.tsx
+msgid "FurDropの<0/>二つの軸"
+msgstr "The two pillars<0/>of FurDrop"
+
+#: src/pages/GuidePage.tsx
+msgid "FurDropの使い方"
+msgstr "How to use FurDrop"
+
+#: src/pages/LandingPage.tsx
+msgid "FurDropの特長"
+msgstr "What makes FurDrop different"
+
+#: src/pages/LandingPage.tsx
+msgid "FurDropは、<0>メアドもアカウントも交換せずに、撮影者情報だけ写真に残せる</0>サービス。受け取りURLひとつで、面倒な個人情報のやりとりは無し。"
+msgstr "FurDrop lets you <0>keep the photographer's credit on the photo without ever exchanging emails or accounts</0>. One receiving URL, and none of the personal-information back and forth."
+
+#: src/pages/LandingPage.tsx
+msgid "Google Drive"
+msgstr "Google Drive"
+
 #: src/pages/send/UploadingPage.tsx
 msgid "HEIC変換中..."
 msgstr "Converting HEIC..."
+
+#: src/pages/GuidePage.tsx
+msgid "iPhoneのHEICはアップロード時にJPEGへ自動変換されます"
+msgstr "iPhone HEIC files are converted to JPEG automatically on upload"
+
+#: src/pages/LandingPage.tsx
+msgid "JPEG · PNG · HEIC · 最大20MB/枚"
+msgstr "JPEG · PNG · HEIC · up to 20MB each"
 
 #: src/pages/send/UploadPage.tsx
 msgid "JPEG / PNG / HEIC ・ 最大 20MB / 枚 ・ 100 枚まで"
@@ -94,6 +226,14 @@ msgstr "JPEG / PNG / HEIC · up to 20MB each · 100 photos max"
 msgid "Mプラス丸"
 msgstr "M PLUS Rounded 1c"
 
+#: src/pages/LandingPage.tsx
+msgid "QRコードも自動生成"
+msgstr "QR code generated for you"
+
+#: src/pages/GuidePage.tsx
+msgid "QRはPNGでダウンロードして印刷物にも使えます。"
+msgstr "Download the QR as a PNG and use it in print."
+
 #: src/lib/watermark.ts
 msgid "UDゴシック"
 msgstr "BIZ UDGothic"
@@ -102,6 +242,56 @@ msgstr "BIZ UDGothic"
 msgid "URLに誤りがないかご確認ください。"
 msgstr "Please check that the URL is correct."
 
+#: src/pages/LandingPage.tsx
+msgid "URLを作る"
+msgstr "Create your URL"
+
+#: src/pages/LandingPage.tsx
+msgid "URLを作る →"
+msgstr "Create URL →"
+
+#: src/pages/LandingPage.tsx
+msgid "URLを共有"
+msgstr "Share the URL"
+
+#: src/pages/GuidePage.tsx
+msgid "URLを知っている人だけが写真を送れます。誰にでも公開する必要はありません。"
+msgstr "Only people who know the URL can send you photos. You never have to make it fully public."
+
+#: src/pages/LandingPage.tsx
+msgid "URLを知っている人だけが送信できる"
+msgstr "Only people with the URL can send"
+
+#: src/pages/LandingPage.tsx
+msgid "URL埋め込みOK (SNS / web)"
+msgstr "Embeddable URL (social / web)"
+
+#: src/pages/LandingPage.tsx
+msgid "URL埋め込みは不可"
+msgstr "No embeddable URL"
+
+#: src/pages/LandingPage.tsx
+msgid "URL埋め込みは可能"
+msgstr "Embeddable URL"
+
+#: src/pages/GuidePage.tsx
+msgid "X (Twitter) アカウントで30秒で登録できます。"
+msgstr "Sign up with your X (Twitter) account in 30 seconds."
+
+#: src/pages/LandingPage.tsx
+msgid "X (Twitter) で30秒登録"
+msgstr "30-second sign-up with X (Twitter)"
+
+#: src/pages/GuidePage.tsx
+msgid "X (Twitter) でログインしてURLを作る"
+msgstr "Sign in with X (Twitter) and create your URL"
+
+#: src/pages/LandingPage.tsx
+msgid "X (Twitter)で30秒。\n"
+"{PUBLIC_HOST}/send/your_handle が完成。"
+msgstr "30 seconds with X (Twitter).\n"
+"{PUBLIC_HOST}/send/your_handle is ready."
+
 #: src/lib/api-error.ts
 msgid "アカウントが見つかりません"
 msgstr "Account not found"
@@ -109,6 +299,10 @@ msgstr "Account not found"
 #: src/lib/api-error.ts
 msgid "アカウントが見つかりません。再度ログインしてください"
 msgstr "Account not found. Please sign in again"
+
+#: src/pages/LandingPage.tsx
+msgid "アカウント登録もメアド入力も不要"
+msgstr "No sign-up, no email address"
 
 #: src/lib/api-error.ts
 msgid "アクセスが集中しています。少し待ってからもう一度お試しください"
@@ -126,9 +320,25 @@ msgstr "Uploading"
 msgid "アップロード画面に戻る"
 msgstr "Back to the upload screen"
 
+#: src/pages/GuidePage.tsx
+msgid "アップロード進行と送信完了画面"
+msgstr "Upload progress and the completion screen"
+
 #: src/lib/watermark.ts
 msgid "アンバー"
 msgstr "Amber"
+
+#: src/pages/LandingPage.tsx
+msgid "イベントが終わってふと気づく、写真送ってほしいな。"
+msgstr "The event ends, and it hits you — I'd love those photos."
+
+#: src/pages/LandingPage.tsx
+msgid "イベント共有アルバムから探すのが面倒"
+msgstr "Digging through a shared event album is a chore"
+
+#: src/pages/LandingPage.tsx
+msgid "イベント専用共有サイト"
+msgstr "Event photo-sharing sites"
 
 #: src/lib/watermark.ts
 msgid "インパクト"
@@ -141,6 +351,10 @@ msgstr "Something went wrong. Please wait a moment and try again"
 #: src/lib/watermark.ts
 msgid "オールド明朝"
 msgstr "Zen Old Mincho"
+
+#: src/pages/LegalPage.tsx
+msgid "お問い合わせ"
+msgstr "Contact"
 
 #: src/components/layout/AppFooter.tsx
 msgid "お問い合わせ・通報"
@@ -162,6 +376,10 @@ msgstr "Kiwi Maru"
 msgid "キャンセル"
 msgstr "Cancel"
 
+#: src/pages/LandingPage.tsx
+msgid "くらべる"
+msgstr "Compare"
+
 #: src/lib/watermark.ts
 msgid "グリーン"
 msgstr "Green"
@@ -170,9 +388,21 @@ msgstr "Green"
 msgid "クレー"
 msgstr "Klee One"
 
+#: src/pages/GuidePage.tsx
+msgid "クレジット表記の形式"
+msgstr "Credit formats"
+
 #: src/lib/watermark.ts
 msgid "コーラル"
 msgstr "Coral"
+
+#: src/pages/GuidePage.tsx
+msgid "ここがFurDropの<0>いちばん大切なステップ</0>です。"
+msgstr "This is <0>the most important step</0> in FurDrop."
+
+#: src/pages/LandingPage.tsx
+msgid "ここに写真をドロップ"
+msgstr "Drop your photos here"
 
 #: src/lib/watermark.ts
 msgid "ゴシック"
@@ -206,6 +436,10 @@ msgstr "This recipient requires you to enter your name"
 msgid "この操作を行う権限がありません"
 msgstr "You don't have permission to do that"
 
+#: src/pages/LegalPage.tsx
+msgid "この文書は日本語のみで提供されます。日本語版が正文です。"
+msgstr "This document is available in Japanese only. The Japanese version is authoritative."
+
 #: src/components/send/WatermarkDialog.tsx
 msgid "この画像はプレビューできません"
 msgstr "This image can't be previewed"
@@ -217,6 +451,10 @@ msgstr "This image can't be sent (it is not a JPEG)"
 #: src/components/send/WatermarkDialog.tsx
 msgid "この要素を削除"
 msgstr "Delete this element"
+
+#: src/pages/LandingPage.tsx
+msgid "こんな経験<0/>ありませんか？"
+msgstr "Sound<0/>familiar?"
 
 #: src/lib/api-error.ts
 msgid "サーバーでエラーが発生しました。時間をおいてもう一度お試しください"
@@ -231,6 +469,10 @@ msgstr "Connecting to the server"
 msgid "サイズ ({0}%)"
 msgstr "Size ({0}%)"
 
+#: src/pages/GuidePage.tsx
+msgid "サムネイルをタップして拡大表示・送信者情報の確認"
+msgstr "Tap a thumbnail to enlarge it and check the sender's details"
+
 #: src/lib/watermark.ts
 msgid "しっぽり明朝"
 msgstr "Shippori Mincho"
@@ -238,6 +480,10 @@ msgstr "Shippori Mincho"
 #: src/lib/watermark.ts
 msgid "スカイ"
 msgstr "Sky"
+
+#: src/pages/GuidePage.tsx
+msgid "ストレージ使用状況のプログレスバー"
+msgstr "Storage usage progress bar"
 
 #: src/pages/send/UploadPage.tsx
 msgid "すべてクリア"
@@ -247,9 +493,37 @@ msgstr "Clear all"
 msgid "セッションが期限切れです"
 msgstr "This session has expired"
 
+#: src/pages/LandingPage.tsx
+msgid "ダッシュボード"
+msgstr "Dashboard"
+
+#: src/pages/LandingPage.tsx
+msgid "ダッシュボードでQRを表示・コピー・共有。配布物に貼るだけ。"
+msgstr "Show, copy or share the QR from your dashboard. Just drop it into whatever you hand out."
+
+#: src/pages/GuidePage.tsx
+msgid "ダッシュボードと設定ページに使用率バーが表示されます。"
+msgstr "A usage bar appears on the dashboard and the settings page."
+
+#: src/pages/GuidePage.tsx
+msgid "ダッシュボードの<0>「あなたの受信URL」</0>に、自分専用のリンクが表示されます。共有方法は3通り。"
+msgstr "Your personal link appears under <0>\"Your receiving URL\"</0> on the dashboard. There are three ways to share it."
+
+#: src/pages/GuidePage.tsx
+msgid "ダッシュボードの<0>「最近の写真」</0>、または<1>ギャラリー</1>から届いた写真を確認できます。"
+msgstr "Check what has arrived under <0>\"Recent photos\"</0> on the dashboard, or in the <1>gallery</1>."
+
 #: src/components/send/WatermarkDialog.tsx
 msgid "テキスト"
 msgstr "Text"
+
+#: src/pages/LandingPage.tsx
+msgid "でも、催促しづらい。"
+msgstr "But it's awkward to ask."
+
+#: src/pages/LandingPage.tsx
+msgid "でも、送る方法がない。"
+msgstr "But there's no good way to send them."
 
 #: src/lib/watermark.ts
 msgid "デラゴシック"
@@ -263,6 +537,10 @@ msgstr "DotGothic16"
 msgid "トップに戻る"
 msgstr "Back to home"
 
+#: src/pages/GuidePage.tsx
+msgid "トップへ戻る"
+msgstr "Back to top page"
+
 #: src/components/send/WatermarkDialog.tsx
 msgid "ドラッグで配置、ピンチ / ホイールでズーム"
 msgstr "Drag to position, pinch or scroll to zoom"
@@ -270,6 +548,10 @@ msgstr "Drag to position, pinch or scroll to zoom"
 #: src/lib/watermark.ts
 msgid "トレイン"
 msgstr "Train One"
+
+#: src/pages/GuidePage.tsx
+msgid "ドロップゾーンとサムネイル一覧"
+msgstr "The drop zone and thumbnail list"
 
 #: src/lib/api-error.ts
 msgid "ネットワークに接続できません。通信環境を確認してください"
@@ -279,9 +561,25 @@ msgstr "Can't reach the network. Please check your connection"
 msgid "バイオレット"
 msgstr "Violet"
 
+#: src/pages/LandingPage.tsx
+msgid "はじめる"
+msgstr "Get started"
+
 #: src/lib/watermark.ts
 msgid "はちまるポップ"
 msgstr "Hachi Maru Pop"
+
+#: src/pages/GuidePage.tsx
+msgid "ハンドル（URLの末尾）：<0>小文字英数字とアンダースコア・3〜32文字</0>"
+msgstr "Handle (the end of your URL): <0>lowercase letters, numbers and underscores, 3–32 characters</0>"
+
+#: src/pages/GuidePage.tsx
+msgid "ハンドルがそのまま受信URLになります。後から変更したい場合はサポートまで。"
+msgstr "Your handle becomes your receiving URL. Contact support if you need to change it later."
+
+#: src/pages/GuidePage.tsx
+msgid "ハンドルと表示名の登録フォーム"
+msgstr "The handle and display-name sign-up form"
 
 #: src/lib/watermark.ts
 msgid "ピンク"
@@ -291,6 +589,10 @@ msgstr "Pink"
 msgid "ファイルサイズが上限 (20MB) を超えています"
 msgstr "This file is over the 20MB limit"
 
+#: src/pages/LandingPage.tsx
+msgid "フィードバック"
+msgstr "Feedback"
+
 #: src/components/send/WatermarkDialog.tsx
 msgid "フォント"
 msgstr "Font"
@@ -298,6 +600,11 @@ msgstr "Font"
 #: src/components/layout/AppFooter.tsx
 msgid "プライバシー"
 msgstr "Privacy"
+
+#: src/pages/GuidePage.tsx
+#: src/pages/LegalPage.tsx
+msgid "プライバシーポリシー"
+msgstr "Privacy Policy"
 
 #: src/components/send/WatermarkDialog.tsx
 msgid "プレビューできる画像がありません"
@@ -314,6 +621,12 @@ msgstr "Loading preview…"
 #: src/pages/send/UploadPage.tsx
 msgid "プレビュー不可"
 msgstr "No preview"
+
+#: src/pages/LandingPage.tsx
+msgid "プロフィールやイベントページに貼るだけ。\n"
+"QRも自動生成。"
+msgstr "Just paste it on your profile or event page.\n"
+"A QR code is generated too."
 
 #: src/pages/NotFoundPage.tsx
 msgid "ページが見つかりません"
@@ -335,6 +648,18 @@ msgstr "The popup was blocked. Please allow popups in your browser and try again
 msgid "またはタップしてファイルを選択"
 msgstr "or tap to choose files"
 
+#: src/pages/LandingPage.tsx
+msgid "メール"
+msgstr "Email"
+
+#: src/pages/GuidePage.tsx
+msgid "メールアドレスは公開されません。送る人にもあなたのメアドは伝わりません。"
+msgstr "Your email address is never published. Senders never see it either."
+
+#: src/pages/LandingPage.tsx
+msgid "メアド・氏名が共有相手に見える"
+msgstr "Your email and name are visible to everyone shared with"
+
 #: src/pages/send/UploadPage.tsx
 msgid "メタデータに送信者名<0>{credit}</0>を書き込みます（元のカメラ情報は上書き）"
 msgstr "Writes your name <0>{credit}</0> into the metadata (the original camera info is overwritten)"
@@ -343,6 +668,18 @@ msgstr "Writes your name <0>{credit}</0> into the metadata (the original camera 
 msgid "メタデータに送信者名を書き込みます（元のカメラ情報は上書き）"
 msgstr "Writes your name into the metadata (the original camera info is overwritten)"
 
+#: src/pages/LandingPage.tsx
+msgid "メニュー"
+msgstr "Menu"
+
+#: src/pages/GuidePage.tsx
+msgid "モード"
+msgstr "Mode"
+
+#: src/pages/GuidePage.tsx
+msgid "もう一方の使い方"
+msgstr "The other side"
+
 #: src/lib/watermark.ts
 msgid "モッチーポップ"
 msgstr "Mochiy Pop One"
@@ -350,6 +687,10 @@ msgstr "Mochiy Pop One"
 #: src/pages/send/LandingPage.tsx
 msgid "ユーザーが見つかりません"
 msgstr "User not found"
+
+#: src/pages/LandingPage.tsx
+msgid "よくある困りごと"
+msgstr "Common frustrations"
 
 #: src/lib/watermark.ts
 msgid "よもぎ"
@@ -363,6 +704,10 @@ msgstr "Rampart One"
 msgid "レゲエ"
 msgstr "Reggae One"
 
+#: src/pages/LandingPage.tsx
+msgid "ログイン"
+msgstr "Sign in"
+
 #: src/lib/api-error.ts
 msgid "ログインがキャンセルされました"
 msgstr "Sign-in was cancelled"
@@ -375,6 +720,10 @@ msgstr "Sign-in failed. Please wait a moment and try again"
 msgid "ログインの有効期限が切れました。もう一度ログインしてください"
 msgstr "Your session has expired. Please sign in again"
 
+#: src/pages/GuidePage.tsx
+msgid "ログイン画面から<0>X (Twitter) アカウントで連携</0>すると、受信用のページが作成できます。"
+msgstr "From the sign-in screen, <0>connect your X (Twitter) account</0> to create your receiving page."
+
 #: src/lib/watermark.ts
 msgid "ロックンロール"
 msgstr "RocknRoll One"
@@ -382,6 +731,10 @@ msgstr "RocknRoll One"
 #: src/pages/send/UploadPage.tsx
 msgid "一度に送れるのは{MAX_PHOTOS_PER_SESSION}枚までです"
 msgstr "You can send up to {MAX_PHOTOS_PER_SESSION} photos at a time"
+
+#: src/pages/GuidePage.tsx
+msgid "不明点をフィードバック"
+msgstr "Something unclear? Tell us"
 
 #: src/lib/watermark.ts
 msgid "丸ゴ・ポップ"
@@ -395,13 +748,37 @@ msgstr "Zen Maru Gothic"
 msgid "他の写真を追加"
 msgstr "Add more photos"
 
+#: src/pages/LandingPage.tsx
+msgid "他の方法との違い"
+msgstr "How it compares"
+
+#: src/pages/GuidePage.tsx
+msgid "任意"
+msgstr "Optional"
+
 #: src/lib/watermark.ts
 msgid "佑字 肅"
 msgstr "Yuji Syuku"
 
+#: src/pages/LandingPage.tsx
+msgid "使い方"
+msgstr "How it works"
+
 #: src/lib/api-error.ts
 msgid "保存容量がいっぱいです"
 msgstr "Storage is full"
+
+#: src/pages/LandingPage.tsx
+msgid "個人情報の交換なしで<0/><1>撮影者情報は残せる</1><2/>写真の受け取り"
+msgstr "Receive photos with<0/><1>the photographer's credit intact</1><2/>and nothing personal exchanged"
+
+#: src/pages/LandingPage.tsx
+msgid "個人情報は<0/>交換しない"
+msgstr "No personal details<0/>exchanged"
+
+#: src/pages/LandingPage.tsx
+msgid "個別到達で探す手間なし"
+msgstr "Arrives individually, nothing to search"
 
 #: src/components/ui/ScrollToTopButton.tsx
 msgid "先頭にスクロール"
@@ -419,9 +796,33 @@ msgstr "Please check what you entered. The recipient may require you to enter a 
 msgid "全ての画像の加工に失敗しました"
 msgstr "Processing failed for every photo"
 
+#: src/pages/LandingPage.tsx
+msgid "共有リンクで埋込可"
+msgstr "Shareable link can be embedded"
+
+#: src/pages/GuidePage.tsx
+msgid "共有リンクを開く"
+msgstr "Open the shared link"
+
+#: src/pages/GuidePage.tsx
+msgid "最重要"
+msgstr "Key step"
+
+#: src/pages/LandingPage.tsx
+msgid "写真が届く"
+msgstr "Photos arrive"
+
+#: src/pages/LandingPage.tsx
+msgid "写真の受け取りに特化"
+msgstr "Built for receiving photos"
+
 #: src/pages/send/LandingPage.tsx
 msgid "写真を{displayName}さんに送れます"
 msgstr "You can send photos to {displayName}"
+
+#: src/pages/GuidePage.tsx
+msgid "写真を「送る人」と「受け取る人」、それぞれの立場で必要な手順をまとめました。 アカウント登録は受け取る人だけ。送る人はリンクを開くだけで使えます。"
+msgstr "Here's what to do, whether you're sending photos or receiving them. Only the receiver needs an account — senders just open a link."
 
 #: src/pages/send/UploadPage.tsx
 msgid "写真をここにドロップ"
@@ -435,6 +836,10 @@ msgstr "Importing photos…"
 msgid "写真を送る"
 msgstr "Send photos"
 
+#: src/pages/GuidePage.tsx
+msgid "写真を選ぶ"
+msgstr "Choose your photos"
+
 #: src/pages/send/UploadPage.tsx
 msgid "初めての方は<0>使い方を見る →</0>"
 msgstr "New here? <0>See how it works →</0>"
@@ -444,6 +849,8 @@ msgid "別の写真を送る"
 msgstr "Send more photos"
 
 #: src/components/layout/AppFooter.tsx
+#: src/pages/GuidePage.tsx
+#: src/pages/LegalPage.tsx
 msgid "利用規約"
 msgstr "Terms"
 
@@ -455,9 +862,81 @@ msgstr "Processing"
 msgid "加工済"
 msgstr "Processed"
 
+#: src/pages/LandingPage.tsx
+msgid "参加者にもアカウント登録が必要"
+msgstr "Attendees have to sign up too"
+
+#: src/pages/GuidePage.tsx
+msgid "友達から共有リンクを受け取った？"
+msgstr "Got a link from a friend?"
+
+#: src/pages/LandingPage.tsx
+msgid "受け取り側"
+msgstr "Receiver"
+
+#: src/pages/LandingPage.tsx
+msgid "受け取り側がURLをひとつ作るだけ。送る側はアカウントもメアドも要らない。 それでも、誰が撮ったかも写真に残せる。"
+msgstr "The receiver creates one URL. The sender needs no account and no email address. And the photos can still carry who took them."
+
+#: src/pages/LandingPage.tsx
+msgid "受け取り側が共有したURLを開いて、写真をドロップするだけ。 アプリも、サインアップも、メアドの入力も発生しません。"
+msgstr "Open the URL the receiver shared and drop your photos in. No app, no sign-up, no email address."
+
+#: src/pages/LandingPage.tsx
+msgid "受け取り手のハンドルだけ"
+msgstr "Just the receiver's handle"
+
+#: src/pages/GuidePage.tsx
+msgid "受け取り用URLを共有する"
+msgstr "Share your receiving URL"
+
+#: src/pages/GuidePage.tsx
+msgid "受け取る人から送られてきた<0>{PUBLIC_HOST}/send/...</0>という形のリンクを、ブラウザで開いてください。"
+msgstr "Open the link the receiver sent you — it looks like <0>{PUBLIC_HOST}/send/...</0> — in your browser."
+
+#: src/pages/GuidePage.tsx
+msgid "受け取る人が許可している場合のみ、次の埋め込みオプションが表示されます。"
+msgstr "The embedding options below only appear if the receiver has allowed them."
+
+#: src/pages/GuidePage.tsx
+msgid "受け取る人の手順を見る →"
+msgstr "See the receiver's steps →"
+
+#: src/pages/GuidePage.tsx
+msgid "受け取る人へ"
+msgstr "For receivers"
+
+#: src/pages/GuidePage.tsx
+msgid "受け取る側の設定で「必須」になっている項目は最初からONで動かせません。"
+msgstr "Options the receiver set to \"Required\" start switched on and can't be turned off."
+
 #: src/pages/send/UploadingPage.tsx
 msgid "受信URLが無効です。受信者から最新の受信URL (?k=... 付き) を共有してもらってください。"
 msgstr "This upload URL is not valid. Ask the recipient to share their latest upload URL (the one with ?k=...)."
+
+#: src/pages/GuidePage.tsx
+msgid "受信URLとコピー・QR・シェアボタン"
+msgstr "The receiving URL with copy, QR and share buttons"
+
+#: src/pages/GuidePage.tsx
+msgid "受信オプションの3段階ラジオボタン"
+msgstr "The three-way radio buttons for receiving options"
+
+#: src/pages/GuidePage.tsx
+msgid "受信した写真には自動的にダウンロード期限（既定30日）が設定され、期限を過ぎたものは自動で削除されます。早めにギャラリーから保存しておきましょう。"
+msgstr "Photos you receive get a download deadline automatically (30 days by default), and anything past it is deleted. Save what you want from the gallery early."
+
+#: src/pages/GuidePage.tsx
+msgid "受信写真のギャラリー一覧"
+msgstr "The gallery of received photos"
+
+#: src/pages/LandingPage.tsx
+msgid "受信者"
+msgstr "Receiver"
+
+#: src/pages/LandingPage.tsx
+msgid "受信者が許可した方式だけが有効"
+msgstr "Only the methods the receiver allows are active"
 
 #: src/pages/send/UploadPage.tsx
 msgid "受信者に表示されます"
@@ -467,9 +946,41 @@ msgstr "Shown to the recipient"
 msgid "受信者に表示されます。EXIF埋め込みにもこの名前が使われます"
 msgstr "Shown to the recipient. This name is also used for the EXIF embed"
 
+#: src/pages/GuidePage.tsx
+msgid "受信者のプロフィールと「写真を送る」ボタンが表示されます。"
+msgstr "The receiver's profile and a \"Send photos\" button appear."
+
+#: src/pages/GuidePage.tsx
+msgid "受信者のプロフィール画面"
+msgstr "The receiver's profile screen"
+
+#: src/pages/LandingPage.tsx
+msgid "受信者のメールアドレスは公開されない"
+msgstr "The receiver's email address is never published"
+
+#: src/pages/LandingPage.tsx
+msgid "受信者のメアドも公開"
+msgstr "The receiver's email is exposed too"
+
+#: src/pages/LandingPage.tsx
+msgid "受信者のメアドも非公開"
+msgstr "The receiver's email stays private"
+
 #: src/lib/api-error.ts
 msgid "受信者の保存容量がいっぱいです。受信者に連絡してください"
 msgstr "The recipient's storage is full. Please let them know"
+
+#: src/pages/LandingPage.tsx
+msgid "受信者はアカウント不要"
+msgstr "Receivers need no account"
+
+#: src/pages/GuidePage.tsx
+msgid "受信者向け手順"
+msgstr "Steps for receivers"
+
+#: src/pages/GuidePage.tsx
+msgid "各項目に <0>無効 / 任意 / 必須</0> の3段階があります。"
+msgstr "Each option has three levels: <0>Off / Optional / Required</0>."
 
 #: src/components/send/WatermarkDialog.tsx
 msgid "四角形"
@@ -479,22 +990,50 @@ msgstr "Shape"
 msgid "変換失敗"
 msgstr "Convert failed"
 
+#: src/pages/LandingPage.tsx
+msgid "大量の写真から目当てを探す必要"
+msgstr "You have to hunt through piles of photos"
+
 #: src/pages/send/UploadingPage.tsx
 msgid "失敗"
 msgstr "Failed"
+
+#: src/pages/GuidePage.tsx
+msgid "失敗しても残りの写真は送信され、失敗分のみ再試行できます"
+msgstr "If one fails the rest still go through, and you can retry just the failures"
 
 #: src/components/send/WatermarkDialog.tsx
 #: src/pages/send/UploadingPage.tsx
 msgid "完了"
 msgstr "Done"
 
+#: src/pages/GuidePage.tsx
+msgid "完了マークが出れば、相手のギャラリーに写真が届いています。"
+msgstr "Once the checkmark appears, your photos are in their gallery."
+
+#: src/pages/GuidePage.tsx
+msgid "完了画面まで進めば送信終了です。「別の写真を送る」から続けて送ることもできます。"
+msgstr "Reaching the completion screen means you're done. \"Send more photos\" lets you keep going."
+
 #: src/lib/watermark.ts
 msgid "定番"
 msgstr "Classic"
 
+#: src/pages/GuidePage.tsx
+msgid "対応形式: <0>JPEG / PNG / HEIC</0>"
+msgstr "Supported formats: <0>JPEG / PNG / HEIC</0>"
+
 #: src/lib/api-error.ts
 msgid "対象が見つかりません"
 msgstr "Not found"
+
+#: src/pages/GuidePage.tsx
+msgid "届いた写真を眺める・保存する"
+msgstr "Browse and save what arrives"
+
+#: src/pages/LandingPage.tsx
+msgid "届いてほしい写真がある"
+msgstr "There are photos you want to receive"
 
 #. placeholder {0}: Math.round(selected.rectW * 100)
 #: src/components/send/WatermarkDialog.tsx
@@ -505,13 +1044,71 @@ msgstr "Width ({0}% of the long edge)"
 msgid "待機"
 msgstr "Waiting"
 
+#: src/pages/GuidePage.tsx
 #: src/pages/send/UploadPage.tsx
 msgid "必須"
 msgstr "Required"
 
+#: src/pages/GuidePage.tsx
+#: src/pages/LegalPage.tsx
+msgid "戻る"
+msgstr "Back"
+
 #: src/lib/watermark.ts
 msgid "手書き・デザイン"
 msgstr "Handwritten & display"
+
+#: src/pages/GuidePage.tsx
+msgid "挙動"
+msgstr "Behavior"
+
+#: src/pages/LandingPage.tsx
+msgid "撮ってもらった写真、結局どうやって受け取るんだっけ。"
+msgstr "Someone took photos of you. So how do you actually get them?"
+
+#: src/pages/LandingPage.tsx
+msgid "撮ってもらった写真を ちゃんと受け取る"
+msgstr "Actually get the photos taken of you"
+
+#: src/pages/LandingPage.tsx
+msgid "撮ってもらった写真を、ちゃんと受け取る。<0/>個人情報の交換なし、撮影者情報は写真に。"
+msgstr "Actually get the photos taken of you.<0/>No personal details exchanged; the credit stays on the photo."
+
+#: src/pages/LandingPage.tsx
+msgid "撮影者"
+msgstr "Photographer"
+
+#: src/pages/LandingPage.tsx
+msgid "撮影者ごとに整理して見られる"
+msgstr "Browse organized by photographer"
+
+#: src/pages/LandingPage.tsx
+msgid "撮影者ごとの整理機能なし"
+msgstr "No per-photographer organization"
+
+#: src/pages/GuidePage.tsx
+msgid "撮影者情報の受け入れ設定"
+msgstr "Decide what credit you accept"
+
+#: src/pages/LandingPage.tsx
+msgid "撮影者情報の埋込なし"
+msgstr "No photographer credit embedded"
+
+#: src/pages/LandingPage.tsx
+msgid "撮影者情報を<0/>写真に"
+msgstr "The credit<0/>stays on the photo"
+
+#: src/pages/GuidePage.tsx
+msgid "撮影者情報を入力する"
+msgstr "Enter your photographer details"
+
+#: src/pages/LandingPage.tsx
+msgid "撮影者情報を写真に埋込"
+msgstr "Photographer credit embedded in the photo"
+
+#: src/pages/LandingPage.tsx
+msgid "撮影者情報を写真に残せる"
+msgstr "The credit stays on the photo"
 
 #: src/components/send/WatermarkDialog.tsx
 msgid "文字を入力"
@@ -525,6 +1122,22 @@ msgstr "Switch to Japanese"
 msgid "明朝"
 msgstr "Noto Serif JP"
 
+#: src/pages/LandingPage.tsx
+msgid "機能"
+msgstr "Features"
+
+#: src/pages/GuidePage.tsx
+msgid "正方形の均一グリッドで、選びたい写真が一目で分かります。"
+msgstr "A uniform square grid, so the photo you want stands out at a glance."
+
+#: src/pages/GuidePage.tsx
+msgid "残量に応じて色が変わります。"
+msgstr "The color changes as space runs low."
+
+#: src/pages/LandingPage.tsx
+msgid "比較"
+msgstr "Compare"
+
 #: src/lib/watermark.ts
 msgid "油性マジック"
 msgstr "Yusei Magic"
@@ -532,6 +1145,18 @@ msgstr "Yusei Magic"
 #: src/pages/send/UploadingPage.tsx
 msgid "準備中"
 msgstr "Getting ready"
+
+#: src/pages/GuidePage.tsx
+msgid "点線で囲まれたエリアに写真をドラッグ＆ドロップするか、タップしてファイルを選びます。 一度に複数枚まとめて選択できます。"
+msgstr "Drag and drop photos into the dashed area, or tap to pick files. You can select several at once."
+
+#: src/pages/GuidePage.tsx
+msgid "無効"
+msgstr "Off"
+
+#: src/pages/GuidePage.tsx
+msgid "無料プランは<0>10GB</0>まで保存できます（一眼JPEG換算でおよそ680枚）。"
+msgstr "The free plan stores up to <0>10GB</0> (roughly 680 DSLR JPEGs)."
 
 #: src/pages/send/LandingPage.tsx
 msgid "現在、この受信者は写真を受け付けていません。"
@@ -557,9 +1182,17 @@ msgstr "Image conversion failed. Try a different photo, or send fewer at once"
 msgid "画像を加工中"
 msgstr "Processing photos"
 
+#: src/pages/GuidePage.tsx
+msgid "画面下部の <0>「送信する (○枚)」</0> ボタンをタップすると、写真の加工とアップロードが始まります。"
+msgstr "Tap the <0>\"Send (N photos)\"</0> button at the bottom and processing and upload begin."
+
 #: src/lib/watermark.ts
 msgid "白 / 黒"
 msgstr "White / black"
+
+#: src/pages/GuidePage.tsx
+msgid "相手のプロフィールが表示されたら、<0>「写真を送る」</0>ボタンをタップします。"
+msgstr "When their profile appears, tap the <0>\"Send photos\"</0> button."
 
 #: src/lib/api-error.ts
 msgid "短時間に多くのリクエストが集中したため、不正利用（bot 等）対策により一時的に送信を制限しています。1〜2分ほど時間をおいてからもう一度お試しください。"
@@ -568,6 +1201,10 @@ msgstr "Too many requests came in at once, so uploads are temporarily limited to
 #: src/lib/api-error.ts
 msgid "確認用ハンドルが一致しません"
 msgstr "The handle you typed doesn't match"
+
+#: src/pages/GuidePage.tsx
+msgid "空き容量を確認する"
+msgstr "Check your free space"
 
 #: src/pages/send/UploadPage.tsx
 msgid "端末の保存容量が不足しているため、一部の写真を取り込めませんでした。写真の枚数を減らすか、空き容量を確保してお試しください。"
@@ -589,6 +1226,10 @@ msgstr "Outline (adds a stroke for readability)"
 msgid "縦横比の違う写真が混ざっています。サムネイルを切り替えて、他の写真での位置も確認してください"
 msgstr "Your photos have different aspect ratios. Switch thumbnails to check the position on the others too"
 
+#: src/pages/GuidePage.tsx
+msgid "自分も写真を受け取りたい？"
+msgstr "Want to receive photos too?"
+
 #: src/components/send/WatermarkDialog.tsx
 msgid "色"
 msgstr "Color"
@@ -596,6 +1237,10 @@ msgstr "Color"
 #: src/components/ui/LocaleToggle.tsx
 msgid "英語に切り替える"
 msgstr "Switch to English"
+
+#: src/pages/GuidePage.tsx
+msgid "表示名：プロフィールに表示される、相手から見える名前"
+msgstr "Display name: the name shown on your profile, visible to senders"
 
 #: src/components/send/WatermarkDialog.tsx
 msgid "要素"
@@ -618,6 +1263,22 @@ msgstr "Kaisei Decol"
 msgid "言語"
 msgstr "Language"
 
+#: src/pages/LandingPage.tsx
+msgid "設定で続きから"
+msgstr "Finish setting up"
+
+#: src/pages/GuidePage.tsx
+msgid "設定ページの<0>「受信オプション」</0>で、送信者がどこまで自分の名前を写真に残せるかを決められます。"
+msgstr "Under <0>\"Receiving options\"</0> on the settings page, you decide how far senders can go in leaving their name on your photos."
+
+#: src/pages/LandingPage.tsx
+msgid "詳しい使い方を見る"
+msgstr "See the full guide"
+
+#: src/pages/GuidePage.tsx
+msgid "読みたい手順を選ぶ"
+msgstr "Choose which steps to read"
+
 #: src/pages/send/LandingPage.tsx
 msgid "読み込みに失敗しました。時間をおいて再度お試しください。"
 msgstr "Loading failed. Please wait a moment and try again."
@@ -627,6 +1288,53 @@ msgstr "Loading failed. Please wait a moment and try again."
 msgid "読み込み中"
 msgstr "Loading"
 
+#: src/pages/GuidePage.tsx
+msgid "迷ったら「任意」がおすすめ。送る人の判断にゆだねつつ、選択肢は提示できます。"
+msgstr "When in doubt, \"Optional\" is a good default — senders decide, but the choice is offered."
+
+#: src/pages/LandingPage.tsx
+msgid "送りたい写真がある"
+msgstr "There are photos you want to send"
+
+#: src/pages/GuidePage.tsx
+msgid "送る人の手順を見る →"
+msgstr "See the sender's steps →"
+
+#: src/pages/GuidePage.tsx
+msgid "送る人へ"
+msgstr "For senders"
+
+#: src/pages/LandingPage.tsx
+msgid "送る側"
+msgstr "Sender"
+
+#: src/pages/LandingPage.tsx
+msgid "送る側に<0/>必要なのはURLだけ"
+msgstr "All a sender needs<0/>is the URL"
+
+#: src/pages/LandingPage.tsx
+msgid "送る側の画面"
+msgstr "What senders see"
+
+#: src/pages/LandingPage.tsx
+msgid "送る側はURLにドロップするだけ。\n"
+"アカウント不要、匿名のまま。"
+msgstr "Senders just drop photos on the URL.\n"
+"No account, still anonymous."
+
+#: src/pages/GuidePage.tsx
+msgid "送る側はアカウント不要。リンクを開くだけで写真を送れます。"
+msgstr "Senders need no account. Opening the link is enough to send photos."
+
+#: src/pages/LandingPage.tsx
+msgid "送る側はメアドもアカウントも作らない。URLを開いて、ドロップ。"
+msgstr "Senders create no email address and no account. Open the URL, drop the photos."
+
+#: src/pages/LandingPage.tsx
+msgid "送信 →"
+msgstr "Send →"
+
+#: src/pages/GuidePage.tsx
 #: src/pages/send/UploadPage.tsx
 msgid "送信する"
 msgstr "Send"
@@ -647,6 +1355,10 @@ msgstr "Sending"
 msgid "送信中..."
 msgstr "Sending..."
 
+#: src/pages/GuidePage.tsx
+msgid "送信中はブラウザを閉じないでください"
+msgstr "Don't close the browser while sending"
+
 #: src/lib/api-error.ts
 msgid "送信内容に問題があります。写真を選び直してもう一度お試しください"
 msgstr "There's a problem with what was sent. Please reselect your photos and try again"
@@ -659,6 +1371,50 @@ msgstr "Send failed"
 msgid "送信完了"
 msgstr "Upload complete"
 
+#: src/pages/LandingPage.tsx
+msgid "送信時に入力した撮影者情報を、EXIFや透かしで写真自体に埋込可能 (受信者の許可方式に従う)。"
+msgstr "The details entered when sending can be embedded in the photo itself via EXIF or a watermark (following whichever methods the receiver allows)."
+
+#: src/pages/GuidePage.tsx
+msgid "送信画面に項目を表示しない"
+msgstr "The option isn't shown on the send screen"
+
+#: src/pages/LandingPage.tsx
+msgid "送信者 (匿名)"
+msgstr "Sender (anonymous)"
+
+#: src/pages/LandingPage.tsx
+msgid "送信者がメアドを開示する必要あり"
+msgstr "Senders have to reveal their email"
+
+#: src/pages/GuidePage.tsx
+msgid "送信者が必要に応じて選択できる"
+msgstr "Senders can turn it on if they want"
+
+#: src/pages/LandingPage.tsx
+msgid "送信者が選べる位置の透かしテキスト"
+msgstr "Watermark text the sender can position"
+
+#: src/pages/LandingPage.tsx
+msgid "送信者にアカウント不要"
+msgstr "Senders need no account"
+
+#: src/pages/LandingPage.tsx
+msgid "送信者にもアカウント必須"
+msgstr "Senders need an account too"
+
+#: src/pages/LandingPage.tsx
+msgid "送信者の登録・アカウント作成は不要"
+msgstr "Senders don't register or create an account"
+
+#: src/pages/LandingPage.tsx
+msgid "送信者はアカウント不要。受信者もメアドを開示しない。 お互いの個人情報を交換せずに、写真だけを受け渡せます。 URLを知っている人だけが送信できる、ゆるいクローズドな入り口。"
+msgstr "Senders need no account, and receivers reveal no email address. Photos change hands without either side handing over personal details — a gently closed door that only people with the URL can open."
+
+#: src/pages/GuidePage.tsx
+msgid "送信者は必ず埋め込み（送信者名の入力も必須に）"
+msgstr "Senders must embed it (entering a name becomes mandatory too)"
+
 #: src/pages/send/UploadPage.tsx
 msgid "送信者名 / TwitterID"
 msgstr "Your name / Twitter ID"
@@ -666,6 +1422,10 @@ msgstr "Your name / Twitter ID"
 #: src/components/send/WatermarkDialog.tsx
 msgid "送信者名が未入力です。このテキストには送信者名が使われます"
 msgstr "You haven't entered your name yet. This text will use your name once you do"
+
+#: src/pages/GuidePage.tsx
+msgid "送信者名とクレジット表記、埋め込みオプションのフォーム"
+msgstr "The name, credit format and embedding-options form"
 
 #: src/components/send/WatermarkDialog.tsx
 msgid "送信者名に連動中（編集すると解除）"
@@ -678,6 +1438,10 @@ msgstr "Fills in automatically once you enter your name"
 #: src/pages/send/UploadPage.tsx
 msgid "送信者名を記載しない場合、写真のクレジット表記なしでの編集・共有が行われる可能性があることに同意します"
 msgstr "I understand that without my name, my photos may be edited or shared without credit"
+
+#: src/pages/GuidePage.tsx
+msgid "送信者向け手順"
+msgstr "Steps for senders"
 
 #: src/components/send/WatermarkDialog.tsx
 msgid "透かしにする文字"
@@ -707,6 +1471,18 @@ msgstr "Edit watermark"
 #: src/components/send/WatermarkDialog.tsx
 msgid "透明度 ({0}%)"
 msgstr "Opacity ({0}%)"
+
+#: src/pages/GuidePage.tsx
+msgid "進行中はファイルごとの状態（待機 / 送信中 / 完了）が表示されます"
+msgstr "You'll see each file's status while it runs (waiting / sending / done)"
+
+#: src/pages/GuidePage.tsx
+msgid "選び直したいときは、各サムネイル右上の「×」で個別に取り消せます。"
+msgstr "To change your mind, remove individual photos with the \"×\" at the top right of each thumbnail."
+
+#: src/pages/GuidePage.tsx
+msgid "選んだ写真は即座にプレビューが表示されます。"
+msgstr "Previews appear as soon as you choose photos."
 
 #: src/components/ui/Dialog.tsx
 msgid "閉じる"

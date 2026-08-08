@@ -10,6 +10,9 @@ import { createEmulatorUser, registerReceiver } from "../helpers/auth";
  * TRANSLATED は翻訳が済んだページだけを列挙する。Phase 2 で 1 ページ翻訳する
  * ごとにここへ追加していく。直接 goto できる画面に限る (送信中 / 送信完了は
  * 直接開くと前の画面へリダイレクトされるため、送信フロー spec 側でカバーする)。
+ *
+ * /terms と /privacy は対象外。本文の markdown は日本語を正文とする方針で、
+ * en でも日本語のまま表示するのが正しいため (代わりに注意書きを出している)。
  */
 type Target = {
   name: string;
@@ -20,6 +23,8 @@ type Target = {
 
 const TRANSLATED: Target[] = [
   { name: "404", path: "/__not_found__" },
+  { name: "トップページ", path: "/" },
+  { name: "使い方ガイド", path: "/guide" },
   {
     name: "送信者ランディング",
     path: ({ handle, sendKey }) => `/send/${handle}?k=${sendKey}`,
@@ -47,6 +52,8 @@ async function gotoWithLocale(page: Page, path: string, locale: "ja" | "en") {
   await page.addInitScript((l) => {
     window.localStorage.setItem("furdrop.locale", l);
   }, locale);
+  // トップの装飾写真は picsum.photos の外部画像。networkidle を外部依存にしないため落とす
+  await page.route("https://picsum.photos/**", (route) => route.abort());
   await page.goto(path, { waitUntil: "networkidle" });
 }
 
