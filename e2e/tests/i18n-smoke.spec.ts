@@ -116,6 +116,13 @@ for (const target of TRANSLATED) {
   });
 }
 
+test("/en/ は英語 LP へ転送される (目的: 広告リンク先の入口が生きていること)", async ({ page }) => {
+  // クローラー向けに英語 OGP を静的に返すだけの入口。人間は JS で LP へ送られる
+  await page.goto("/en/", { waitUntil: "networkidle" });
+  await expect(page).toHaveURL(/\/(\?|$)/);
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+});
+
 test("?lang= は保存済みロケールより優先される (目的: 判定の優先順位)", async ({ page }) => {
   await page.addInitScript(() => {
     window.localStorage.setItem("furdrop.locale", "ja");

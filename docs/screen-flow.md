@@ -26,6 +26,20 @@
 言語の決定順は `?lang=` → localStorage → `navigator.languages` → `en`。
 ヘッダーの言語トグルからも切り替えられる。
 
+### 英語 OGP 用の入口 `/en/`
+
+広告のリンク先に使う静的ページ (`frontend/en/index.html`)。OGP を読む X / Meta の
+クローラーは JS を実行しないため、SPA 側で言語を切り替えても静的なタグは日本語のまま
+届く。閲覧者の言語では出し分けられないので URL で出し分ける。
+
+- クローラー: 英語の `og:*` / `twitter:*` と `og-en.png` を読んで帰る
+- 人間: `<script>` で `/?lang=en` へ転送される (`_redirects` の 301/302 にすると
+  クローラーも転送されてしまうので JS で行う)
+- `noindex`。検索向けの `/en/` 配下ルーティングと hreflang は v1.1
+
+OG 画像は `python3 frontend/scripts/generate-og.py` で日英ぶん生成する
+(`public/og.png` / `public/og-en.png`)。
+
 ---
 
 ## 2. ナビゲーションフロー

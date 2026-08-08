@@ -1,14 +1,22 @@
 #!/usr/bin/env python3
 """
-OG 画像 (1200x630) を生成する。
-ロゴと簡易的なタグラインを配置。
+OG 画像 (1200x630) を日本語 / 英語で生成する。
+
+英語版は広告のクリエイティブと `/en/` の OGP 用。レイアウトは共通で、
+文字列だけロケールごとに差し替える。英語は日本語より横に長くなるため、
+主要な行は指定幅に収まるまでフォントサイズを落として描画する。
+
+    python3 frontend/scripts/generate-og.py
 """
-from PIL import Image, ImageDraw, ImageFont
+
+from dataclasses import dataclass
 from pathlib import Path
+
+from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parent.parent
 LOGO_PATH = ROOT / "src" / "assets" / "logos" / "logo.png"
-OUTPUT_PATH = ROOT / "public" / "og.png"
+OUTPUT_DIR = ROOT / "public"
 
 W, H = 1200, 630
 BG = (250, 246, 240)  # surface-canvas
@@ -20,8 +28,49 @@ BRAND_TINT = (252, 237, 228)
 FONT_BOLD = "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc"
 FONT_REG = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
 
+# 右側はアクセント円とポラロイドの領域。テキストはここまでに収める。
+# 日本語の既存レイアウト (メイン 684px) をそのまま保てる幅にしてある
+TEXT_MAX_W = 700
 
-def main():
+
+@dataclass(frozen=True)
+class Copy:
+    filename: str
+    sub: str
+    main: str
+    desc: tuple[str, ...]
+    main_size: int
+
+
+COPIES = (
+    Copy(
+        filename="og.png",
+        sub="撮ってもらった写真を、",
+        main="ちゃんと受け取る。",
+        desc=("メアドもアカウントも交換せずに、", "撮影者情報だけ写真に残せるサービス。"),
+        main_size=76,
+    ),
+    Copy(
+        filename="og-en.png",
+        sub="Someone took photos of you.",
+        main="Actually get them.",
+        desc=("No emails, no accounts —", "just photos, with the credit intact."),
+        main_size=76,
+    ),
+)
+
+
+def fitted_font(draw, text, path, size, max_width):
+    """max_width に収まるまでフォントサイズを落とす (英語の長い行対策)"""
+    while size > 24:
+        font = ImageFont.truetype(path, size)
+        if draw.textlength(text, font=font) <= max_width:
+            return font
+        size -= 2
+    return ImageFont.truetype(path, size)
+
+
+def render(copy: Copy) -> Path:
     img = Image.new("RGB", (W, H), BG)
     draw = ImageDraw.Draw(img)
 
@@ -40,37 +89,17 @@ def main():
     img.paste(logo_resized, (80, 70), logo_resized)
 
     # ヒーロー手書き風サブコピー (Caveat フォントが無いので Sans で代替)
-    f_sub = ImageFont.truetype(FONT_REG, 28)
-    draw.text(
-        (80, 220),
-        "撮ってもらった写真を、",
-        fill=BRAND,
-        font=f_sub,
-    )
+    f_sub = fitted_font(draw, copy.sub, FONT_REG, 28, TEXT_MAX_W)
+    draw.text((80, 220), copy.sub, fill=BRAND, font=f_sub)
 
     # メインタグライン (Bold)
-    f_main = ImageFont.truetype(FONT_BOLD, 76)
-    draw.text(
-        (80, 270),
-        "ちゃんと受け取る。",
-        fill=INK,
-        font=f_main,
-    )
+    f_main = fitted_font(draw, copy.main, FONT_BOLD, copy.main_size, TEXT_MAX_W)
+    draw.text((80, 270), copy.main, fill=INK, font=f_main)
 
     # 補足説明
-    f_desc = ImageFont.truetype(FONT_REG, 26)
-    draw.text(
-        (80, 388),
-        "メアドもアカウントも交換せずに、",
-        fill=INK_SOFT,
-        font=f_desc,
-    )
-    draw.text(
-        (80, 426),
-        "撮影者情報だけ写真に残せるサービス。",
-        fill=INK_SOFT,
-        font=f_desc,
-    )
+    for i, line in enumerate(copy.desc):
+        f_desc = fitted_font(draw, line, FONT_REG, 26, TEXT_MAX_W)
+        draw.text((80, 388 + i * 38), line, fill=INK_SOFT, font=f_desc)
 
     # 底部の URL バッジ
     f_url = ImageFont.truetype(FONT_REG, 22)
@@ -85,12 +114,7 @@ def main():
         radius=8,
         fill=BRAND,
     )
-    draw.text(
-        (badge_x + pad_x, badge_y + pad_y - 2),
-        url_text,
-        fill=(255, 255, 255),
-        font=f_url,
-    )
+    draw.text((badge_x + pad_x, badge_y + pad_y - 2), url_text, fill=(255, 255, 255), font=f_url)
 
     # 右下に装飾的なポラロイド風枠 (簡易)
     pol_w, pol_h = 220, 250
@@ -108,9 +132,16 @@ def main():
     img.paste(rotated_shadow, (pol_x - 30, pol_y - 30), rotated_shadow)
     img.paste(rotated, (pol_x - 20, pol_y - 20), rotated)
 
-    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    img.save(OUTPUT_PATH, "PNG", optimize=True)
-    print(f"Generated: {OUTPUT_PATH} ({W}x{H})")
+    out = OUTPUT_DIR / copy.filename
+    out.parent.mkdir(parents=True, exist_ok=True)
+    img.save(out, "PNG", optimize=True)
+    return out
+
+
+def main():
+    for copy in COPIES:
+        out = render(copy)
+        print(f"Generated: {out} ({W}x{H})")
 
 
 if __name__ == "__main__":

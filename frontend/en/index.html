@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/icons/icon-192.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <!--
+      英語の OGP カードを出すためだけの入口。広告のリンク先に使う。
+
+      OGP を読むのは X / Meta のクローラーで JS を実行しないため、SPA 側で
+      言語を切り替えても静的なタグは日本語のまま届く。閲覧者の言語では出し分け
+      られないので、URL (`/en/`) で出し分ける。
+
+      リダイレクトは必ず JS で行う。_redirects の 301/302 にするとクローラーも
+      転送されてしまい、英語のタグを読んでもらえない。
+      本格的な /en/ 配下のルーティングと hreflang は別途 (v1.1)。
+    -->
+    <link rel="canonical" href="https://%VITE_PUBLIC_HOST%/" />
+    <meta
+      name="description"
+      content="FurDrop lets you receive photos anonymously — no emails, no accounts exchanged, with the photographer's credit kept on the photo."
+    />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="FurDrop" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="ja_JP" />
+    <meta property="og:url" content="https://%VITE_PUBLIC_HOST%/en/" />
+    <meta property="og:title" content="FurDrop — Actually get the photos taken of you." />
+    <meta
+      property="og:description"
+      content="Receive photos anonymously. No emails, no accounts — just photos, with the credit intact."
+    />
+    <meta property="og:image" content="https://%VITE_PUBLIC_HOST%/og-en.png" />
+    <meta
+      property="og:image:alt"
+      content="FurDrop — Actually get the photos taken of you."
+    />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="FurDrop — Actually get the photos taken of you." />
+    <meta
+      name="twitter:description"
+      content="Receive photos anonymously. No emails, no accounts — just photos, with the credit intact."
+    />
+    <meta name="twitter:image" content="https://%VITE_PUBLIC_HOST%/og-en.png" />
+
+    <title>FurDrop — Actually get the photos taken of you.</title>
+    <script>
+      // クローラーは JS を実行しないのでここには来ない。人間だけを英語の LP へ送る。
+      // ?lang=en は App の LocaleUrlSync が適用したあと URL から取り除く。
+      location.replace("/?lang=en");
+    </script>
+  </head>
+  <body>
+    <noscript>
+      <p>
+        JavaScript is required. Open
+        <a href="/?lang=en">https://%VITE_PUBLIC_HOST%/?lang=en</a> instead.
+      </p>
+    </noscript>
+  </body>
+</html>
