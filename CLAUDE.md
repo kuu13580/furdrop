@@ -9,6 +9,7 @@
 - **DB**: Cloudflare D1 (SQLite)
 - **ストレージ**: Cloudflare R2
 - **認証**: Firebase Auth (Twitter OAuth)
+- **多言語化**: Lingui (日本語=原文 / 英語)
 - **リント/フォーマット**: Biome
 - **パッケージマネージャ**: pnpm (workspaces)
 - **E2Eテスト**: Playwright
