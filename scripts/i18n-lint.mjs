@@ -25,6 +25,9 @@ const EXCLUDE = ["pages/DesignPreviewPage.tsx", "pages/__shots__/", "lib/debug-l
 const JAPANESE = /[぀-ヿ一-鿿]/;
 /** この行の日本語はマクロが拾っているとみなす */
 const MACRO = /<Trans[\s>]|\bt`|\bmsg`|\bplural\(|\bselect\(|\bselectOrdinal\(/;
+const TRANS_OPEN = /<Trans[\s>]/g;
+const TRANS_CLOSE = /<\/Trans>/g;
+const TRANS_SELF_CLOSING = /<Trans[^>]*\/>/g;
 
 /** `//` コメントと `/* *\/` ブロックを落とす (URL の `://` は残す) */
 function stripComments(source) {
@@ -35,10 +38,24 @@ function stripComments(source) {
     .join("\n");
 }
 
+const countOf = (line, re) => (line.match(re) ?? []).length;
+
+/**
+ * 複数行の `<Trans>` は開始行にしかマクロが出ないので、要素の中にいる間は
+ * まとめて除外する。これが無いと、正しく国際化した長文で逆に検出が増える。
+ */
 function countInFile(source) {
-  return stripComments(source)
-    .split("\n")
-    .filter((line) => JAPANESE.test(line) && !MACRO.test(line)).length;
+  let depth = 0;
+  let count = 0;
+  for (const line of stripComments(source).split("\n")) {
+    const insideTrans = depth > 0;
+    depth +=
+      countOf(line, TRANS_OPEN) - countOf(line, TRANS_CLOSE) - countOf(line, TRANS_SELF_CLOSING);
+    if (depth < 0) depth = 0;
+    if (insideTrans || MACRO.test(line)) continue;
+    if (JAPANESE.test(line)) count++;
+  }
+  return count;
 }
 
 async function collect(dir, out = []) {

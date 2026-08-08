@@ -8,7 +8,6 @@
   "components/ui/ConfirmDialog.tsx": 1,
   "components/ui/Dialog.tsx": 2,
   "components/ui/LoadingSpinner.tsx": 1,
-  "components/ui/LocaleToggle.tsx": 2,
   "components/ui/ScrollToTopButton.tsx": 1,
   "components/ui/StorageQuotaBar.tsx": 3,
   "lib/api-error.ts": 35,

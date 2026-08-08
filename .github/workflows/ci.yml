@@ -3,17 +3,20 @@ name: CI
 on:
   push:
     branches: [main]
-  # feature/i18n は多言語化の統合ブランチ。ここへの PR でも CI を回さないと、
-  # 統合ブランチにマージされるまで i18n ガードが効かない
+  # base を絞らない。統合ブランチ宛ての PR でも CI を回す必要があり、
+  # 対象を列挙する方式だとブランチが増えるたびに漏れる
   pull_request:
-    branches: [main, feature/i18n]
 
 jobs:
   check:
     name: Lint・型チェック
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - uses: pnpm/action-setup@v4
 
@@ -33,8 +36,12 @@ jobs:
   i18n:
     name: i18n ガード (カタログ乖離・日本語直書き)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - uses: pnpm/action-setup@v4
 
@@ -51,8 +58,12 @@ jobs:
   test-frontend:
     name: Frontend ユニットテスト (Vitest)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - uses: pnpm/action-setup@v4
 
@@ -69,8 +80,12 @@ jobs:
   test-workers:
     name: Workers 統合テスト (vitest-pool-workers + Auth Emulator)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - uses: pnpm/action-setup@v4
 
@@ -93,8 +108,12 @@ jobs:
   test-e2e:
     name: Playwright E2E (Frontend + Workers + Auth Emulator)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - uses: pnpm/action-setup@v4
 

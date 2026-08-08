@@ -24,3 +24,15 @@ msgstr "トップに戻る"
 #: src/pages/NotFoundPage.tsx
 msgid "ページが見つかりません"
 msgstr "ページが見つかりません"
+
+#: src/components/ui/LocaleToggle.tsx
+msgid "日本語に切り替える"
+msgstr "日本語に切り替える"
+
+#: src/components/ui/LocaleToggle.tsx
+msgid "英語に切り替える"
+msgstr "英語に切り替える"
+
+#: src/components/ui/LocaleToggle.tsx
+msgid "言語"
+msgstr "言語"

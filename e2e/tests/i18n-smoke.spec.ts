@@ -35,16 +35,17 @@ async function visibleText(page: Page): Promise<string[]> {
   });
 }
 
+/** 言語トグルの "日本語" は endonym なので意図的に翻訳しない */
+function withoutEndonym(texts: string[]): string[] {
+  return texts.filter((t) => JAPANESE.test(t.replace(/日本語/g, "")));
+}
+
 for (const { name, path } of TRANSLATED) {
   test(`${name}: en では日本語が表示されない (目的: ロケール切替の実画面検証)`, async ({
     page,
   }) => {
     await gotoWithLocale(page, path, "en");
-    const found = (await visibleText(page)).filter((t) => JAPANESE.test(t));
-    // 言語トグルの "日本語" は endonym なので意図的に翻訳しない
-    expect(found.filter((t) => t.replace(/日本語(に切り替える)?/g, "").match(JAPANESE))).toEqual(
-      [],
-    );
+    expect(withoutEndonym(await visibleText(page))).toEqual([]);
   });
 
   test(`${name}: ja では日本語が表示される (目的: 切替が効いていることの裏取り)`, async ({
@@ -53,5 +54,16 @@ for (const { name, path } of TRANSLATED) {
     await gotoWithLocale(page, path, "ja");
     const found = (await visibleText(page)).filter((t) => JAPANESE.test(t));
     expect(found.length).toBeGreaterThan(0);
+  });
+
+  test(`${name}: ?lang= は保存済みロケールより優先される (目的: 判定の優先順位)`, async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      window.localStorage.setItem("furdrop.locale", "ja");
+    });
+    await page.goto(`${path}?lang=en`, { waitUntil: "networkidle" });
+    await expect(page.locator("html")).toHaveAttribute("lang", "en");
+    expect(withoutEndonym(await visibleText(page))).toEqual([]);
   });
 }

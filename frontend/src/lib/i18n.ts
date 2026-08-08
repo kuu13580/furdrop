@@ -3,6 +3,9 @@ import { i18n } from "@lingui/core";
 export const LOCALES = ["ja", "en"] as const;
 export type Locale = (typeof LOCALES)[number];
 
+/** 原文のロケール。カタログ未ロード時はこの言語の msgid が出る */
+export const SOURCE_LOCALE: Locale = "ja";
+
 /** ja / en 以外のブラウザには日本語より英語のほうが読める可能性が高い */
 export const FALLBACK_LOCALE: Locale = "en";
 
@@ -46,9 +49,19 @@ export function persistLocale(locale: Locale): void {
   }
 }
 
-export async function activateLocale(locale: Locale): Promise<void> {
+/**
+ * 直近に要求されたロケール。連続で切り替えたとき、先に投げた要求が後から
+ * 完了して現在のカタログを上書きするのを防ぐ。
+ */
+let pendingLocale: Locale | null = null;
+
+/** 有効化できたロケールを返す。要求が古くなっていた場合は null */
+export async function activateLocale(locale: Locale): Promise<Locale | null> {
+  pendingLocale = locale;
   const { messages } = await import(`../locales/${locale}/messages.po`);
+  if (pendingLocale !== locale) return null;
   i18n.loadAndActivate({ locale, messages });
+  return locale;
 }
 
 export { i18n };

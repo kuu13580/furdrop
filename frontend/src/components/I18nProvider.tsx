@@ -3,7 +3,7 @@ import { I18nProvider as LinguiProvider } from "@lingui/react";
 import { useAtomValue } from "jotai";
 import { type ReactNode, useEffect, useState } from "react";
 import { extractError, trackClientError } from "../lib/analytics";
-import { activateLocale, i18n } from "../lib/i18n";
+import { activateLocale, i18n, type Locale, SOURCE_LOCALE } from "../lib/i18n";
 import { localeAtom } from "../stores/locale";
 
 /** index.html の title は静的なので、ロケールに追従させるにはここで上書きする */
@@ -29,10 +29,14 @@ export default function I18nProvider({ children }: { children: ReactNode }) {
           context: "i18n-catalog",
           ...extractError(err),
         });
+        return null;
       })
-      .finally(() => {
+      .then((activated) => {
         if (cancelled) return;
-        document.documentElement.lang = locale;
+        // 失敗・古い要求だった場合は実際に有効なカタログの言語に合わせる。
+        // lang 属性だけ切り替わって中身が別言語、という食い違いを防ぐ
+        const effective = activated ?? (i18n.locale as Locale) ?? SOURCE_LOCALE;
+        document.documentElement.lang = effective;
         document.title = i18n._(APP_TITLE);
         setReady(true);
       });
