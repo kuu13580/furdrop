@@ -13,26 +13,706 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#: src/components/send/WatermarkDialog.tsx
+msgid "（背景の明るさで明暗が自動調整されます）"
+msgstr "（背景の明るさで明暗が自動調整されます）"
+
+#. placeholder {0}: c.name
+#: src/components/send/WatermarkDialog.tsx
+msgid "{0} をプレビュー"
+msgstr "{0} をプレビュー"
+
+#: src/pages/send/DonePage.tsx
+msgid "{completedCount, plural, other {#枚の写真を送信しました！}}"
+msgstr "{completedCount, plural, other {#枚の写真を送信しました！}}"
+
+#: src/pages/send/UploadingPage.tsx
+msgid "{current}/{total}枚 · {percent}%"
+msgstr "{current}/{total}枚 · {percent}%"
+
+#: src/pages/send/DonePage.tsx
+msgid "{failedCount, plural, other {#枚のアップロードに失敗しました}}"
+msgstr "{failedCount, plural, other {#枚のアップロードに失敗しました}}"
+
+#: src/pages/send/UploadPage.tsx
+msgid "{fileCount, plural, other {#枚選択中}}"
+msgstr "{fileCount, plural, other {#枚選択中}}"
+
+#: src/pages/send/UploadPage.tsx
+msgid "{fileCount, plural, other {送信する (#枚)}}"
+msgstr "{fileCount, plural, other {送信する (#枚)}}"
+
+#: src/pages/send/UploadPage.tsx
+msgid "{name} を削除"
+msgstr "{name} を削除"
+
+#: src/pages/send/UploadPage.tsx
+msgid "{name}: 20MBを超えています"
+msgstr "{name}: 20MBを超えています"
+
+#: src/pages/send/UploadPage.tsx
+msgid "{name}: 対応外の形式"
+msgstr "{name}: 対応外の形式"
+
+#: src/pages/send/UploadPage.tsx
+msgid "{receiverName}さんへ送信"
+msgstr "{receiverName}さんへ送信"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "「＋ 文字を追加」「＋ 四角形を追加」から透かしの要素を追加できます"
+msgstr "「＋ 文字を追加」「＋ 四角形を追加」から透かしの要素を追加できます"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "＋ 四角形を追加"
+msgstr "＋ 四角形を追加"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "＋ 文字を追加"
+msgstr "＋ 文字を追加"
+
+#: src/pages/send/UploadPage.tsx
+msgid "< 戻る"
+msgstr "< 戻る"
+
+#: src/pages/send/UploadPage.tsx
+msgid "EXIFカメラモデル欄に埋め込む"
+msgstr "EXIFカメラモデル欄に埋め込む"
+
 #: src/components/I18nProvider.tsx
 msgid "FurDrop — 撮ってもらった写真を、ちゃんと受け取る。"
 msgstr "FurDrop — 撮ってもらった写真を、ちゃんと受け取る。"
+
+#: src/pages/send/UploadingPage.tsx
+msgid "HEIC変換中..."
+msgstr "HEIC変換中..."
+
+#: src/pages/send/UploadPage.tsx
+msgid "JPEG / PNG / HEIC ・ 最大 20MB / 枚 ・ 100 枚まで"
+msgstr "JPEG / PNG / HEIC ・ 最大 20MB / 枚 ・ 100 枚まで"
+
+#: src/lib/watermark.ts
+msgid "Mプラス丸"
+msgstr "Mプラス丸"
+
+#: src/lib/watermark.ts
+msgid "UDゴシック"
+msgstr "UDゴシック"
+
+#: src/pages/send/LandingPage.tsx
+msgid "URLに誤りがないかご確認ください。"
+msgstr "URLに誤りがないかご確認ください。"
+
+#: src/lib/api-error.ts
+msgid "アカウントが見つかりません"
+msgstr "アカウントが見つかりません"
+
+#: src/lib/api-error.ts
+msgid "アカウントが見つかりません。再度ログインしてください"
+msgstr "アカウントが見つかりません。再度ログインしてください"
+
+#: src/lib/api-error.ts
+msgid "アクセスが集中しています。少し待ってからもう一度お試しください"
+msgstr "アクセスが集中しています。少し待ってからもう一度お試しください"
+
+#: src/lib/api-error.ts
+msgid "アップロードに失敗しました。もう一度お試しください"
+msgstr "アップロードに失敗しました。もう一度お試しください"
+
+#: src/pages/send/UploadingPage.tsx
+msgid "アップロード中"
+msgstr "アップロード中"
+
+#: src/pages/send/UploadingPage.tsx
+msgid "アップロード画面に戻る"
+msgstr "アップロード画面に戻る"
+
+#: src/lib/watermark.ts
+msgid "アンバー"
+msgstr "アンバー"
+
+#: src/lib/watermark.ts
+msgid "インパクト"
+msgstr "インパクト"
+
+#: src/lib/api-error.ts
+msgid "エラーが発生しました。時間をおいてもう一度お試しください"
+msgstr "エラーが発生しました。時間をおいてもう一度お試しください"
+
+#: src/lib/watermark.ts
+msgid "オールド明朝"
+msgstr "オールド明朝"
+
+#: src/components/layout/AppFooter.tsx
+msgid "お問い合わせ・通報"
+msgstr "お問い合わせ・通報"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "カスタム色"
+msgstr "カスタム色"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "カスタム色（明暗の自動調整なし・固定色）"
+msgstr "カスタム色（明暗の自動調整なし・固定色）"
+
+#: src/lib/watermark.ts
+msgid "キウイ丸"
+msgstr "キウイ丸"
+
+#: src/components/ui/ConfirmDialog.tsx
+msgid "キャンセル"
+msgstr "キャンセル"
+
+#: src/lib/watermark.ts
+msgid "グリーン"
+msgstr "グリーン"
+
+#: src/lib/watermark.ts
+msgid "クレー"
+msgstr "クレー"
+
+#: src/lib/watermark.ts
+msgid "コーラル"
+msgstr "コーラル"
+
+#: src/lib/watermark.ts
+msgid "ゴシック"
+msgstr "ゴシック"
+
+#: src/lib/api-error.ts
+msgid "このアカウントは別のログイン方法で登録されています"
+msgstr "このアカウントは別のログイン方法で登録されています"
+
+#: src/lib/api-error.ts
+msgid "このアカウントは無効化されています"
+msgstr "このアカウントは無効化されています"
+
+#: src/lib/api-error.ts
+msgid "このハンドルは既に使われています。別のハンドルを試してください"
+msgstr "このハンドルは既に使われています。別のハンドルを試してください"
+
+#: src/lib/api-error.ts
+msgid "この受信URLのユーザーが見つかりません。URLを確認してください"
+msgstr "この受信URLのユーザーが見つかりません。URLを確認してください"
+
+#: src/lib/api-error.ts
+msgid "この受信URLは無効です。受信者から最新の受信URL (?k=... 付き) を共有してもらってください"
+msgstr "この受信URLは無効です。受信者から最新の受信URL (?k=... 付き) を共有してもらってください"
+
+#: src/pages/send/UploadPage.tsx
+msgid "この受信者への送信には送信者名の入力が必要です"
+msgstr "この受信者への送信には送信者名の入力が必要です"
+
+#: src/lib/api-error.ts
+msgid "この操作を行う権限がありません"
+msgstr "この操作を行う権限がありません"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "この画像はプレビューできません"
+msgstr "この画像はプレビューできません"
+
+#: src/lib/api-error.ts
+msgid "この画像は送信できません (JPEG 形式ではありません)"
+msgstr "この画像は送信できません (JPEG 形式ではありません)"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "この要素を削除"
+msgstr "この要素を削除"
+
+#: src/lib/api-error.ts
+msgid "サーバーでエラーが発生しました。時間をおいてもう一度お試しください"
+msgstr "サーバーでエラーが発生しました。時間をおいてもう一度お試しください"
+
+#: src/pages/send/UploadingPage.tsx
+msgid "サーバーに接続中"
+msgstr "サーバーに接続中"
+
+#. placeholder {0}: (selected.fontSizeRatio * 100).toFixed(1)
+#: src/components/send/WatermarkDialog.tsx
+msgid "サイズ ({0}%)"
+msgstr "サイズ ({0}%)"
+
+#: src/lib/watermark.ts
+msgid "しっぽり明朝"
+msgstr "しっぽり明朝"
+
+#: src/lib/watermark.ts
+msgid "スカイ"
+msgstr "スカイ"
+
+#: src/pages/send/UploadPage.tsx
+msgid "すべてクリア"
+msgstr "すべてクリア"
+
+#: src/pages/send/DonePage.tsx
+msgid "セッションが期限切れです"
+msgstr "セッションが期限切れです"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "テキスト"
+msgstr "テキスト"
+
+#: src/lib/watermark.ts
+msgid "デラゴシック"
+msgstr "デラゴシック"
+
+#: src/lib/watermark.ts
+msgid "ドットゴシック"
+msgstr "ドットゴシック"
 
 #: src/pages/NotFoundPage.tsx
 msgid "トップに戻る"
 msgstr "トップに戻る"
 
+#: src/components/send/WatermarkDialog.tsx
+msgid "ドラッグで配置、ピンチ / ホイールでズーム"
+msgstr "ドラッグで配置、ピンチ / ホイールでズーム"
+
+#: src/lib/watermark.ts
+msgid "トレイン"
+msgstr "トレイン"
+
+#: src/lib/api-error.ts
+msgid "ネットワークに接続できません。通信環境を確認してください"
+msgstr "ネットワークに接続できません。通信環境を確認してください"
+
+#: src/lib/watermark.ts
+msgid "バイオレット"
+msgstr "バイオレット"
+
+#: src/lib/watermark.ts
+msgid "はちまるポップ"
+msgstr "はちまるポップ"
+
+#: src/lib/watermark.ts
+msgid "ピンク"
+msgstr "ピンク"
+
+#: src/lib/api-error.ts
+msgid "ファイルサイズが上限 (20MB) を超えています"
+msgstr "ファイルサイズが上限 (20MB) を超えています"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "フォント"
+msgstr "フォント"
+
+#: src/components/layout/AppFooter.tsx
+msgid "プライバシー"
+msgstr "プライバシー"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "プレビューできる画像がありません"
+msgstr "プレビューできる画像がありません"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "プレビューの要素かチップをタップすると編集できます"
+msgstr "プレビューの要素かチップをタップすると編集できます"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "プレビューを読み込み中…"
+msgstr "プレビューを読み込み中…"
+
+#: src/pages/send/UploadPage.tsx
+msgid "プレビュー不可"
+msgstr "プレビュー不可"
+
 #: src/pages/NotFoundPage.tsx
 msgid "ページが見つかりません"
 msgstr "ページが見つかりません"
+
+#: src/pages/send/UploadingPage.tsx
+msgid "ページを閉じないでください"
+msgstr "ページを閉じないでください"
+
+#: src/lib/watermark.ts
+msgid "ポッタ"
+msgstr "ポッタ"
+
+#: src/lib/api-error.ts
+msgid "ポップアップがブロックされました。ブラウザの設定で許可してからお試しください"
+msgstr "ポップアップがブロックされました。ブラウザの設定で許可してからお試しください"
+
+#: src/pages/send/UploadPage.tsx
+msgid "またはタップしてファイルを選択"
+msgstr "またはタップしてファイルを選択"
+
+#: src/pages/send/UploadPage.tsx
+msgid "メタデータに送信者名<0>{credit}</0>を書き込みます（元のカメラ情報は上書き）"
+msgstr "メタデータに送信者名<0>{credit}</0>を書き込みます（元のカメラ情報は上書き）"
+
+#: src/pages/send/UploadPage.tsx
+msgid "メタデータに送信者名を書き込みます（元のカメラ情報は上書き）"
+msgstr "メタデータに送信者名を書き込みます（元のカメラ情報は上書き）"
+
+#: src/lib/watermark.ts
+msgid "モッチーポップ"
+msgstr "モッチーポップ"
+
+#: src/pages/send/LandingPage.tsx
+msgid "ユーザーが見つかりません"
+msgstr "ユーザーが見つかりません"
+
+#: src/lib/watermark.ts
+msgid "よもぎ"
+msgstr "よもぎ"
+
+#: src/lib/watermark.ts
+msgid "ランパート"
+msgstr "ランパート"
+
+#: src/lib/watermark.ts
+msgid "レゲエ"
+msgstr "レゲエ"
+
+#: src/lib/api-error.ts
+msgid "ログインがキャンセルされました"
+msgstr "ログインがキャンセルされました"
+
+#: src/lib/api-error.ts
+msgid "ログインに失敗しました。時間をおいてもう一度お試しください"
+msgstr "ログインに失敗しました。時間をおいてもう一度お試しください"
+
+#: src/lib/api-error.ts
+msgid "ログインの有効期限が切れました。もう一度ログインしてください"
+msgstr "ログインの有効期限が切れました。もう一度ログインしてください"
+
+#: src/lib/watermark.ts
+msgid "ロックンロール"
+msgstr "ロックンロール"
+
+#: src/pages/send/UploadPage.tsx
+msgid "一度に送れるのは{MAX_PHOTOS_PER_SESSION}枚までです"
+msgstr "一度に送れるのは{MAX_PHOTOS_PER_SESSION}枚までです"
+
+#: src/lib/watermark.ts
+msgid "丸ゴ・ポップ"
+msgstr "丸ゴ・ポップ"
+
+#: src/lib/watermark.ts
+msgid "丸ゴシック"
+msgstr "丸ゴシック"
+
+#: src/pages/send/UploadPage.tsx
+msgid "他の写真を追加"
+msgstr "他の写真を追加"
+
+#: src/lib/watermark.ts
+msgid "佑字 肅"
+msgstr "佑字 肅"
+
+#: src/lib/api-error.ts
+msgid "保存容量がいっぱいです"
+msgstr "保存容量がいっぱいです"
+
+#: src/components/ui/ScrollToTopButton.tsx
+msgid "先頭にスクロール"
+msgstr "先頭にスクロール"
+
+#: src/lib/api-error.ts
+msgid "入力内容を確認してください"
+msgstr "入力内容を確認してください"
+
+#: src/lib/api-error.ts
+msgid "入力内容を確認してください。受信者が名前の入力を必須にしている場合があります"
+msgstr "入力内容を確認してください。受信者が名前の入力を必須にしている場合があります"
+
+#: src/pages/send/UploadingPage.tsx
+msgid "全ての画像の加工に失敗しました"
+msgstr "全ての画像の加工に失敗しました"
+
+#: src/pages/send/LandingPage.tsx
+msgid "写真を{displayName}さんに送れます"
+msgstr "写真を{displayName}さんに送れます"
+
+#: src/pages/send/UploadPage.tsx
+msgid "写真をここにドロップ"
+msgstr "写真をここにドロップ"
+
+#: src/pages/send/UploadPage.tsx
+msgid "写真を取り込み中…"
+msgstr "写真を取り込み中…"
+
+#: src/pages/send/LandingPage.tsx
+msgid "写真を送る"
+msgstr "写真を送る"
+
+#: src/pages/send/UploadPage.tsx
+msgid "初めての方は<0>使い方を見る →</0>"
+msgstr "初めての方は<0>使い方を見る →</0>"
+
+#: src/pages/send/DonePage.tsx
+msgid "別の写真を送る"
+msgstr "別の写真を送る"
+
+#: src/components/layout/AppFooter.tsx
+msgid "利用規約"
+msgstr "利用規約"
+
+#: src/pages/send/UploadingPage.tsx
+msgid "加工中"
+msgstr "加工中"
+
+#: src/pages/send/UploadingPage.tsx
+msgid "加工済"
+msgstr "加工済"
+
+#: src/pages/send/UploadingPage.tsx
+msgid "受信URLが無効です。受信者から最新の受信URL (?k=... 付き) を共有してもらってください。"
+msgstr "受信URLが無効です。受信者から最新の受信URL (?k=... 付き) を共有してもらってください。"
+
+#: src/pages/send/UploadPage.tsx
+msgid "受信者に表示されます"
+msgstr "受信者に表示されます"
+
+#: src/pages/send/UploadPage.tsx
+msgid "受信者に表示されます。EXIF埋め込みにもこの名前が使われます"
+msgstr "受信者に表示されます。EXIF埋め込みにもこの名前が使われます"
+
+#: src/lib/api-error.ts
+msgid "受信者の保存容量がいっぱいです。受信者に連絡してください"
+msgstr "受信者の保存容量がいっぱいです。受信者に連絡してください"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "四角形"
+msgstr "四角形"
+
+#: src/pages/send/UploadingPage.tsx
+msgid "変換失敗"
+msgstr "変換失敗"
+
+#: src/pages/send/UploadingPage.tsx
+msgid "失敗"
+msgstr "失敗"
+
+#: src/components/send/WatermarkDialog.tsx
+#: src/pages/send/UploadingPage.tsx
+msgid "完了"
+msgstr "完了"
+
+#: src/lib/watermark.ts
+msgid "定番"
+msgstr "定番"
+
+#: src/lib/api-error.ts
+msgid "対象が見つかりません"
+msgstr "対象が見つかりません"
+
+#. placeholder {0}: Math.round(selected.rectW * 100)
+#: src/components/send/WatermarkDialog.tsx
+msgid "幅 (長辺の{0}%)"
+msgstr "幅 (長辺の{0}%)"
+
+#: src/pages/send/UploadingPage.tsx
+msgid "待機"
+msgstr "待機"
+
+#: src/pages/send/UploadPage.tsx
+msgid "必須"
+msgstr "必須"
+
+#: src/lib/watermark.ts
+msgid "手書き・デザイン"
+msgstr "手書き・デザイン"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "文字を入力"
+msgstr "文字を入力"
 
 #: src/components/ui/LocaleToggle.tsx
 msgid "日本語に切り替える"
 msgstr "日本語に切り替える"
 
+#: src/lib/watermark.ts
+msgid "明朝"
+msgstr "明朝"
+
+#: src/lib/watermark.ts
+msgid "油性マジック"
+msgstr "油性マジック"
+
+#: src/pages/send/UploadingPage.tsx
+msgid "準備中"
+msgstr "準備中"
+
+#: src/pages/send/LandingPage.tsx
+msgid "現在、この受信者は写真を受け付けていません。"
+msgstr "現在、この受信者は写真を受け付けていません。"
+
+#: src/lib/api-error.ts
+msgid "現在この受信者は写真を受け付けていません"
+msgstr "現在この受信者は写真を受け付けていません"
+
+#: src/pages/send/UploadPage.tsx
+msgid "画像"
+msgstr "画像"
+
+#: src/pages/send/UploadPage.tsx
+msgid "画像に文字や四角形を描き込みます（不可逆）。初期設定では送信者名が右下に入り、内容・位置・フォントは自由に編集できます"
+msgstr "画像に文字や四角形を描き込みます（不可逆）。初期設定では送信者名が右下に入り、内容・位置・フォントは自由に編集できます"
+
+#: src/lib/api-error.ts
+msgid "画像の変換に失敗しました。別の画像でお試しいただくか、枚数を減らしてください"
+msgstr "画像の変換に失敗しました。別の画像でお試しいただくか、枚数を減らしてください"
+
+#: src/pages/send/UploadingPage.tsx
+msgid "画像を加工中"
+msgstr "画像を加工中"
+
+#: src/lib/watermark.ts
+msgid "白 / 黒"
+msgstr "白 / 黒"
+
+#: src/lib/api-error.ts
+msgid "短時間に多くのリクエストが集中したため、不正利用（bot 等）対策により一時的に送信を制限しています。1〜2分ほど時間をおいてからもう一度お試しください。"
+msgstr "短時間に多くのリクエストが集中したため、不正利用（bot 等）対策により一時的に送信を制限しています。1〜2分ほど時間をおいてからもう一度お試しください。"
+
+#: src/lib/api-error.ts
+msgid "確認用ハンドルが一致しません"
+msgstr "確認用ハンドルが一致しません"
+
+#: src/pages/send/UploadPage.tsx
+msgid "端末の保存容量が不足しているため、一部の写真を取り込めませんでした。写真の枚数を減らすか、空き容量を確保してお試しください。"
+msgstr "端末の保存容量が不足しているため、一部の写真を取り込めませんでした。写真の枚数を減らすか、空き容量を確保してお試しください。"
+
+#: src/lib/watermark.ts
+msgid "紅道"
+msgstr "紅道"
+
+#: src/pages/send/DonePage.tsx
+msgid "結果の取得に失敗しました"
+msgstr "結果の取得に失敗しました"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "縁取り（アウトラインで視認性UP）"
+msgstr "縁取り（アウトラインで視認性UP）"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "縦横比の違う写真が混ざっています。サムネイルを切り替えて、他の写真での位置も確認してください"
+msgstr "縦横比の違う写真が混ざっています。サムネイルを切り替えて、他の写真での位置も確認してください"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "色"
+msgstr "色"
+
 #: src/components/ui/LocaleToggle.tsx
 msgid "英語に切り替える"
 msgstr "英語に切り替える"
 
+#: src/components/send/WatermarkDialog.tsx
+msgid "要素"
+msgstr "要素"
+
+#: src/lib/watermark.ts
+msgid "角ゴシック"
+msgstr "角ゴシック"
+
+#. placeholder {0}: Math.round(selected.rectRadius * 200)
+#: src/components/send/WatermarkDialog.tsx
+msgid "角丸 ({0}%)"
+msgstr "角丸 ({0}%)"
+
+#: src/lib/watermark.ts
+msgid "解星デコール"
+msgstr "解星デコール"
+
 #: src/components/ui/LocaleToggle.tsx
 msgid "言語"
 msgstr "言語"
+
+#: src/pages/send/LandingPage.tsx
+msgid "読み込みに失敗しました。時間をおいて再度お試しください。"
+msgstr "読み込みに失敗しました。時間をおいて再度お試しください。"
+
+#: src/components/ui/Button.tsx
+#: src/components/ui/LoadingSpinner.tsx
+msgid "読み込み中"
+msgstr "読み込み中"
+
+#: src/pages/send/UploadPage.tsx
+msgid "送信する"
+msgstr "送信する"
+
+#: src/lib/api-error.ts
+msgid "送信の有効期限が切れました。お手数ですが最初からやり直してください"
+msgstr "送信の有効期限が切れました。お手数ですが最初からやり直してください"
+
+#: src/pages/send/UploadPage.tsx
+msgid "送信ボタンを押すと、<0>利用規約</0>および<1>プライバシーポリシー</1>に同意したものとみなされます。"
+msgstr "送信ボタンを押すと、<0>利用規約</0>および<1>プライバシーポリシー</1>に同意したものとみなされます。"
+
+#: src/pages/send/UploadingPage.tsx
+msgid "送信中"
+msgstr "送信中"
+
+#: src/pages/send/UploadingPage.tsx
+msgid "送信中..."
+msgstr "送信中..."
+
+#: src/lib/api-error.ts
+msgid "送信内容に問題があります。写真を選び直してもう一度お試しください"
+msgstr "送信内容に問題があります。写真を選び直してもう一度お試しください"
+
+#: src/pages/send/UploadingPage.tsx
+msgid "送信失敗"
+msgstr "送信失敗"
+
+#: src/pages/send/DonePage.tsx
+msgid "送信完了"
+msgstr "送信完了"
+
+#: src/pages/send/UploadPage.tsx
+msgid "送信者名 / TwitterID"
+msgstr "送信者名 / TwitterID"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "送信者名が未入力です。このテキストには送信者名が使われます"
+msgstr "送信者名が未入力です。このテキストには送信者名が使われます"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "送信者名に連動中（編集すると解除）"
+msgstr "送信者名に連動中（編集すると解除）"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "送信者名を入力すると自動で入ります"
+msgstr "送信者名を入力すると自動で入ります"
+
+#: src/pages/send/UploadPage.tsx
+msgid "送信者名を記載しない場合、写真のクレジット表記なしでの編集・共有が行われる可能性があることに同意します"
+msgstr "送信者名を記載しない場合、写真のクレジット表記なしでの編集・共有が行われる可能性があることに同意します"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "透かしにする文字"
+msgstr "透かしにする文字"
+
+#: src/pages/send/UploadPage.tsx
+msgid "透かしに表示できる文字がありません。「透かしを編集」から文字を入力してください。"
+msgstr "透かしに表示できる文字がありません。「透かしを編集」から文字を入力してください。"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "透かしのプレビュー。要素をドラッグして配置できます"
+msgstr "透かしのプレビュー。要素をドラッグして配置できます"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "透かしの設定"
+msgstr "透かしの設定"
+
+#: src/pages/send/UploadPage.tsx
+msgid "透かしを入れる"
+msgstr "透かしを入れる"
+
+#: src/pages/send/UploadPage.tsx
+msgid "透かしを編集"
+msgstr "透かしを編集"
+
+#. placeholder {0}: Math.round(selected.opacity * 100)
+#: src/components/send/WatermarkDialog.tsx
+msgid "透明度 ({0}%)"
+msgstr "透明度 ({0}%)"
+
+#: src/components/ui/Dialog.tsx
+msgid "閉じる"
+msgstr "閉じる"
+
+#. placeholder {0}: Math.round(selected.rectH * 100)
+#: src/components/send/WatermarkDialog.tsx
+msgid "高さ (長辺の{0}%)"
+msgstr "高さ (長辺の{0}%)"
