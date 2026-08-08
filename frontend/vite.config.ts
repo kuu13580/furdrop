@@ -12,6 +12,13 @@ export default defineConfig({
     lingui(),
     tailwindcss(),
   ],
+  build: {
+    rollupOptions: {
+      // `en/index.html` は英語 OGP カード専用の静的な入口 (広告のリンク先)。
+      // 実体は JS で `/?lang=en` へ飛ばすだけで、SPA のルートは増えない
+      input: { main: "index.html", en: "en/index.html" },
+    },
+  },
   server: {
     port: 4000,
     proxy: {

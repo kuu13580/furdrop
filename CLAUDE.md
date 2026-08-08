@@ -67,6 +67,9 @@ pnpm secrets:prod
 # CIのdeployワークフローで自動実行される
 pnpm cors:prod
 
+# OG 画像 (日英) を再生成する。LP のコピーを変えたら実行
+python3 frontend/scripts/generate-og.py
+
 # i18n カタログ更新 (ユーザー向け文言を追加・変更したら実行)
 pnpm i18n:extract
 
