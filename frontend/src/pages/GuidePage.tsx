@@ -359,14 +359,12 @@ const SENDER_STEPS: Step[] = [
         </p>
         <div className="rounded-xl bg-surface-canvas px-4 py-3 text-[13px]">
           <p className="font-semibold text-ink">
-            <Trans>クレジット表記の形式</Trans>
+            <Trans>入力した名前の使われ方</Trans>
           </p>
           <p className="mt-1 text-ink-soft">
             <Trans>
-              <code className="font-mono">Shot by ...</code>／
-              <code className="font-mono">Photo by ...</code>／
-              <code className="font-mono">© ...</code>／<code className="font-mono">名前のみ</code>
-              の4種類から選べます。
+              受け取る人の一覧に表示されるほか、EXIF埋め込みの内容と、透かしの初期テキストにも
+              そのまま使われます。透かしの文字は編集ダイアログで自由に変更できます。
             </Trans>
           </p>
         </div>
@@ -399,7 +397,7 @@ const SENDER_STEPS: Step[] = [
     ),
     image: {
       src: "/guide/sender-step3.png",
-      alt: msg`送信者名とクレジット表記、埋め込みオプションのフォーム`,
+      alt: msg`送信者名と埋め込みオプションのフォーム`,
       caption: msg`受け取る側の設定で「必須」になっている項目は最初からONで動かせません。`,
     },
   },

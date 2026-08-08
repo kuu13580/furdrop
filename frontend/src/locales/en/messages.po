@@ -139,10 +139,6 @@ msgid "<0>QR</0>：QRコードを表示・ダウンロード。名刺やイベ�
 msgstr "<0>QR</0>: show and download a QR code — for business cards or event posters"
 
 #: src/pages/GuidePage.tsx
-msgid "<0>Shot by ...</0>／<1>Photo by ...</1>／<2>© ...</2>／<3>名前のみ</3>の4種類から選べます。"
-msgstr "Choose from four formats: <0>Shot by ...</0>, <1>Photo by ...</1>, <2>© ...</2>, or <3>name only</3>."
-
-#: src/pages/GuidePage.tsx
 msgid "<0>オレンジ</0>：そろそろ整理どき（80〜94%）"
 msgstr "<0>Orange</0>: time to tidy up (80–94%)"
 
@@ -485,10 +481,6 @@ msgstr "Select group"
 #: src/lib/watermark.ts
 msgid "クレー"
 msgstr "Klee One"
-
-#: src/pages/GuidePage.tsx
-msgid "クレジット表記の形式"
-msgstr "Credit formats"
 
 #: src/lib/watermark.ts
 msgid "コーラル"
@@ -980,6 +972,10 @@ msgstr "Arrives individually, nothing to search"
 msgid "先頭にスクロール"
 msgstr "Scroll to top"
 
+#: src/pages/GuidePage.tsx
+msgid "入力した名前の使われ方"
+msgstr "How the name you enter is used"
+
 #: src/lib/api-error.ts
 msgid "入力内容を確認してください"
 msgstr "Please check what you entered"
@@ -1181,6 +1177,10 @@ msgstr "Open the link the receiver sent you — it looks like <0>{PUBLIC_HOST}/s
 #: src/pages/GuidePage.tsx
 msgid "受け取る人が許可している場合のみ、次の埋め込みオプションが表示されます。"
 msgstr "The embedding options below only appear if the receiver has allowed them."
+
+#: src/pages/GuidePage.tsx
+msgid "受け取る人の一覧に表示されるほか、EXIF埋め込みの内容と、透かしの初期テキストにも そのまま使われます。透かしの文字は編集ダイアログで自由に変更できます。"
+msgstr "It appears in the receiver's list, and it is also used as the EXIF embed value and as the watermark's initial text. You can freely change the watermark text in the edit dialog."
 
 #: src/pages/GuidePage.tsx
 msgid "受け取る人の手順を見る →"
@@ -1841,8 +1841,8 @@ msgid "送信者名が未入力です。このテキストには送信者名が�
 msgstr "You haven't entered your name yet. This text will use your name once you do"
 
 #: src/pages/GuidePage.tsx
-msgid "送信者名とクレジット表記、埋め込みオプションのフォーム"
-msgstr "The name, credit format and embedding-options form"
+msgid "送信者名と埋め込みオプションのフォーム"
+msgstr "The name and embedding-options form"
 
 #: src/components/send/WatermarkDialog.tsx
 msgid "送信者名に連動中（編集すると解除）"
