@@ -25,6 +25,7 @@ graph TD
 | 認証 | Firebase Auth | Twitter OAuth対応、経験あり |
 | 状態管理 | Jotai | アトム単位で軽量・シンプル |
 | CSS | Tailwind CSS | ユーティリティファースト、最小UIから段階的に改善 |
+| 多言語化 | Lingui | 原文がそのままメッセージ ID になり、既存の日本語リテラルをキー命名なしで移行できる。マクロはビルド時に展開されランタイムに残らない |
 | E2Eテスト | Playwright | 主要フローの動作検証 |
 | PWA | vite-plugin-pwa (Workbox)（**Phase 2**） | Service Worker 自動生成。MVP では未導入 |
 | プッシュ通知 | Firebase Cloud Messaging (FCM)（**Phase 2**） | Firebase Auth と統合、PWA対応。MVP では未導入 |
@@ -789,7 +790,7 @@ pnpm generate
 # 設定ファイルを生成 (本番用 .env.prod を使用。CIでのみ使用)
 pnpm generate:prod
 
-# workers の dev は自動で generate を実行する
+# workers の dev は自動で generate と migrate:local を実行する
 pnpm --filter workers dev
 ```
 

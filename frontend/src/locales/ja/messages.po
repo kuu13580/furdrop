@@ -1,0 +1,1935 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-08-08 04:08+0900\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: ja\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
+
+#: src/pages/GalleryPage.tsx
+msgid "(匿名)"
+msgstr "(匿名)"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "（背景の明るさで明暗が自動調整されます）"
+msgstr "（背景の明るさで明暗が自動調整されます）"
+
+#. placeholder {0}: c.name
+#: src/components/send/WatermarkDialog.tsx
+msgid "{0} をプレビュー"
+msgstr "{0} をプレビュー"
+
+#: src/pages/send/DonePage.tsx
+msgid "{completedCount, plural, other {#枚の写真を送信しました！}}"
+msgstr "{completedCount, plural, other {#枚の写真を送信しました！}}"
+
+#: src/pages/send/UploadingPage.tsx
+msgid "{current}/{total}枚 · {percent}%"
+msgstr "{current}/{total}枚 · {percent}%"
+
+#: src/components/BatchDownloadModal.tsx
+msgid "{failed, plural, other {#枚の取得に失敗しました (成功分のみ ZIP に含まれます)}}"
+msgstr "{failed, plural, other {#枚の取得に失敗しました (成功分のみ ZIP に含まれます)}}"
+
+#: src/pages/send/DonePage.tsx
+msgid "{failedCount, plural, other {#枚のアップロードに失敗しました}}"
+msgstr "{failedCount, plural, other {#枚のアップロードに失敗しました}}"
+
+#: src/pages/send/UploadPage.tsx
+msgid "{fileCount, plural, other {#枚選択中}}"
+msgstr "{fileCount, plural, other {#枚選択中}}"
+
+#: src/pages/send/UploadPage.tsx
+msgid "{fileCount, plural, other {送信する (#枚)}}"
+msgstr "{fileCount, plural, other {送信する (#枚)}}"
+
+#: src/pages/send/UploadPage.tsx
+msgid "{name} を削除"
+msgstr "{name} を削除"
+
+#: src/pages/send/UploadPage.tsx
+msgid "{name}: 20MBを超えています"
+msgstr "{name}: 20MBを超えています"
+
+#: src/pages/send/UploadPage.tsx
+msgid "{name}: 対応外の形式"
+msgstr "{name}: 対応外の形式"
+
+#: src/components/BatchDownloadModal.tsx
+msgid "{processed} / {total} 枚"
+msgstr "{processed} / {total} 枚"
+
+#: src/pages/send/UploadPage.tsx
+msgid "{receiverName}さんへ送信"
+msgstr "{receiverName}さんへ送信"
+
+#: src/pages/GalleryPage.tsx
+msgid "{selectedCount, plural, other {#枚選択中}}"
+msgstr "{selectedCount, plural, other {#枚選択中}}"
+
+#: src/pages/GalleryPage.tsx
+msgid "{selectedCount}枚の写真を削除しますか？"
+msgstr "{selectedCount}枚の写真を削除しますか？"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "「＋ 文字を追加」「＋ 四角形を追加」から透かしの要素を追加できます"
+msgstr "「＋ 文字を追加」「＋ 四角形を追加」から透かしの要素を追加できます"
+
+#: src/pages/GuidePage.tsx
+msgid "「ダウンロード期限」を過ぎる前に必要な写真をローカル保存"
+msgstr "「ダウンロード期限」を過ぎる前に必要な写真をローカル保存"
+
+#: src/pages/LandingPage.tsx
+msgid "「写真を受け取る」ことに、特化しています。"
+msgstr "「写真を受け取る」ことに、特化しています。"
+
+#: src/pages/LandingPage.tsx
+msgid "「写真送るね」と言ったまま、半年"
+msgstr "「写真送るね」と言ったまま、半年"
+
+#: src/pages/GuidePage.tsx
+msgid "「選択」モードで複数枚をまとめてダウンロードまたは削除"
+msgstr "「選択」モードで複数枚をまとめてダウンロードまたは削除"
+
+#: src/pages/LandingPage.tsx
+msgid "@{SAMPLE_HANDLE} に写真を送る"
+msgstr "@{SAMPLE_HANDLE} に写真を送る"
+
+#: src/pages/GuidePage.tsx
+msgid "※ アカウント登録やログインは必要ありません。"
+msgstr "※ アカウント登録やログインは必要ありません。"
+
+#: src/pages/SettingsPage.tsx
+msgid "※ 法令遵守 (情プラ法第5条等) のため、送信者の通信記録 (IPアドレス・User-Agent) は当該送信から最低3か月の保存期間を経過するまで残ります (利用規約第13条)。"
+msgstr "※ 法令遵守 (情プラ法第5条等) のため、送信者の通信記録 (IPアドレス・User-Agent) は当該送信から最低3か月の保存期間を経過するまで残ります (利用規約第13条)。"
+
+#: src/pages/PhotoDetailPage.tsx
+msgid "← ギャラリー"
+msgstr "← ギャラリー"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "＋ 四角形を追加"
+msgstr "＋ 四角形を追加"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "＋ 文字を追加"
+msgstr "＋ 文字を追加"
+
+#: src/pages/send/UploadPage.tsx
+msgid "< 戻る"
+msgstr "< 戻る"
+
+#: src/pages/GuidePage.tsx
+msgid "<0>EXIFカメラモデル欄に埋め込む</0>：写真のメタデータに名前を残します（あとから消すことも可能）"
+msgstr "<0>EXIFカメラモデル欄に埋め込む</0>：写真のメタデータに名前を残します（あとから消すことも可能）"
+
+#: src/pages/GuidePage.tsx
+msgid "<0>EXIF埋め込み</0>：メタデータのみなので画像は変わりません。あとから除去も可能。"
+msgstr "<0>EXIF埋め込み</0>：メタデータのみなので画像は変わりません。あとから除去も可能。"
+
+#: src/pages/GuidePage.tsx
+msgid "<0>QR</0>：QRコードを表示・ダウンロード。名刺やイベントポスターへの掲載に"
+msgstr "<0>QR</0>：QRコードを表示・ダウンロード。名刺やイベントポスターへの掲載に"
+
+#: src/pages/GuidePage.tsx
+msgid "<0>オレンジ</0>：そろそろ整理どき（80〜94%）"
+msgstr "<0>オレンジ</0>：そろそろ整理どき（80〜94%）"
+
+#: src/pages/GuidePage.tsx
+msgid "<0>コピー</0>：URLをクリップボードにコピーして、SNSやメッセージに貼れます"
+msgstr "<0>コピー</0>：URLをクリップボードにコピーして、SNSやメッセージに貼れます"
+
+#: src/pages/GuidePage.tsx
+msgid "<0>シェア</0>：スマホの共有メニュー（または X 投稿フォーム）が立ち上がります"
+msgstr "<0>シェア</0>：スマホの共有メニュー（または X 投稿フォーム）が立ち上がります"
+
+#: src/pages/SettingsPage.tsx
+msgid "<0>利用規約</0>および<1>プライバシーポリシー</1>に同意します。"
+msgstr "<0>利用規約</0>および<1>プライバシーポリシー</1>に同意します。"
+
+#: src/pages/GuidePage.tsx
+msgid "<0>緑</0>：余裕あり（〜79%）"
+msgstr "<0>緑</0>：余裕あり（〜79%）"
+
+#: src/pages/GuidePage.tsx
+msgid "<0>赤</0>：満タン間近（95%以上）"
+msgstr "<0>赤</0>：満タン間近（95%以上）"
+
+#: src/pages/GuidePage.tsx
+msgid "<0>送信者名 / Twitter ID</0> を入力すると、その情報を写真に残せるようになります。"
+msgstr "<0>送信者名 / Twitter ID</0> を入力すると、その情報を写真に残せるようになります。"
+
+#: src/pages/GuidePage.tsx
+msgid "<0>透かし</0>：画像本体に焼き込まれるため<1>取り消せません</1>。「必須」にする場合は慎重に。"
+msgstr "<0>透かし</0>：画像本体に焼き込まれるため<1>取り消せません</1>。「必須」にする場合は慎重に。"
+
+#: src/pages/GuidePage.tsx
+msgid "<0>透かしを入れる</0>：画像そのものに名前を描き込みます。位置・サイズ・透明度・色は <1>「透かしを編集」</1> から細かく調整できます（一度入れると消せません）"
+msgstr "<0>透かしを入れる</0>：画像そのものに名前を描き込みます。位置・サイズ・透明度・色は <1>「透かしを編集」</1> から細かく調整できます（一度入れると消せません）"
+
+#: src/pages/GuidePage.tsx
+msgid "⚠️ 受け取る人が「必須」に設定している場合は、送信者名の入力が必須となり、対応する埋め込みも自動でONになります。"
+msgstr "⚠️ 受け取る人が「必須」に設定している場合は、送信者名の入力が必須となり、対応する埋め込みも自動でONになります。"
+
+#: src/pages/GuidePage.tsx
+msgid "1枚あたり最大 <0>20MB</0> ／ 1度に最大 <1>100枚</1>"
+msgstr "1枚あたり最大 <0>20MB</0> ／ 1度に最大 <1>100枚</1>"
+
+#: src/pages/LandingPage.tsx
+msgid "2026年4月14日のイベント"
+msgstr "2026年4月14日のイベント"
+
+#: src/pages/GalleryPage.tsx
+msgid "DL"
+msgstr "DL"
+
+#: src/pages/LandingPage.tsx
+msgid "DMは知り合いにしか許可したくない"
+msgstr "DMは知り合いにしか許可したくない"
+
+#: src/pages/LandingPage.tsx
+msgid "Driveの招待でメアドを知られたくない"
+msgstr "Driveの招待でメアドを知られたくない"
+
+#: src/pages/send/UploadPage.tsx
+msgid "EXIFカメラモデル欄に埋め込む"
+msgstr "EXIFカメラモデル欄に埋め込む"
+
+#: src/pages/LandingPage.tsx
+msgid "EXIFのカメラモデル欄や目立たない透かしで、撮影者情報を写真ファイル自体に埋め込み可能。 匿名性と「誰が撮ったか」の追跡可能性を両立できます。"
+msgstr "EXIFのカメラモデル欄や目立たない透かしで、撮影者情報を写真ファイル自体に埋め込み可能。 匿名性と「誰が撮ったか」の追跡可能性を両立できます。"
+
+#: src/pages/SettingsPage.tsx
+msgid "EXIF埋め込み"
+msgstr "EXIF埋め込み"
+
+#: src/pages/LandingPage.tsx
+msgid "EXIF埋め込み (Camera Model欄)"
+msgstr "EXIF埋め込み (Camera Model欄)"
+
+#: src/components/I18nProvider.tsx
+msgid "FurDrop — 撮ってもらった写真を、ちゃんと受け取る。"
+msgstr "FurDrop — 撮ってもらった写真を、ちゃんと受け取る。"
+
+#: src/pages/DashboardPage.tsx
+msgid "FurDrop の使い方を見る →"
+msgstr "FurDrop の使い方を見る →"
+
+#: src/pages/GuidePage.tsx
+msgid "FurDrop ホーム"
+msgstr "FurDrop ホーム"
+
+#: src/pages/LandingPage.tsx
+msgid "FurDropの<0/>二つの軸"
+msgstr "FurDropの<0/>二つの軸"
+
+#: src/pages/GuidePage.tsx
+msgid "FurDropの使い方"
+msgstr "FurDropの使い方"
+
+#: src/pages/LandingPage.tsx
+msgid "FurDropの特長"
+msgstr "FurDropの特長"
+
+#: src/pages/LandingPage.tsx
+msgid "FurDropは、<0>メアドもアカウントも交換せずに、撮影者情報だけ写真に残せる</0>サービス。受け取りURLひとつで、面倒な個人情報のやりとりは無し。"
+msgstr "FurDropは、<0>メアドもアカウントも交換せずに、撮影者情報だけ写真に残せる</0>サービス。受け取りURLひとつで、面倒な個人情報のやりとりは無し。"
+
+#: src/pages/LandingPage.tsx
+msgid "Google Drive"
+msgstr "Google Drive"
+
+#: src/pages/send/UploadingPage.tsx
+msgid "HEIC変換中..."
+msgstr "HEIC変換中..."
+
+#: src/pages/GuidePage.tsx
+msgid "iPhoneのHEICはアップロード時にJPEGへ自動変換されます"
+msgstr "iPhoneのHEICはアップロード時にJPEGへ自動変換されます"
+
+#: src/pages/LandingPage.tsx
+msgid "JPEG · PNG · HEIC · 最大20MB/枚"
+msgstr "JPEG · PNG · HEIC · 最大20MB/枚"
+
+#: src/pages/send/UploadPage.tsx
+msgid "JPEG / PNG / HEIC ・ 最大 20MB / 枚 ・ 100 枚まで"
+msgstr "JPEG / PNG / HEIC ・ 最大 20MB / 枚 ・ 100 枚まで"
+
+#: src/lib/watermark.ts
+msgid "Mプラス丸"
+msgstr "Mプラス丸"
+
+#: src/pages/LandingPage.tsx
+msgid "QRコードも自動生成"
+msgstr "QRコードも自動生成"
+
+#: src/pages/GuidePage.tsx
+msgid "QRはPNGでダウンロードして印刷物にも使えます。"
+msgstr "QRはPNGでダウンロードして印刷物にも使えます。"
+
+#: src/pages/DashboardPage.tsx
+msgid "QRをダウンロード"
+msgstr "QRをダウンロード"
+
+#: src/pages/LoginPage.tsx
+msgid "Twitterでログイン"
+msgstr "Twitterでログイン"
+
+#: src/lib/watermark.ts
+msgid "UDゴシック"
+msgstr "UDゴシック"
+
+#: src/pages/send/LandingPage.tsx
+msgid "URLに誤りがないかご確認ください。"
+msgstr "URLに誤りがないかご確認ください。"
+
+#: src/pages/LandingPage.tsx
+msgid "URLを作る"
+msgstr "URLを作る"
+
+#: src/pages/LandingPage.tsx
+msgid "URLを作る →"
+msgstr "URLを作る →"
+
+#: src/pages/LandingPage.tsx
+msgid "URLを共有"
+msgstr "URLを共有"
+
+#: src/pages/GuidePage.tsx
+msgid "URLを知っている人だけが写真を送れます。誰にでも公開する必要はありません。"
+msgstr "URLを知っている人だけが写真を送れます。誰にでも公開する必要はありません。"
+
+#: src/pages/LandingPage.tsx
+msgid "URLを知っている人だけが送信できる"
+msgstr "URLを知っている人だけが送信できる"
+
+#: src/pages/LandingPage.tsx
+msgid "URL埋め込みOK (SNS / web)"
+msgstr "URL埋め込みOK (SNS / web)"
+
+#: src/pages/LandingPage.tsx
+msgid "URL埋め込みは不可"
+msgstr "URL埋め込みは不可"
+
+#: src/pages/LandingPage.tsx
+msgid "URL埋め込みは可能"
+msgstr "URL埋め込みは可能"
+
+#: src/pages/GuidePage.tsx
+msgid "X (Twitter) アカウントで30秒で登録できます。"
+msgstr "X (Twitter) アカウントで30秒で登録できます。"
+
+#: src/pages/LandingPage.tsx
+msgid "X (Twitter) で30秒登録"
+msgstr "X (Twitter) で30秒登録"
+
+#: src/pages/GuidePage.tsx
+msgid "X (Twitter) でログインしてURLを作る"
+msgstr "X (Twitter) でログインしてURLを作る"
+
+#: src/pages/LandingPage.tsx
+msgid "X (Twitter)で30秒。\n"
+"{PUBLIC_HOST}/send/your_handle が完成。"
+msgstr "X (Twitter)で30秒。\n"
+"{PUBLIC_HOST}/send/your_handle が完成。"
+
+#: src/components/BatchDownloadModal.tsx
+msgid "ZIP を作成中"
+msgstr "ZIP を作成中"
+
+#: src/lib/api-error.ts
+msgid "アカウントが見つかりません"
+msgstr "アカウントが見つかりません"
+
+#: src/lib/api-error.ts
+msgid "アカウントが見つかりません。再度ログインしてください"
+msgstr "アカウントが見つかりません。再度ログインしてください"
+
+#: src/pages/SettingsPage.tsx
+msgid "アカウントと、受信した全ての写真・送信セッション履歴を完全に削除します。 この操作は取り消せません。"
+msgstr "アカウントと、受信した全ての写真・送信セッション履歴を完全に削除します。 この操作は取り消せません。"
+
+#: src/pages/SettingsPage.tsx
+msgid "アカウントを削除"
+msgstr "アカウントを削除"
+
+#: src/pages/SettingsPage.tsx
+msgid "アカウントを削除しますか？"
+msgstr "アカウントを削除しますか？"
+
+#: src/pages/SettingsPage.tsx
+msgid "アカウント削除"
+msgstr "アカウント削除"
+
+#: src/pages/LandingPage.tsx
+msgid "アカウント登録もメアド入力も不要"
+msgstr "アカウント登録もメアド入力も不要"
+
+#: src/pages/SettingsPage.tsx
+msgid "アカウント設定"
+msgstr "アカウント設定"
+
+#: src/lib/api-error.ts
+msgid "アクセスが集中しています。少し待ってからもう一度お試しください"
+msgstr "アクセスが集中しています。少し待ってからもう一度お試しください"
+
+#: src/lib/api-error.ts
+msgid "アップロードに失敗しました。もう一度お試しください"
+msgstr "アップロードに失敗しました。もう一度お試しください"
+
+#: src/pages/send/UploadingPage.tsx
+msgid "アップロード中"
+msgstr "アップロード中"
+
+#: src/pages/send/UploadingPage.tsx
+msgid "アップロード画面に戻る"
+msgstr "アップロード画面に戻る"
+
+#: src/pages/GuidePage.tsx
+msgid "アップロード進行と送信完了画面"
+msgstr "アップロード進行と送信完了画面"
+
+#: src/pages/DashboardPage.tsx
+msgid "あなたの受信URL"
+msgstr "あなたの受信URL"
+
+#: src/lib/watermark.ts
+msgid "アンバー"
+msgstr "アンバー"
+
+#: src/pages/LandingPage.tsx
+msgid "イベントが終わってふと気づく、写真送ってほしいな。"
+msgstr "イベントが終わってふと気づく、写真送ってほしいな。"
+
+#: src/pages/LandingPage.tsx
+msgid "イベント共有アルバムから探すのが面倒"
+msgstr "イベント共有アルバムから探すのが面倒"
+
+#: src/pages/LandingPage.tsx
+msgid "イベント専用共有サイト"
+msgstr "イベント専用共有サイト"
+
+#: src/lib/watermark.ts
+msgid "インパクト"
+msgstr "インパクト"
+
+#: src/lib/api-error.ts
+msgid "エラーが発生しました。時間をおいてもう一度お試しください"
+msgstr "エラーが発生しました。時間をおいてもう一度お試しください"
+
+#: src/lib/watermark.ts
+msgid "オールド明朝"
+msgstr "オールド明朝"
+
+#: src/pages/LegalPage.tsx
+msgid "お問い合わせ"
+msgstr "お問い合わせ"
+
+#: src/components/layout/AppFooter.tsx
+msgid "お問い合わせ・通報"
+msgstr "お問い合わせ・通報"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "カスタム色"
+msgstr "カスタム色"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "カスタム色（明暗の自動調整なし・固定色）"
+msgstr "カスタム色（明暗の自動調整なし・固定色）"
+
+#: src/lib/watermark.ts
+msgid "キウイ丸"
+msgstr "キウイ丸"
+
+#: src/components/layout/AppLayout.tsx
+#: src/pages/GalleryPage.tsx
+msgid "ギャラリー"
+msgstr "ギャラリー"
+
+#: src/pages/PhotoDetailPage.tsx
+msgid "ギャラリーに戻る"
+msgstr "ギャラリーに戻る"
+
+#: src/components/ui/ConfirmDialog.tsx
+#: src/pages/SettingsPage.tsx
+msgid "キャンセル"
+msgstr "キャンセル"
+
+#: src/pages/LandingPage.tsx
+msgid "くらべる"
+msgstr "くらべる"
+
+#: src/lib/watermark.ts
+msgid "グリーン"
+msgstr "グリーン"
+
+#: src/pages/GalleryPage.tsx
+msgid "グループ解除"
+msgstr "グループ解除"
+
+#: src/pages/GalleryPage.tsx
+msgid "グループ選択"
+msgstr "グループ選択"
+
+#: src/lib/watermark.ts
+msgid "クレー"
+msgstr "クレー"
+
+#: src/lib/watermark.ts
+msgid "コーラル"
+msgstr "コーラル"
+
+#: src/pages/GuidePage.tsx
+msgid "ここがFurDropの<0>いちばん大切なステップ</0>です。"
+msgstr "ここがFurDropの<0>いちばん大切なステップ</0>です。"
+
+#: src/pages/LandingPage.tsx
+msgid "ここに写真をドロップ"
+msgstr "ここに写真をドロップ"
+
+#: src/lib/watermark.ts
+msgid "ゴシック"
+msgstr "ゴシック"
+
+#: src/lib/api-error.ts
+msgid "このアカウントは別のログイン方法で登録されています"
+msgstr "このアカウントは別のログイン方法で登録されています"
+
+#: src/lib/api-error.ts
+msgid "このアカウントは無効化されています"
+msgstr "このアカウントは無効化されています"
+
+#: src/pages/SettingsPage.tsx
+msgid "このハンドルは既に使われています"
+msgstr "このハンドルは既に使われています"
+
+#: src/lib/api-error.ts
+msgid "このハンドルは既に使われています。別のハンドルを試してください"
+msgstr "このハンドルは既に使われています。別のハンドルを試してください"
+
+#: src/pages/PhotoDetailPage.tsx
+msgid "この写真を削除しますか？"
+msgstr "この写真を削除しますか？"
+
+#: src/lib/api-error.ts
+msgid "この受信URLのユーザーが見つかりません。URLを確認してください"
+msgstr "この受信URLのユーザーが見つかりません。URLを確認してください"
+
+#: src/lib/api-error.ts
+msgid "この受信URLは無効です。受信者から最新の受信URL (?k=... 付き) を共有してもらってください"
+msgstr "この受信URLは無効です。受信者から最新の受信URL (?k=... 付き) を共有してもらってください"
+
+#: src/pages/send/UploadPage.tsx
+msgid "この受信者への送信には送信者名の入力が必要です"
+msgstr "この受信者への送信には送信者名の入力が必要です"
+
+#: src/lib/api-error.ts
+msgid "この操作を行う権限がありません"
+msgstr "この操作を行う権限がありません"
+
+#: src/pages/LegalPage.tsx
+msgid "この文書は日本語のみで提供されます。日本語版が正文です。"
+msgstr "この文書は日本語のみで提供されます。日本語版が正文です。"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "この画像はプレビューできません"
+msgstr "この画像はプレビューできません"
+
+#: src/lib/api-error.ts
+msgid "この画像は送信できません (JPEG 形式ではありません)"
+msgstr "この画像は送信できません (JPEG 形式ではありません)"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "この要素を削除"
+msgstr "この要素を削除"
+
+#: src/pages/DashboardPage.tsx
+msgid "コピー"
+msgstr "コピー"
+
+#: src/pages/DashboardPage.tsx
+msgid "コピーしました!"
+msgstr "コピーしました!"
+
+#: src/pages/LandingPage.tsx
+msgid "こんな経験<0/>ありませんか？"
+msgstr "こんな経験<0/>ありませんか？"
+
+#: src/lib/api-error.ts
+msgid "サーバーでエラーが発生しました。時間をおいてもう一度お試しください"
+msgstr "サーバーでエラーが発生しました。時間をおいてもう一度お試しください"
+
+#: src/pages/send/UploadingPage.tsx
+msgid "サーバーに接続中"
+msgstr "サーバーに接続中"
+
+#: src/pages/PhotoDetailPage.tsx
+msgid "サイズ"
+msgstr "サイズ"
+
+#. placeholder {0}: (selected.fontSizeRatio * 100).toFixed(1)
+#: src/components/send/WatermarkDialog.tsx
+msgid "サイズ ({0}%)"
+msgstr "サイズ ({0}%)"
+
+#: src/pages/GuidePage.tsx
+msgid "サムネイルをタップして拡大表示・送信者情報の確認"
+msgstr "サムネイルをタップして拡大表示・送信者情報の確認"
+
+#: src/pages/DashboardPage.tsx
+msgid "シェア"
+msgstr "シェア"
+
+#: src/lib/watermark.ts
+msgid "しっぽり明朝"
+msgstr "しっぽり明朝"
+
+#: src/lib/watermark.ts
+msgid "スカイ"
+msgstr "スカイ"
+
+#: src/components/ui/StorageQuotaBar.tsx
+#: src/pages/DashboardPage.tsx
+#: src/pages/SettingsPage.tsx
+msgid "ストレージ"
+msgstr "ストレージ"
+
+#: src/pages/GuidePage.tsx
+msgid "ストレージ使用状況のプログレスバー"
+msgstr "ストレージ使用状況のプログレスバー"
+
+#: src/pages/send/UploadPage.tsx
+msgid "すべてクリア"
+msgstr "すべてクリア"
+
+#: src/pages/send/DonePage.tsx
+msgid "セッションが期限切れです"
+msgstr "セッションが期限切れです"
+
+#: src/pages/PhotoDetailPage.tsx
+msgid "ダウンロード"
+msgstr "ダウンロード"
+
+#: src/components/layout/AppLayout.tsx
+#: src/pages/DashboardPage.tsx
+#: src/pages/LandingPage.tsx
+msgid "ダッシュボード"
+msgstr "ダッシュボード"
+
+#: src/pages/LandingPage.tsx
+msgid "ダッシュボードでQRを表示・コピー・共有。配布物に貼るだけ。"
+msgstr "ダッシュボードでQRを表示・コピー・共有。配布物に貼るだけ。"
+
+#: src/pages/GuidePage.tsx
+msgid "ダッシュボードと設定ページに使用率バーが表示されます。"
+msgstr "ダッシュボードと設定ページに使用率バーが表示されます。"
+
+#: src/pages/GuidePage.tsx
+msgid "ダッシュボードの<0>「あなたの受信URL」</0>に、自分専用のリンクが表示されます。共有方法は3通り。"
+msgstr "ダッシュボードの<0>「あなたの受信URL」</0>に、自分専用のリンクが表示されます。共有方法は3通り。"
+
+#: src/pages/GuidePage.tsx
+msgid "ダッシュボードの<0>「最近の写真」</0>、または<1>ギャラリー</1>から届いた写真を確認できます。"
+msgstr "ダッシュボードの<0>「最近の写真」</0>、または<1>ギャラリー</1>から届いた写真を確認できます。"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "テキスト"
+msgstr "テキスト"
+
+#: src/pages/LandingPage.tsx
+msgid "でも、催促しづらい。"
+msgstr "でも、催促しづらい。"
+
+#: src/pages/LandingPage.tsx
+msgid "でも、送る方法がない。"
+msgstr "でも、送る方法がない。"
+
+#: src/lib/watermark.ts
+msgid "デラゴシック"
+msgstr "デラゴシック"
+
+#: src/lib/watermark.ts
+msgid "ドットゴシック"
+msgstr "ドットゴシック"
+
+#: src/pages/NotFoundPage.tsx
+msgid "トップに戻る"
+msgstr "トップに戻る"
+
+#: src/pages/LoginPage.tsx
+msgid "トップへ"
+msgstr "トップへ"
+
+#: src/pages/GuidePage.tsx
+msgid "トップへ戻る"
+msgstr "トップへ戻る"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "ドラッグで配置、ピンチ / ホイールでズーム"
+msgstr "ドラッグで配置、ピンチ / ホイールでズーム"
+
+#: src/lib/watermark.ts
+msgid "トレイン"
+msgstr "トレイン"
+
+#: src/pages/GuidePage.tsx
+msgid "ドロップゾーンとサムネイル一覧"
+msgstr "ドロップゾーンとサムネイル一覧"
+
+#: src/lib/api-error.ts
+msgid "ネットワークに接続できません。通信環境を確認してください"
+msgstr "ネットワークに接続できません。通信環境を確認してください"
+
+#: src/lib/watermark.ts
+msgid "バイオレット"
+msgstr "バイオレット"
+
+#: src/pages/LandingPage.tsx
+msgid "はじめる"
+msgstr "はじめる"
+
+#: src/lib/watermark.ts
+msgid "はちまるポップ"
+msgstr "はちまるポップ"
+
+#: src/pages/SettingsPage.tsx
+msgid "ハンドル"
+msgstr "ハンドル"
+
+#: src/pages/GuidePage.tsx
+msgid "ハンドル（URLの末尾）：<0>小文字英数字とアンダースコア・3〜32文字</0>"
+msgstr "ハンドル（URLの末尾）：<0>小文字英数字とアンダースコア・3〜32文字</0>"
+
+#: src/pages/GuidePage.tsx
+msgid "ハンドルがそのまま受信URLになります。後から変更したい場合はサポートまで。"
+msgstr "ハンドルがそのまま受信URLになります。後から変更したい場合はサポートまで。"
+
+#: src/pages/GuidePage.tsx
+msgid "ハンドルと表示名の登録フォーム"
+msgstr "ハンドルと表示名の登録フォーム"
+
+#: src/pages/SettingsPage.tsx
+msgid "ハンドルを入力してください"
+msgstr "ハンドルを入力してください"
+
+#: src/lib/watermark.ts
+msgid "ピンク"
+msgstr "ピンク"
+
+#: src/lib/api-error.ts
+msgid "ファイルサイズが上限 (20MB) を超えています"
+msgstr "ファイルサイズが上限 (20MB) を超えています"
+
+#: src/pages/LandingPage.tsx
+msgid "フィードバック"
+msgstr "フィードバック"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "フォント"
+msgstr "フォント"
+
+#: src/components/layout/AppFooter.tsx
+msgid "プライバシー"
+msgstr "プライバシー"
+
+#: src/pages/GuidePage.tsx
+#: src/pages/LegalPage.tsx
+msgid "プライバシーポリシー"
+msgstr "プライバシーポリシー"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "プレビューできる画像がありません"
+msgstr "プレビューできる画像がありません"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "プレビューの要素かチップをタップすると編集できます"
+msgstr "プレビューの要素かチップをタップすると編集できます"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "プレビューを読み込み中…"
+msgstr "プレビューを読み込み中…"
+
+#: src/pages/send/UploadPage.tsx
+msgid "プレビュー不可"
+msgstr "プレビュー不可"
+
+#: src/pages/SettingsPage.tsx
+msgid "プロフィール"
+msgstr "プロフィール"
+
+#: src/pages/SettingsPage.tsx
+msgid "プロフィール・受信オプション設定"
+msgstr "プロフィール・受信オプション設定"
+
+#: src/pages/LandingPage.tsx
+msgid "プロフィールやイベントページに貼るだけ。\n"
+"QRも自動生成。"
+msgstr "プロフィールやイベントページに貼るだけ。\n"
+"QRも自動生成。"
+
+#: src/pages/NotFoundPage.tsx
+msgid "ページが見つかりません"
+msgstr "ページが見つかりません"
+
+#: src/pages/send/UploadingPage.tsx
+msgid "ページを閉じないでください"
+msgstr "ページを閉じないでください"
+
+#: src/lib/watermark.ts
+msgid "ポッタ"
+msgstr "ポッタ"
+
+#: src/lib/api-error.ts
+msgid "ポップアップがブロックされました。ブラウザの設定で許可してからお試しください"
+msgstr "ポップアップがブロックされました。ブラウザの設定で許可してからお試しください"
+
+#: src/pages/send/UploadPage.tsx
+msgid "またはタップしてファイルを選択"
+msgstr "またはタップしてファイルを選択"
+
+#: src/pages/DashboardPage.tsx
+#: src/pages/GalleryPage.tsx
+msgid "まだ写真がありません"
+msgstr "まだ写真がありません"
+
+#: src/pages/LandingPage.tsx
+msgid "メール"
+msgstr "メール"
+
+#: src/pages/GuidePage.tsx
+msgid "メールアドレスは公開されません。送る人にもあなたのメアドは伝わりません。"
+msgstr "メールアドレスは公開されません。送る人にもあなたのメアドは伝わりません。"
+
+#: src/pages/LandingPage.tsx
+msgid "メアド・氏名が共有相手に見える"
+msgstr "メアド・氏名が共有相手に見える"
+
+#: src/pages/send/UploadPage.tsx
+msgid "メタデータに送信者名<0>{credit}</0>を書き込みます（元のカメラ情報は上書き）"
+msgstr "メタデータに送信者名<0>{credit}</0>を書き込みます（元のカメラ情報は上書き）"
+
+#: src/pages/send/UploadPage.tsx
+msgid "メタデータに送信者名を書き込みます（元のカメラ情報は上書き）"
+msgstr "メタデータに送信者名を書き込みます（元のカメラ情報は上書き）"
+
+#: src/pages/LandingPage.tsx
+msgid "メニュー"
+msgstr "メニュー"
+
+#: src/components/layout/AppLayout.tsx
+msgid "メニューを閉じる"
+msgstr "メニューを閉じる"
+
+#: src/components/layout/AppLayout.tsx
+msgid "メニューを開く"
+msgstr "メニューを開く"
+
+#: src/pages/GuidePage.tsx
+msgid "モード"
+msgstr "モード"
+
+#: src/pages/GuidePage.tsx
+msgid "もう一方の使い方"
+msgstr "もう一方の使い方"
+
+#: src/lib/watermark.ts
+msgid "モッチーポップ"
+msgstr "モッチーポップ"
+
+#: src/pages/send/LandingPage.tsx
+msgid "ユーザーが見つかりません"
+msgstr "ユーザーが見つかりません"
+
+#: src/pages/LandingPage.tsx
+msgid "よくある困りごと"
+msgstr "よくある困りごと"
+
+#: src/lib/watermark.ts
+msgid "よもぎ"
+msgstr "よもぎ"
+
+#: src/lib/watermark.ts
+msgid "ランパート"
+msgstr "ランパート"
+
+#: src/lib/watermark.ts
+msgid "レゲエ"
+msgstr "レゲエ"
+
+#: src/components/layout/AppLayout.tsx
+msgid "ログアウト"
+msgstr "ログアウト"
+
+#: src/components/layout/AppLayout.tsx
+msgid "ログアウトしますか？"
+msgstr "ログアウトしますか？"
+
+#: src/pages/LandingPage.tsx
+msgid "ログイン"
+msgstr "ログイン"
+
+#: src/lib/api-error.ts
+msgid "ログインがキャンセルされました"
+msgstr "ログインがキャンセルされました"
+
+#: src/pages/LoginPage.tsx
+msgid "ログインすると<0>利用規約</0>および<1>プライバシーポリシー</1>に同意したものとみなされます。"
+msgstr "ログインすると<0>利用規約</0>および<1>プライバシーポリシー</1>に同意したものとみなされます。"
+
+#: src/lib/api-error.ts
+msgid "ログインに失敗しました。時間をおいてもう一度お試しください"
+msgstr "ログインに失敗しました。時間をおいてもう一度お試しください"
+
+#: src/lib/api-error.ts
+msgid "ログインの有効期限が切れました。もう一度ログインしてください"
+msgstr "ログインの有効期限が切れました。もう一度ログインしてください"
+
+#: src/pages/LoginPage.tsx
+msgid "ログイン中..."
+msgstr "ログイン中..."
+
+#: src/pages/GuidePage.tsx
+msgid "ログイン画面から<0>X (Twitter) アカウントで連携</0>すると、受信用のページが作成できます。"
+msgstr "ログイン画面から<0>X (Twitter) アカウントで連携</0>すると、受信用のページが作成できます。"
+
+#: src/lib/watermark.ts
+msgid "ロックンロール"
+msgstr "ロックンロール"
+
+#: src/pages/send/UploadPage.tsx
+msgid "一度に送れるのは{MAX_PHOTOS_PER_SESSION}枚までです"
+msgstr "一度に送れるのは{MAX_PHOTOS_PER_SESSION}枚までです"
+
+#: src/components/ui/StorageQuotaBar.tsx
+msgid "上限を超えると新しい写真を受け取れなくなります。"
+msgstr "上限を超えると新しい写真を受け取れなくなります。"
+
+#: src/pages/GuidePage.tsx
+msgid "不明点をフィードバック"
+msgstr "不明点をフィードバック"
+
+#: src/components/BatchDownloadModal.tsx
+msgid "中断"
+msgstr "中断"
+
+#: src/lib/watermark.ts
+msgid "丸ゴ・ポップ"
+msgstr "丸ゴ・ポップ"
+
+#: src/lib/watermark.ts
+msgid "丸ゴシック"
+msgstr "丸ゴシック"
+
+#: src/pages/send/UploadPage.tsx
+msgid "他の写真を追加"
+msgstr "他の写真を追加"
+
+#: src/pages/LandingPage.tsx
+msgid "他の方法との違い"
+msgstr "他の方法との違い"
+
+#: src/pages/SettingsPage.tsx
+msgid "以下のデータが完全に削除されます。この操作は取り消せません。"
+msgstr "以下のデータが完全に削除されます。この操作は取り消せません。"
+
+#: src/pages/GuidePage.tsx
+#: src/pages/SettingsPage.tsx
+msgid "任意"
+msgstr "任意"
+
+#: src/lib/watermark.ts
+msgid "佑字 肅"
+msgstr "佑字 肅"
+
+#: src/pages/LandingPage.tsx
+msgid "使い方"
+msgstr "使い方"
+
+#: src/lib/api-error.ts
+msgid "保存容量がいっぱいです"
+msgstr "保存容量がいっぱいです"
+
+#: src/pages/LandingPage.tsx
+msgid "個人情報の交換なしで<0/><1>撮影者情報は残せる</1><2/>写真の受け取り"
+msgstr "個人情報の交換なしで<0/><1>撮影者情報は残せる</1><2/>写真の受け取り"
+
+#: src/pages/LandingPage.tsx
+msgid "個人情報は<0/>交換しない"
+msgstr "個人情報は<0/>交換しない"
+
+#: src/pages/LandingPage.tsx
+msgid "個別到達で探す手間なし"
+msgstr "個別到達で探す手間なし"
+
+#: src/components/ui/ScrollToTopButton.tsx
+msgid "先頭にスクロール"
+msgstr "先頭にスクロール"
+
+#: src/pages/GuidePage.tsx
+msgid "入力した名前の使われ方"
+msgstr "入力した名前の使われ方"
+
+#: src/lib/api-error.ts
+msgid "入力内容を確認してください"
+msgstr "入力内容を確認してください"
+
+#: src/lib/api-error.ts
+msgid "入力内容を確認してください。受信者が名前の入力を必須にしている場合があります"
+msgstr "入力内容を確認してください。受信者が名前の入力を必須にしている場合があります"
+
+#: src/lib/zip-download.ts
+msgid "全ての写真のダウンロードに失敗しました"
+msgstr "全ての写真のダウンロードに失敗しました"
+
+#: src/pages/send/UploadingPage.tsx
+msgid "全ての画像の加工に失敗しました"
+msgstr "全ての画像の加工に失敗しました"
+
+#: src/pages/DashboardPage.tsx
+msgid "全て見る →"
+msgstr "全て見る →"
+
+#: src/pages/GalleryPage.tsx
+msgid "全解除"
+msgstr "全解除"
+
+#: src/pages/GalleryPage.tsx
+msgid "全選択"
+msgstr "全選択"
+
+#: src/pages/SettingsPage.tsx
+msgid "公開URL ({handle}) の所有権"
+msgstr "公開URL ({handle}) の所有権"
+
+#: src/pages/SettingsPage.tsx
+msgid "公開URLに使われます: {publicHost}/send/あなたのハンドル"
+msgstr "公開URLに使われます: {publicHost}/send/あなたのハンドル"
+
+#: src/pages/LandingPage.tsx
+msgid "共有リンクで埋込可"
+msgstr "共有リンクで埋込可"
+
+#: src/pages/GuidePage.tsx
+msgid "共有リンクを開く"
+msgstr "共有リンクを開く"
+
+#: src/components/layout/AppLayout.tsx
+msgid "再度ログインするには Twitter 認証が必要です。"
+msgstr "再度ログインするには Twitter 認証が必要です。"
+
+#: src/pages/DashboardPage.tsx
+msgid "最近の写真"
+msgstr "最近の写真"
+
+#: src/pages/GuidePage.tsx
+msgid "最重要"
+msgstr "最重要"
+
+#: src/pages/DashboardPage.tsx
+#: src/pages/GalleryPage.tsx
+#: src/pages/PhotoDetailPage.tsx
+msgid "写真"
+msgstr "写真"
+
+#: src/pages/LandingPage.tsx
+msgid "写真が届く"
+msgstr "写真が届く"
+
+#: src/pages/PhotoDetailPage.tsx
+msgid "写真が見つかりません"
+msgstr "写真が見つかりません"
+
+#: src/pages/LandingPage.tsx
+msgid "写真の受け取りに特化"
+msgstr "写真の受け取りに特化"
+
+#: src/pages/DashboardPage.tsx
+msgid "写真はこちらから送ってください！\n"
+"{receiveUrl}"
+msgstr "写真はこちらから送ってください！\n"
+"{receiveUrl}"
+
+#: src/pages/send/LandingPage.tsx
+msgid "写真を{displayName}さんに送れます"
+msgstr "写真を{displayName}さんに送れます"
+
+#: src/pages/GuidePage.tsx
+msgid "写真を「送る人」と「受け取る人」、それぞれの立場で必要な手順をまとめました。 アカウント登録は受け取る人だけ。送る人はリンクを開くだけで使えます。"
+msgstr "写真を「送る人」と「受け取る人」、それぞれの立場で必要な手順をまとめました。 アカウント登録は受け取る人だけ。送る人はリンクを開くだけで使えます。"
+
+#: src/pages/send/UploadPage.tsx
+msgid "写真をここにドロップ"
+msgstr "写真をここにドロップ"
+
+#: src/pages/send/UploadPage.tsx
+msgid "写真を取り込み中…"
+msgstr "写真を取り込み中…"
+
+#: src/pages/LoginPage.tsx
+msgid "写真を受け取るための<0/>あなた専用URLを作ろう"
+msgstr "写真を受け取るための<0/>あなた専用URLを作ろう"
+
+#: src/pages/SettingsPage.tsx
+msgid "写真を受け取るための公開URLを作成します"
+msgstr "写真を受け取るための公開URLを作成します"
+
+#: src/pages/send/LandingPage.tsx
+msgid "写真を送る"
+msgstr "写真を送る"
+
+#: src/pages/GuidePage.tsx
+msgid "写真を選ぶ"
+msgstr "写真を選ぶ"
+
+#: src/pages/PhotoDetailPage.tsx
+msgid "写真情報"
+msgstr "写真情報"
+
+#: src/pages/send/UploadPage.tsx
+msgid "初めての方は<0>使い方を見る →</0>"
+msgstr "初めての方は<0>使い方を見る →</0>"
+
+#: src/pages/send/DonePage.tsx
+msgid "別の写真を送る"
+msgstr "別の写真を送る"
+
+#: src/components/layout/AppFooter.tsx
+#: src/pages/GuidePage.tsx
+#: src/pages/LegalPage.tsx
+msgid "利用規約"
+msgstr "利用規約"
+
+#: src/pages/SettingsPage.tsx
+msgid "利用規約とプライバシーポリシーへの同意が必要です"
+msgstr "利用規約とプライバシーポリシーへの同意が必要です"
+
+#: src/pages/GalleryPage.tsx
+#: src/pages/PhotoDetailPage.tsx
+msgid "削除"
+msgstr "削除"
+
+#: src/pages/GalleryPage.tsx
+#: src/pages/PhotoDetailPage.tsx
+msgid "削除された写真は復元できません。"
+msgstr "削除された写真は復元できません。"
+
+#: src/pages/GalleryPage.tsx
+#: src/pages/PhotoDetailPage.tsx
+#: src/pages/SettingsPage.tsx
+msgid "削除する"
+msgstr "削除する"
+
+#: src/pages/PhotoDetailPage.tsx
+msgid "前の写真"
+msgstr "前の写真"
+
+#: src/pages/PhotoDetailPage.tsx
+msgid "前へ"
+msgstr "前へ"
+
+#: src/pages/send/UploadingPage.tsx
+msgid "加工中"
+msgstr "加工中"
+
+#: src/pages/send/UploadingPage.tsx
+msgid "加工済"
+msgstr "加工済"
+
+#: src/pages/LandingPage.tsx
+msgid "参加者にもアカウント登録が必要"
+msgstr "参加者にもアカウント登録が必要"
+
+#: src/pages/GuidePage.tsx
+msgid "友達から共有リンクを受け取った？"
+msgstr "友達から共有リンクを受け取った？"
+
+#: src/pages/LandingPage.tsx
+msgid "受け取り側"
+msgstr "受け取り側"
+
+#: src/pages/LandingPage.tsx
+msgid "受け取り側がURLをひとつ作るだけ。送る側はアカウントもメアドも要らない。 それでも、誰が撮ったかも写真に残せる。"
+msgstr "受け取り側がURLをひとつ作るだけ。送る側はアカウントもメアドも要らない。 それでも、誰が撮ったかも写真に残せる。"
+
+#: src/pages/LandingPage.tsx
+msgid "受け取り側が共有したURLを開いて、写真をドロップするだけ。 アプリも、サインアップも、メアドの入力も発生しません。"
+msgstr "受け取り側が共有したURLを開いて、写真をドロップするだけ。 アプリも、サインアップも、メアドの入力も発生しません。"
+
+#: src/pages/LandingPage.tsx
+msgid "受け取り手のハンドルだけ"
+msgstr "受け取り手のハンドルだけ"
+
+#: src/pages/GuidePage.tsx
+msgid "受け取り用URLを共有する"
+msgstr "受け取り用URLを共有する"
+
+#: src/pages/GuidePage.tsx
+msgid "受け取る人から送られてきた<0>{PUBLIC_HOST}/send/...</0>という形のリンクを、ブラウザで開いてください。"
+msgstr "受け取る人から送られてきた<0>{PUBLIC_HOST}/send/...</0>という形のリンクを、ブラウザで開いてください。"
+
+#: src/pages/GuidePage.tsx
+msgid "受け取る人が許可している場合のみ、次の埋め込みオプションが表示されます。"
+msgstr "受け取る人が許可している場合のみ、次の埋め込みオプションが表示されます。"
+
+#: src/pages/GuidePage.tsx
+msgid "受け取る人の一覧に表示されるほか、EXIF埋め込みの内容と、透かしの初期テキストにも そのまま使われます。透かしの文字は編集ダイアログで自由に変更できます。"
+msgstr "受け取る人の一覧に表示されるほか、EXIF埋め込みの内容と、透かしの初期テキストにも そのまま使われます。透かしの文字は編集ダイアログで自由に変更できます。"
+
+#: src/pages/GuidePage.tsx
+msgid "受け取る人の手順を見る →"
+msgstr "受け取る人の手順を見る →"
+
+#: src/pages/GuidePage.tsx
+msgid "受け取る人へ"
+msgstr "受け取る人へ"
+
+#: src/pages/GuidePage.tsx
+msgid "受け取る側の設定で「必須」になっている項目は最初からONで動かせません。"
+msgstr "受け取る側の設定で「必須」になっている項目は最初からONで動かせません。"
+
+#: src/pages/send/UploadingPage.tsx
+msgid "受信URLが無効です。受信者から最新の受信URL (?k=... 付き) を共有してもらってください。"
+msgstr "受信URLが無効です。受信者から最新の受信URL (?k=... 付き) を共有してもらってください。"
+
+#: src/pages/GuidePage.tsx
+msgid "受信URLとコピー・QR・シェアボタン"
+msgstr "受信URLとコピー・QR・シェアボタン"
+
+#: src/pages/SettingsPage.tsx
+msgid "受信オプション"
+msgstr "受信オプション"
+
+#: src/pages/GuidePage.tsx
+msgid "受信オプションの3段階ラジオボタン"
+msgstr "受信オプションの3段階ラジオボタン"
+
+#: src/pages/SettingsPage.tsx
+msgid "受信した全ての写真とサムネイル"
+msgstr "受信した全ての写真とサムネイル"
+
+#: src/pages/GuidePage.tsx
+msgid "受信した写真には自動的にダウンロード期限（既定30日）が設定され、期限を過ぎたものは自動で削除されます。早めにギャラリーから保存しておきましょう。"
+msgstr "受信した写真には自動的にダウンロード期限（既定30日）が設定され、期限を過ぎたものは自動で削除されます。早めにギャラリーから保存しておきましょう。"
+
+#: src/pages/GuidePage.tsx
+msgid "受信写真のギャラリー一覧"
+msgstr "受信写真のギャラリー一覧"
+
+#: src/pages/PhotoDetailPage.tsx
+msgid "受信日"
+msgstr "受信日"
+
+#: src/pages/LandingPage.tsx
+msgid "受信者"
+msgstr "受信者"
+
+#: src/pages/LandingPage.tsx
+msgid "受信者が許可した方式だけが有効"
+msgstr "受信者が許可した方式だけが有効"
+
+#: src/pages/send/UploadPage.tsx
+msgid "受信者に表示されます"
+msgstr "受信者に表示されます"
+
+#: src/pages/send/UploadPage.tsx
+msgid "受信者に表示されます。EXIF埋め込みにもこの名前が使われます"
+msgstr "受信者に表示されます。EXIF埋め込みにもこの名前が使われます"
+
+#: src/pages/GuidePage.tsx
+msgid "受信者のプロフィールと「写真を送る」ボタンが表示されます。"
+msgstr "受信者のプロフィールと「写真を送る」ボタンが表示されます。"
+
+#: src/pages/GuidePage.tsx
+msgid "受信者のプロフィール画面"
+msgstr "受信者のプロフィール画面"
+
+#: src/pages/LandingPage.tsx
+msgid "受信者のメールアドレスは公開されない"
+msgstr "受信者のメールアドレスは公開されない"
+
+#: src/pages/LandingPage.tsx
+msgid "受信者のメアドも公開"
+msgstr "受信者のメアドも公開"
+
+#: src/pages/LandingPage.tsx
+msgid "受信者のメアドも非公開"
+msgstr "受信者のメアドも非公開"
+
+#: src/lib/api-error.ts
+msgid "受信者の保存容量がいっぱいです。受信者に連絡してください"
+msgstr "受信者の保存容量がいっぱいです。受信者に連絡してください"
+
+#: src/pages/LandingPage.tsx
+msgid "受信者はアカウント不要"
+msgstr "受信者はアカウント不要"
+
+#: src/pages/GuidePage.tsx
+msgid "受信者向け手順"
+msgstr "受信者向け手順"
+
+#: src/pages/GuidePage.tsx
+msgid "各項目に <0>無効 / 任意 / 必須</0> の3段階があります。"
+msgstr "各項目に <0>無効 / 任意 / 必須</0> の3段階があります。"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "四角形"
+msgstr "四角形"
+
+#: src/pages/send/UploadingPage.tsx
+msgid "変換失敗"
+msgstr "変換失敗"
+
+#: src/pages/LandingPage.tsx
+msgid "大量の写真から目当てを探す必要"
+msgstr "大量の写真から目当てを探す必要"
+
+#: src/pages/SettingsPage.tsx
+msgid "太郎カメラ"
+msgstr "太郎カメラ"
+
+#: src/pages/send/UploadingPage.tsx
+msgid "失敗"
+msgstr "失敗"
+
+#: src/pages/GuidePage.tsx
+msgid "失敗しても残りの写真は送信され、失敗分のみ再試行できます"
+msgstr "失敗しても残りの写真は送信され、失敗分のみ再試行できます"
+
+#: src/components/send/WatermarkDialog.tsx
+#: src/pages/GalleryPage.tsx
+#: src/pages/send/UploadingPage.tsx
+msgid "完了"
+msgstr "完了"
+
+#: src/pages/GuidePage.tsx
+msgid "完了マークが出れば、相手のギャラリーに写真が届いています。"
+msgstr "完了マークが出れば、相手のギャラリーに写真が届いています。"
+
+#: src/pages/GuidePage.tsx
+msgid "完了画面まで進めば送信終了です。「別の写真を送る」から続けて送ることもできます。"
+msgstr "完了画面まで進めば送信終了です。「別の写真を送る」から続けて送ることもできます。"
+
+#: src/lib/watermark.ts
+msgid "定番"
+msgstr "定番"
+
+#: src/components/ui/StorageQuotaBar.tsx
+msgid "容量がほぼ上限です。新しい写真を受け取れません。不要な写真を削除してください。"
+msgstr "容量がほぼ上限です。新しい写真を受け取れません。不要な写真を削除してください。"
+
+#: src/pages/GuidePage.tsx
+msgid "対応形式: <0>JPEG / PNG / HEIC</0>"
+msgstr "対応形式: <0>JPEG / PNG / HEIC</0>"
+
+#: src/lib/api-error.ts
+msgid "対象が見つかりません"
+msgstr "対象が見つかりません"
+
+#: src/pages/SettingsPage.tsx
+msgid "小文字英数字とアンダースコアのみ、3〜32文字"
+msgstr "小文字英数字とアンダースコアのみ、3〜32文字"
+
+#: src/pages/GuidePage.tsx
+msgid "届いた写真を眺める・保存する"
+msgstr "届いた写真を眺める・保存する"
+
+#: src/pages/LandingPage.tsx
+msgid "届いてほしい写真がある"
+msgstr "届いてほしい写真がある"
+
+#. placeholder {0}: Math.round(selected.rectW * 100)
+#: src/components/send/WatermarkDialog.tsx
+msgid "幅 (長辺の{0}%)"
+msgstr "幅 (長辺の{0}%)"
+
+#: src/pages/send/UploadingPage.tsx
+msgid "待機"
+msgstr "待機"
+
+#: src/pages/SettingsPage.tsx
+msgid "必ず埋め込む"
+msgstr "必ず埋め込む"
+
+#: src/pages/GuidePage.tsx
+#: src/pages/send/UploadPage.tsx
+#: src/pages/SettingsPage.tsx
+msgid "必須"
+msgstr "必須"
+
+#: src/pages/GuidePage.tsx
+#: src/pages/LegalPage.tsx
+msgid "戻る"
+msgstr "戻る"
+
+#: src/lib/watermark.ts
+msgid "手書き・デザイン"
+msgstr "手書き・デザイン"
+
+#: src/pages/GuidePage.tsx
+msgid "挙動"
+msgstr "挙動"
+
+#: src/pages/LandingPage.tsx
+msgid "撮ってもらった写真、結局どうやって受け取るんだっけ。"
+msgstr "撮ってもらった写真、結局どうやって受け取るんだっけ。"
+
+#: src/pages/LandingPage.tsx
+msgid "撮ってもらった写真を ちゃんと受け取る"
+msgstr "撮ってもらった写真を ちゃんと受け取る"
+
+#: src/pages/LandingPage.tsx
+msgid "撮ってもらった写真を、ちゃんと受け取る。<0/>個人情報の交換なし、撮影者情報は写真に。"
+msgstr "撮ってもらった写真を、ちゃんと受け取る。<0/>個人情報の交換なし、撮影者情報は写真に。"
+
+#: src/pages/LandingPage.tsx
+msgid "撮影者"
+msgstr "撮影者"
+
+#: src/pages/LandingPage.tsx
+msgid "撮影者ごとに整理して見られる"
+msgstr "撮影者ごとに整理して見られる"
+
+#: src/pages/LandingPage.tsx
+msgid "撮影者ごとの整理機能なし"
+msgstr "撮影者ごとの整理機能なし"
+
+#: src/pages/GalleryPage.tsx
+msgid "撮影者別"
+msgstr "撮影者別"
+
+#: src/pages/GuidePage.tsx
+msgid "撮影者情報の受け入れ設定"
+msgstr "撮影者情報の受け入れ設定"
+
+#: src/pages/LandingPage.tsx
+msgid "撮影者情報の埋込なし"
+msgstr "撮影者情報の埋込なし"
+
+#: src/pages/LandingPage.tsx
+msgid "撮影者情報を<0/>写真に"
+msgstr "撮影者情報を<0/>写真に"
+
+#: src/pages/GuidePage.tsx
+msgid "撮影者情報を入力する"
+msgstr "撮影者情報を入力する"
+
+#: src/pages/LandingPage.tsx
+msgid "撮影者情報を写真に埋込"
+msgstr "撮影者情報を写真に埋込"
+
+#: src/pages/LandingPage.tsx
+msgid "撮影者情報を写真に残せる"
+msgstr "撮影者情報を写真に残せる"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "文字を入力"
+msgstr "文字を入力"
+
+#: src/pages/GalleryPage.tsx
+msgid "新着順"
+msgstr "新着順"
+
+#: src/pages/GalleryPage.tsx
+msgid "日付別"
+msgstr "日付別"
+
+#: src/components/ui/LocaleToggle.tsx
+msgid "日本語に切り替える"
+msgstr "日本語に切り替える"
+
+#: src/lib/watermark.ts
+msgid "明朝"
+msgstr "明朝"
+
+#: src/pages/LandingPage.tsx
+msgid "機能"
+msgstr "機能"
+
+#: src/pages/PhotoDetailPage.tsx
+msgid "次の写真"
+msgstr "次の写真"
+
+#: src/pages/PhotoDetailPage.tsx
+msgid "次へ"
+msgstr "次へ"
+
+#: src/pages/GuidePage.tsx
+msgid "正方形の均一グリッドで、選びたい写真が一目で分かります。"
+msgstr "正方形の均一グリッドで、選びたい写真が一目で分かります。"
+
+#: src/pages/GuidePage.tsx
+msgid "残量に応じて色が変わります。"
+msgstr "残量に応じて色が変わります。"
+
+#: src/pages/LandingPage.tsx
+msgid "比較"
+msgstr "比較"
+
+#: src/lib/watermark.ts
+msgid "油性マジック"
+msgstr "油性マジック"
+
+#: src/pages/send/UploadingPage.tsx
+msgid "準備中"
+msgstr "準備中"
+
+#: src/pages/GuidePage.tsx
+msgid "点線で囲まれたエリアに写真をドラッグ＆ドロップするか、タップしてファイルを選びます。 一度に複数枚まとめて選択できます。"
+msgstr "点線で囲まれたエリアに写真をドラッグ＆ドロップするか、タップしてファイルを選びます。 一度に複数枚まとめて選択できます。"
+
+#: src/pages/GuidePage.tsx
+#: src/pages/SettingsPage.tsx
+msgid "無効"
+msgstr "無効"
+
+#: src/pages/GuidePage.tsx
+msgid "無料プランは<0>10GB</0>まで保存できます（一眼JPEG換算でおよそ680枚）。"
+msgstr "無料プランは<0>10GB</0>まで保存できます（一眼JPEG換算でおよそ680枚）。"
+
+#: src/pages/send/LandingPage.tsx
+msgid "現在、この受信者は写真を受け付けていません。"
+msgstr "現在、この受信者は写真を受け付けていません。"
+
+#: src/lib/api-error.ts
+msgid "現在この受信者は写真を受け付けていません"
+msgstr "現在この受信者は写真を受け付けていません"
+
+#: src/pages/send/UploadPage.tsx
+msgid "画像"
+msgstr "画像"
+
+#: src/pages/DashboardPage.tsx
+msgid "画像なし"
+msgstr "画像なし"
+
+#: src/pages/send/UploadPage.tsx
+msgid "画像に文字や四角形を描き込みます（不可逆）。初期設定では送信者名が右下に入り、内容・位置・フォントは自由に編集できます"
+msgstr "画像に文字や四角形を描き込みます（不可逆）。初期設定では送信者名が右下に入り、内容・位置・フォントは自由に編集できます"
+
+#: src/lib/api-error.ts
+msgid "画像の変換に失敗しました。別の画像でお試しいただくか、枚数を減らしてください"
+msgstr "画像の変換に失敗しました。別の画像でお試しいただくか、枚数を減らしてください"
+
+#: src/pages/send/UploadingPage.tsx
+msgid "画像を加工中"
+msgstr "画像を加工中"
+
+#: src/pages/PhotoDetailPage.tsx
+msgid "画像を読み込めません"
+msgstr "画像を読み込めません"
+
+#: src/pages/SettingsPage.tsx
+msgid "画面に表示しない"
+msgstr "画面に表示しない"
+
+#: src/pages/GuidePage.tsx
+msgid "画面下部の <0>「送信する (○枚)」</0> ボタンをタップすると、写真の加工とアップロードが始まります。"
+msgstr "画面下部の <0>「送信する (○枚)」</0> ボタンをタップすると、写真の加工とアップロードが始まります。"
+
+#: src/pages/SettingsPage.tsx
+msgid "登録する"
+msgstr "登録する"
+
+#: src/lib/watermark.ts
+msgid "白 / 黒"
+msgstr "白 / 黒"
+
+#: src/pages/GuidePage.tsx
+msgid "相手のプロフィールが表示されたら、<0>「写真を送る」</0>ボタンをタップします。"
+msgstr "相手のプロフィールが表示されたら、<0>「写真を送る」</0>ボタンをタップします。"
+
+#: src/lib/api-error.ts
+msgid "短時間に多くのリクエストが集中したため、不正利用（bot 等）対策により一時的に送信を制限しています。1〜2分ほど時間をおいてからもう一度お試しください。"
+msgstr "短時間に多くのリクエストが集中したため、不正利用（bot 等）対策により一時的に送信を制限しています。1〜2分ほど時間をおいてからもう一度お試しください。"
+
+#: src/pages/SettingsPage.tsx
+msgid "確認用ハンドル"
+msgstr "確認用ハンドル"
+
+#: src/lib/api-error.ts
+msgid "確認用ハンドルが一致しません"
+msgstr "確認用ハンドルが一致しません"
+
+#: src/pages/GuidePage.tsx
+msgid "空き容量を確認する"
+msgstr "空き容量を確認する"
+
+#: src/pages/send/UploadPage.tsx
+msgid "端末の保存容量が不足しているため、一部の写真を取り込めませんでした。写真の枚数を減らすか、空き容量を確保してお試しください。"
+msgstr "端末の保存容量が不足しているため、一部の写真を取り込めませんでした。写真の枚数を減らすか、空き容量を確保してお試しください。"
+
+#: src/lib/watermark.ts
+msgid "紅道"
+msgstr "紅道"
+
+#: src/pages/send/DonePage.tsx
+msgid "結果の取得に失敗しました"
+msgstr "結果の取得に失敗しました"
+
+#: src/pages/SettingsPage.tsx
+msgid "続行するには、ご自身のハンドル <0>{handle}</0> を入力してください。"
+msgstr "続行するには、ご自身のハンドル <0>{handle}</0> を入力してください。"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "縁取り（アウトラインで視認性UP）"
+msgstr "縁取り（アウトラインで視認性UP）"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "縦横比の違う写真が混ざっています。サムネイルを切り替えて、他の写真での位置も確認してください"
+msgstr "縦横比の違う写真が混ざっています。サムネイルを切り替えて、他の写真での位置も確認してください"
+
+#: src/pages/GuidePage.tsx
+msgid "自分も写真を受け取りたい？"
+msgstr "自分も写真を受け取りたい？"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "色"
+msgstr "色"
+
+#: src/components/ui/LocaleToggle.tsx
+msgid "英語に切り替える"
+msgstr "英語に切り替える"
+
+#: src/pages/SettingsPage.tsx
+msgid "表示名"
+msgstr "表示名"
+
+#: src/pages/GuidePage.tsx
+msgid "表示名：プロフィールに表示される、相手から見える名前"
+msgstr "表示名：プロフィールに表示される、相手から見える名前"
+
+#: src/pages/SettingsPage.tsx
+msgid "表示名を入力してください"
+msgstr "表示名を入力してください"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "要素"
+msgstr "要素"
+
+#: src/lib/watermark.ts
+msgid "角ゴシック"
+msgstr "角ゴシック"
+
+#. placeholder {0}: Math.round(selected.rectRadius * 200)
+#: src/components/send/WatermarkDialog.tsx
+msgid "角丸 ({0}%)"
+msgstr "角丸 ({0}%)"
+
+#: src/pages/PhotoDetailPage.tsx
+msgid "解像度"
+msgstr "解像度"
+
+#: src/lib/watermark.ts
+msgid "解星デコール"
+msgstr "解星デコール"
+
+#: src/components/ui/LocaleToggle.tsx
+msgid "言語"
+msgstr "言語"
+
+#: src/components/layout/AppLayout.tsx
+#: src/pages/SettingsPage.tsx
+msgid "設定"
+msgstr "設定"
+
+#: src/pages/LandingPage.tsx
+msgid "設定で続きから"
+msgstr "設定で続きから"
+
+#: src/pages/GuidePage.tsx
+msgid "設定ページの<0>「受信オプション」</0>で、送信者がどこまで自分の名前を写真に残せるかを決められます。"
+msgstr "設定ページの<0>「受信オプション」</0>で、送信者がどこまで自分の名前を写真に残せるかを決められます。"
+
+#: src/pages/LandingPage.tsx
+msgid "詳しい使い方を見る"
+msgstr "詳しい使い方を見る"
+
+#: src/pages/GuidePage.tsx
+msgid "読みたい手順を選ぶ"
+msgstr "読みたい手順を選ぶ"
+
+#: src/pages/send/LandingPage.tsx
+msgid "読み込みに失敗しました。時間をおいて再度お試しください。"
+msgstr "読み込みに失敗しました。時間をおいて再度お試しください。"
+
+#: src/components/ui/Button.tsx
+#: src/components/ui/LoadingSpinner.tsx
+msgid "読み込み中"
+msgstr "読み込み中"
+
+#: src/components/AuthGuard.tsx
+#: src/pages/GalleryPage.tsx
+msgid "読み込み中..."
+msgstr "読み込み中..."
+
+#: src/pages/GuidePage.tsx
+msgid "迷ったら「任意」がおすすめ。送る人の判断にゆだねつつ、選択肢は提示できます。"
+msgstr "迷ったら「任意」がおすすめ。送る人の判断にゆだねつつ、選択肢は提示できます。"
+
+#: src/pages/LandingPage.tsx
+msgid "送りたい写真がある"
+msgstr "送りたい写真がある"
+
+#: src/pages/GuidePage.tsx
+msgid "送る人の手順を見る →"
+msgstr "送る人の手順を見る →"
+
+#: src/pages/GuidePage.tsx
+msgid "送る人へ"
+msgstr "送る人へ"
+
+#: src/pages/LandingPage.tsx
+msgid "送る側"
+msgstr "送る側"
+
+#: src/pages/LandingPage.tsx
+msgid "送る側に<0/>必要なのはURLだけ"
+msgstr "送る側に<0/>必要なのはURLだけ"
+
+#: src/pages/LandingPage.tsx
+msgid "送る側の画面"
+msgstr "送る側の画面"
+
+#: src/pages/LandingPage.tsx
+msgid "送る側はURLにドロップするだけ。\n"
+"アカウント不要、匿名のまま。"
+msgstr "送る側はURLにドロップするだけ。\n"
+"アカウント不要、匿名のまま。"
+
+#: src/pages/GuidePage.tsx
+msgid "送る側はアカウント不要。リンクを開くだけで写真を送れます。"
+msgstr "送る側はアカウント不要。リンクを開くだけで写真を送れます。"
+
+#: src/pages/LandingPage.tsx
+msgid "送る側はメアドもアカウントも作らない。URLを開いて、ドロップ。"
+msgstr "送る側はメアドもアカウントも作らない。URLを開いて、ドロップ。"
+
+#: src/pages/LandingPage.tsx
+msgid "送信 →"
+msgstr "送信 →"
+
+#: src/pages/GuidePage.tsx
+#: src/pages/send/UploadPage.tsx
+msgid "送信する"
+msgstr "送信する"
+
+#: src/lib/api-error.ts
+msgid "送信の有効期限が切れました。お手数ですが最初からやり直してください"
+msgstr "送信の有効期限が切れました。お手数ですが最初からやり直してください"
+
+#: src/pages/send/UploadPage.tsx
+msgid "送信ボタンを押すと、<0>利用規約</0>および<1>プライバシーポリシー</1>に同意したものとみなされます。"
+msgstr "送信ボタンを押すと、<0>利用規約</0>および<1>プライバシーポリシー</1>に同意したものとみなされます。"
+
+#: src/pages/send/UploadingPage.tsx
+msgid "送信中"
+msgstr "送信中"
+
+#: src/pages/send/UploadingPage.tsx
+msgid "送信中..."
+msgstr "送信中..."
+
+#: src/pages/GuidePage.tsx
+msgid "送信中はブラウザを閉じないでください"
+msgstr "送信中はブラウザを閉じないでください"
+
+#: src/lib/api-error.ts
+msgid "送信内容に問題があります。写真を選び直してもう一度お試しください"
+msgstr "送信内容に問題があります。写真を選び直してもう一度お試しください"
+
+#: src/pages/send/UploadingPage.tsx
+msgid "送信失敗"
+msgstr "送信失敗"
+
+#: src/pages/send/DonePage.tsx
+msgid "送信完了"
+msgstr "送信完了"
+
+#: src/pages/LandingPage.tsx
+msgid "送信時に入力した撮影者情報を、EXIFや透かしで写真自体に埋込可能 (受信者の許可方式に従う)。"
+msgstr "送信時に入力した撮影者情報を、EXIFや透かしで写真自体に埋込可能 (受信者の許可方式に従う)。"
+
+#: src/pages/GuidePage.tsx
+msgid "送信画面に項目を表示しない"
+msgstr "送信画面に項目を表示しない"
+
+#: src/pages/PhotoDetailPage.tsx
+msgid "送信者"
+msgstr "送信者"
+
+#: src/pages/LandingPage.tsx
+msgid "送信者 (匿名)"
+msgstr "送信者 (匿名)"
+
+#: src/pages/SettingsPage.tsx
+msgid "送信者が"
+msgstr "送信者が"
+
+#: src/pages/SettingsPage.tsx
+msgid "送信者がカメラモデル欄に名前を書き込みます（メタデータのみ、除去可能）"
+msgstr "送信者がカメラモデル欄に名前を書き込みます（メタデータのみ、除去可能）"
+
+#: src/pages/LandingPage.tsx
+msgid "送信者がメアドを開示する必要あり"
+msgstr "送信者がメアドを開示する必要あり"
+
+#: src/pages/GuidePage.tsx
+msgid "送信者が必要に応じて選択できる"
+msgstr "送信者が必要に応じて選択できる"
+
+#: src/pages/SettingsPage.tsx
+msgid "送信者が画像にクレジットテキストを描き込みます（不可逆）"
+msgstr "送信者が画像にクレジットテキストを描き込みます（不可逆）"
+
+#: src/pages/LandingPage.tsx
+msgid "送信者が選べる位置の透かしテキスト"
+msgstr "送信者が選べる位置の透かしテキスト"
+
+#: src/pages/LandingPage.tsx
+msgid "送信者にアカウント不要"
+msgstr "送信者にアカウント不要"
+
+#: src/pages/LandingPage.tsx
+msgid "送信者にもアカウント必須"
+msgstr "送信者にもアカウント必須"
+
+#: src/pages/SettingsPage.tsx
+msgid "送信者に提示するオプションを設定します。「必須」にすると送信者は必ず埋め込みます。"
+msgstr "送信者に提示するオプションを設定します。「必須」にすると送信者は必ず埋め込みます。"
+
+#: src/pages/SettingsPage.tsx
+msgid "送信者に提示するオプションを設定します。あとから設定ページで変更できます。"
+msgstr "送信者に提示するオプションを設定します。あとから設定ページで変更できます。"
+
+#: src/pages/SettingsPage.tsx
+msgid "送信者の"
+msgstr "送信者の"
+
+#: src/pages/LandingPage.tsx
+msgid "送信者の登録・アカウント作成は不要"
+msgstr "送信者の登録・アカウント作成は不要"
+
+#: src/pages/SettingsPage.tsx
+msgid "送信者は"
+msgstr "送信者は"
+
+#: src/pages/LandingPage.tsx
+msgid "送信者はアカウント不要。受信者もメアドを開示しない。 お互いの個人情報を交換せずに、写真だけを受け渡せます。 URLを知っている人だけが送信できる、ゆるいクローズドな入り口。"
+msgstr "送信者はアカウント不要。受信者もメアドを開示しない。 お互いの個人情報を交換せずに、写真だけを受け渡せます。 URLを知っている人だけが送信できる、ゆるいクローズドな入り口。"
+
+#: src/pages/SettingsPage.tsx
+msgid "送信者は名前 (TwitterID等) を入力しないと写真を送れなくなります"
+msgstr "送信者は名前 (TwitterID等) を入力しないと写真を送れなくなります"
+
+#: src/pages/GuidePage.tsx
+msgid "送信者は必ず埋め込み（送信者名の入力も必須に）"
+msgstr "送信者は必ず埋め込み（送信者名の入力も必須に）"
+
+#: src/pages/send/UploadPage.tsx
+msgid "送信者名 / TwitterID"
+msgstr "送信者名 / TwitterID"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "送信者名が未入力です。このテキストには送信者名が使われます"
+msgstr "送信者名が未入力です。このテキストには送信者名が使われます"
+
+#: src/pages/GuidePage.tsx
+msgid "送信者名と埋め込みオプションのフォーム"
+msgstr "送信者名と埋め込みオプションのフォーム"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "送信者名に連動中（編集すると解除）"
+msgstr "送信者名に連動中（編集すると解除）"
+
+#: src/pages/SettingsPage.tsx
+msgid "送信者名の入力を必須にする"
+msgstr "送信者名の入力を必須にする"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "送信者名を入力すると自動で入ります"
+msgstr "送信者名を入力すると自動で入ります"
+
+#: src/pages/send/UploadPage.tsx
+msgid "送信者名を記載しない場合、写真のクレジット表記なしでの編集・共有が行われる可能性があることに同意します"
+msgstr "送信者名を記載しない場合、写真のクレジット表記なしでの編集・共有が行われる可能性があることに同意します"
+
+#: src/pages/GuidePage.tsx
+msgid "送信者向け手順"
+msgstr "送信者向け手順"
+
+#: src/pages/SettingsPage.tsx
+msgid "透かし"
+msgstr "透かし"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "透かしにする文字"
+msgstr "透かしにする文字"
+
+#: src/pages/send/UploadPage.tsx
+msgid "透かしに表示できる文字がありません。「透かしを編集」から文字を入力してください。"
+msgstr "透かしに表示できる文字がありません。「透かしを編集」から文字を入力してください。"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "透かしのプレビュー。要素をドラッグして配置できます"
+msgstr "透かしのプレビュー。要素をドラッグして配置できます"
+
+#: src/components/send/WatermarkDialog.tsx
+msgid "透かしの設定"
+msgstr "透かしの設定"
+
+#: src/pages/send/UploadPage.tsx
+msgid "透かしを入れる"
+msgstr "透かしを入れる"
+
+#: src/pages/send/UploadPage.tsx
+msgid "透かしを編集"
+msgstr "透かしを編集"
+
+#. placeholder {0}: Math.round(selected.opacity * 100)
+#: src/components/send/WatermarkDialog.tsx
+msgid "透明度 ({0}%)"
+msgstr "透明度 ({0}%)"
+
+#: src/pages/GuidePage.tsx
+msgid "進行中はファイルごとの状態（待機 / 送信中 / 完了）が表示されます"
+msgstr "進行中はファイルごとの状態（待機 / 送信中 / 完了）が表示されます"
+
+#: src/pages/GuidePage.tsx
+msgid "選び直したいときは、各サムネイル右上の「×」で個別に取り消せます。"
+msgstr "選び直したいときは、各サムネイル右上の「×」で個別に取り消せます。"
+
+#: src/pages/GuidePage.tsx
+msgid "選んだ写真は即座にプレビューが表示されます。"
+msgstr "選んだ写真は即座にプレビューが表示されます。"
+
+#: src/pages/GalleryPage.tsx
+msgid "選択/DL"
+msgstr "選択/DL"
+
+#: src/components/BatchDownloadModal.tsx
+msgid "選択した写真を1つの ZIP ファイルにまとめています。"
+msgstr "選択した写真を1つの ZIP ファイルにまとめています。"
+
+#: src/pages/SettingsPage.tsx
+msgid "選択できる"
+msgstr "選択できる"
+
+#: src/pages/GalleryPage.tsx
+msgid "選択済み"
+msgstr "選択済み"
+
+#: src/components/ui/Dialog.tsx
+msgid "閉じる"
+msgstr "閉じる"
+
+#. placeholder {0}: Math.round(selected.rectH * 100)
+#: src/components/send/WatermarkDialog.tsx
+msgid "高さ (長辺の{0}%)"
+msgstr "高さ (長辺の{0}%)"

@@ -16,6 +16,16 @@
 | S11 | 利用規約 | `/terms` | 不要 | `frontend/src/content/legal/terms.md` を react-markdown でレンダリング |
 | S12 | プライバシーポリシー | `/privacy` | 不要 | `frontend/src/content/legal/privacy.md` を react-markdown でレンダリング |
 
+### 全画面共通のクエリパラメータ
+
+| クエリ | 用途 |
+|---|---|
+| `?lang=ja` / `?lang=en` | 表示言語の指定。E2E での固定とサポート時の再現用。一度指定すると localStorage に保存され、以降クエリ無しでも維持される |
+| `?debug=true` / `?debug=false` | 送信パイプラインの詳細ログ出力。同じく sticky |
+
+言語の決定順は `?lang=` → localStorage → `navigator.languages` → `en`。
+ヘッダーの言語トグルからも切り替えられる。
+
 ---
 
 ## 2. ナビゲーションフロー

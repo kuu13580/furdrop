@@ -1,3 +1,4 @@
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useAtomValue, useSetAtom } from "jotai";
 import QRCode from "qrcode";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -11,6 +12,7 @@ import { userAtom } from "../stores/user";
 import type { Photo } from "../types/photo";
 
 function PublicUrlCard({ receiveUrl }: { receiveUrl: string }) {
+  const { t } = useLingui();
   const [copied, setCopied] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -25,10 +27,10 @@ function PublicUrlCard({ receiveUrl }: { receiveUrl: string }) {
     if (navigator.share) {
       await navigator.share({ title: "FurDrop", url: receiveUrl });
     } else {
-      const text = encodeURIComponent(`写真はこちらから送ってください！\n${receiveUrl}`);
+      const text = encodeURIComponent(t`写真はこちらから送ってください！\n${receiveUrl}`);
       window.open(`https://x.com/intent/tweet?text=${text}`, "_blank");
     }
-  }, [receiveUrl]);
+  }, [receiveUrl, t]);
 
   const handleDownloadQr = useCallback(async () => {
     const dataUrl = await QRCode.toDataURL(receiveUrl, { width: 512, margin: 2 });
@@ -49,7 +51,7 @@ function PublicUrlCard({ receiveUrl }: { receiveUrl: string }) {
   }, [qrOpen, receiveUrl]);
 
   return (
-    <Card title="あなたの受信URL">
+    <Card title={t`あなたの受信URL`}>
       <div className="space-y-3">
         <p className="break-all rounded-xl bg-surface-canvas px-3 py-2 font-mono text-[14px] text-ink">
           {receiveUrl}
@@ -60,7 +62,7 @@ function PublicUrlCard({ receiveUrl }: { receiveUrl: string }) {
             onClick={handleCopy}
             className="rounded-xl border border-surface-sand-deep bg-surface-sand px-3 py-2 text-[14px] font-medium text-ink transition-colors hover:bg-surface-sand-hover"
           >
-            {copied ? "コピーしました!" : "コピー"}
+            {copied ? t`コピーしました!` : t`コピー`}
           </button>
           <button
             type="button"
@@ -74,12 +76,12 @@ function PublicUrlCard({ receiveUrl }: { receiveUrl: string }) {
             onClick={handleShare}
             className="rounded-xl border border-surface-sand-deep bg-surface-sand px-3 py-2 text-[14px] font-medium text-ink transition-colors hover:bg-surface-sand-hover"
           >
-            シェア
+            <Trans>シェア</Trans>
           </button>
         </div>
         <p className="text-[12px] text-ink-soft">
           <Link to="/guide" className="text-brand underline-offset-2 hover:underline">
-            FurDrop の使い方を見る →
+            <Trans>FurDrop の使い方を見る →</Trans>
           </Link>
         </p>
         {qrOpen && (
@@ -90,7 +92,7 @@ function PublicUrlCard({ receiveUrl }: { receiveUrl: string }) {
               onClick={handleDownloadQr}
               className="rounded-xl border border-surface-sand-deep bg-surface-sand px-3 py-1.5 text-[13px] font-medium text-ink transition-colors hover:bg-surface-sand-hover"
             >
-              QRをダウンロード
+              <Trans>QRをダウンロード</Trans>
             </button>
           </div>
         )}
@@ -100,9 +102,10 @@ function PublicUrlCard({ receiveUrl }: { receiveUrl: string }) {
 }
 
 function RecentPhotos({ photos, loading }: { photos: Photo[]; loading: boolean }) {
+  const { t } = useLingui();
   if (loading) {
     return (
-      <Card title="最近の写真">
+      <Card title={t`最近の写真`}>
         <div className="flex justify-center py-8">
           <LoadingSpinner />
         </div>
@@ -112,14 +115,16 @@ function RecentPhotos({ photos, loading }: { photos: Photo[]; loading: boolean }
 
   if (photos.length === 0) {
     return (
-      <Card title="最近の写真">
-        <p className="py-6 text-center text-[14px] text-ink-muted">まだ写真がありません</p>
+      <Card title={t`最近の写真`}>
+        <p className="py-6 text-center text-[14px] text-ink-muted">
+          <Trans>まだ写真がありません</Trans>
+        </p>
       </Card>
     );
   }
 
   return (
-    <Card title="最近の写真">
+    <Card title={t`最近の写真`}>
       <div className="grid grid-cols-3 gap-2 sm:gap-3">
         {photos.map((photo) => (
           <Link
@@ -131,7 +136,7 @@ function RecentPhotos({ photos, loading }: { photos: Photo[]; loading: boolean }
             {photo.thumb_url ? (
               <img
                 src={photo.thumb_url}
-                alt={photo.sender_name ?? "写真"}
+                alt={photo.sender_name ?? t`写真`}
                 className="max-h-full max-w-full rounded-xl object-contain"
                 loading="lazy"
                 onError={onImageError("dashboard-thumb", "thumb")}
@@ -143,7 +148,7 @@ function RecentPhotos({ photos, loading }: { photos: Photo[]; loading: boolean }
                 viewBox="0 0 24 24"
                 stroke="currentColor"
                 role="img"
-                aria-label="画像なし"
+                aria-label={t`画像なし`}
               >
                 <path
                   strokeLinecap="round"
@@ -161,7 +166,7 @@ function RecentPhotos({ photos, loading }: { photos: Photo[]; loading: boolean }
           to="/gallery"
           className="text-[14px] font-medium text-brand transition-colors hover:text-brand-deep"
         >
-          全て見る &rarr;
+          <Trans>全て見る &rarr;</Trans>
         </Link>
       </div>
     </Card>
@@ -169,6 +174,7 @@ function RecentPhotos({ photos, loading }: { photos: Photo[]; loading: boolean }
 }
 
 export default function DashboardPage() {
+  const { t } = useLingui();
   const user = useAtomValue(userAtom);
   const setUser = useSetAtom(userAtom);
   const [photos, setPhotos] = useState<Photo[]>([]);
@@ -212,10 +218,10 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-[22px] font-bold tracking-[-0.015em] text-ink sm:text-[28px]">
-        ダッシュボード
+        <Trans>ダッシュボード</Trans>
       </h1>
       <PublicUrlCard receiveUrl={`${window.location.origin}${user.receive_url}`} />
-      <Card title="ストレージ">
+      <Card title={t`ストレージ`}>
         <StorageQuotaBar used={user.storage_used} quota={user.storage_quota} />
       </Card>
       <RecentPhotos photos={photos} loading={loading} />

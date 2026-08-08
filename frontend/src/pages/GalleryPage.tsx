@@ -1,3 +1,5 @@
+import { msg } from "@lingui/core/macro";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useAtomValue } from "jotai";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
@@ -25,6 +27,13 @@ type PhotoGroup = {
   items: { photo: Photo; index: number }[];
 };
 
+/**
+ * 送信者名が無いグループ。ラベルは描画時に i18n._() で解決するため、
+ * buildGroups (純関数) では番兵を置いて表示文言を持たせない。
+ */
+const ANONYMOUS_SENTINEL = "\u0000anonymous";
+const ANONYMOUS_LABEL = msg`(匿名)`;
+
 function buildGroups(photos: Photo[], mode: GroupMode, tzOffsetMin: number): PhotoGroup[] {
   if (mode === "none") {
     return [{ key: "all", label: null, items: photos.map((photo, index) => ({ photo, index })) }];
@@ -37,7 +46,7 @@ function buildGroups(photos: Photo[], mode: GroupMode, tzOffsetMin: number): Pho
       ({ key, label } = buildDateKeyAndLabel(photo.created_at, tzOffsetMin));
     } else {
       key = photo.sender_name ?? "__anonymous__";
-      label = photo.sender_name ?? "(匿名)";
+      label = photo.sender_name ?? ANONYMOUS_SENTINEL;
     }
     const existing = map.get(key);
     if (existing) existing.items.push({ photo, index });
@@ -47,12 +56,15 @@ function buildGroups(photos: Photo[], mode: GroupMode, tzOffsetMin: number): Pho
 }
 
 export default function GalleryPage() {
+  const { t, i18n } = useLingui();
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  // `t` のプレースホルダを名前付きにするため、メンバー式のまま埋め込まない
+  const selectedCount = selected.size;
   const [deleting, setDeleting] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [groupMode, setGroupMode] = useState<GroupMode>("none");
@@ -532,7 +544,7 @@ export default function GalleryPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-[22px] font-bold tracking-[-0.015em] text-ink sm:text-[28px]">
-          ギャラリー
+          <Trans>ギャラリー</Trans>
           {totalCount !== null && (
             <span className="ml-2 text-[14px] font-medium text-ink-muted sm:text-[16px]">
               ({totalCount})
@@ -545,7 +557,7 @@ export default function GalleryPage() {
             onClick={() => setSelectMode(true)}
             className="rounded-lg px-3 py-1.5 text-[14px] font-medium text-brand transition-colors hover:bg-brand-tint"
           >
-            選択/DL
+            <Trans>選択/DL</Trans>
           </button>
         )}
       </div>
@@ -558,9 +570,11 @@ export default function GalleryPage() {
               onClick={toggleSelectAll}
               className="text-[14px] font-medium text-brand transition-colors hover:text-brand-deep"
             >
-              {selected.size === photos.length ? "全解除" : "全選択"}
+              {selected.size === photos.length ? t`全解除` : t`全選択`}
             </button>
-            <span className="text-[14px] text-ink-soft">{selected.size}枚選択中</span>
+            <span className="text-[14px] text-ink-soft">
+              <Plural value={selectedCount} other="#枚選択中" />
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -570,7 +584,7 @@ export default function GalleryPage() {
               disabled={selected.size === 0 || zipState !== null}
               loading={zipState !== null}
             >
-              DL
+              <Trans>DL</Trans>
             </Button>
             <Button
               size="sm"
@@ -579,14 +593,14 @@ export default function GalleryPage() {
               disabled={selected.size === 0}
               loading={deleting}
             >
-              削除
+              <Trans>削除</Trans>
             </Button>
             <button
               type="button"
               onClick={exitSelectMode}
               className="rounded-lg px-2.5 py-1.5 text-[14px] font-medium text-brand transition-colors hover:bg-brand-tint"
             >
-              完了
+              <Trans>完了</Trans>
             </button>
           </div>
         </div>
@@ -596,9 +610,9 @@ export default function GalleryPage() {
         <div className="flex gap-1 rounded-xl bg-surface-sand p-1 text-[13px] font-medium">
           {(
             [
-              ["none", "新着順"],
-              ["date", "日付別"],
-              ["sender", "撮影者別"],
+              ["none", t`新着順`],
+              ["date", t`日付別`],
+              ["sender", t`撮影者別`],
             ] as const
           ).map(([mode, label]) => (
             <button
@@ -619,7 +633,9 @@ export default function GalleryPage() {
 
       {photos.length === 0 ? (
         <div className="rounded-2xl bg-surface-sand py-16 text-center">
-          <p className="text-[14px] font-medium text-ink-soft">まだ写真がありません</p>
+          <p className="text-[14px] font-medium text-ink-soft">
+            <Trans>まだ写真がありません</Trans>
+          </p>
         </div>
       ) : (
         <div
@@ -638,7 +654,7 @@ export default function GalleryPage() {
                 {group.label && (
                   <div className="flex items-center justify-between">
                     <h2 className="text-[14px] font-semibold text-ink-soft">
-                      {group.label}
+                      {group.label === ANONYMOUS_SENTINEL ? i18n._(ANONYMOUS_LABEL) : group.label}
                       <span className="ml-2 text-ink-muted">
                         (
                         {groupCounts && groupMode !== "none"
@@ -654,10 +670,10 @@ export default function GalleryPage() {
                       className="rounded-lg px-2.5 py-1 text-[13px] font-medium text-brand transition-colors hover:bg-brand-tint disabled:cursor-progress disabled:opacity-60"
                     >
                       {groupLoadingKey === group.key
-                        ? "読み込み中..."
+                        ? t`読み込み中...`
                         : allGroupSelected
-                          ? "グループ解除"
-                          : "グループ選択"}
+                          ? t`グループ解除`
+                          : t`グループ選択`}
                     </button>
                   </div>
                 )}
@@ -667,7 +683,7 @@ export default function GalleryPage() {
                     const thumb = photo.thumb_url ? (
                       <img
                         src={photo.thumb_url}
-                        alt={photo.sender_name ?? "写真"}
+                        alt={photo.sender_name ?? t`写真`}
                         className="max-h-full max-w-full rounded-xl object-contain"
                         loading="lazy"
                         draggable={false}
@@ -709,7 +725,7 @@ export default function GalleryPage() {
                                   stroke="currentColor"
                                   strokeWidth={3}
                                   role="img"
-                                  aria-label="選択済み"
+                                  aria-label={t`選択済み`}
                                 >
                                   <path
                                     strokeLinecap="round"
@@ -749,10 +765,9 @@ export default function GalleryPage() {
         open={deleteConfirmOpen}
         onClose={() => setDeleteConfirmOpen(false)}
         onConfirm={handleBatchDelete}
-        title={`${selected.size}枚の写真を削除しますか？`}
-        description="削除された写真は復元できません。"
-        confirmLabel="削除する"
-        cancelLabel="キャンセル"
+        title={t`${selectedCount}枚の写真を削除しますか？`}
+        description={t`削除された写真は復元できません。`}
+        confirmLabel={t`削除する`}
         variant="danger"
         loading={deleting}
       />

@@ -1,3 +1,7 @@
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react";
+import { Plural, Trans } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router";
 import SenderAtmosphere from "../../components/send/SenderAtmosphere";
@@ -14,7 +18,11 @@ type SessionPhoto = {
   status: string;
 };
 
+const SESSION_EXPIRED = msg`セッションが期限切れです`;
+const FETCH_FAILED = msg`結果の取得に失敗しました`;
+
 export default function DonePage() {
+  const { i18n } = useLingui();
   const { handle } = useParams<{ handle: string }>();
   const [searchParams] = useSearchParams();
   const accessKey = searchParams.get("k");
@@ -23,7 +31,7 @@ export default function DonePage() {
   const sessionId = (location.state as { sessionId?: string } | null)?.sessionId;
 
   const [photos, setPhotos] = useState<SessionPhoto[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<MessageDescriptor | null>(null);
 
   useEffect(() => {
     if (!handle) return;
@@ -40,11 +48,7 @@ export default function DonePage() {
       })
       .catch((err) => {
         if (cancelled) return;
-        if (err instanceof ApiError && err.status === 404) {
-          setError("セッションが期限切れです");
-        } else {
-          setError("結果の取得に失敗しました");
-        }
+        setError(err instanceof ApiError && err.status === 404 ? SESSION_EXPIRED : FETCH_FAILED);
       });
     return () => {
       cancelled = true;
@@ -53,6 +57,8 @@ export default function DonePage() {
 
   const completed = photos?.filter((p) => p.status === "completed") ?? [];
   const failed = photos?.filter((p) => p.status !== "completed") ?? [];
+  const completedCount = completed.length;
+  const failedCount = failed.length;
 
   return (
     <div className="relative flex flex-1 items-center justify-center overflow-hidden px-4 py-10 sm:py-16">
@@ -66,14 +72,16 @@ export default function DonePage() {
             >
               ✓
             </div>
+            {/* 元は sm:hidden の <br> で改行位置を作っていたが、英語では別の位置で折り返す
+                必要があるため自然折り返しに任せる */}
             <h1 className="text-[22px] font-bold leading-[1.2] tracking-[-0.015em] text-ink sm:text-[28px]">
-              {completed.length}枚の写真を
-              <br className="sm:hidden" />
-              送信しました！
+              <Plural value={completedCount} other="#枚の写真を送信しました！" />
             </h1>
 
-            {failed.length > 0 && (
-              <Alert variant="error">{failed.length}枚のアップロードに失敗しました</Alert>
+            {failedCount > 0 && (
+              <Alert variant="error">
+                <Plural value={failedCount} other="#枚のアップロードに失敗しました" />
+              </Alert>
             )}
 
             {completed.length > 0 && (
@@ -98,8 +106,10 @@ export default function DonePage() {
           </>
         ) : error ? (
           <>
-            <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink">送信完了</h1>
-            <Alert variant="error">{error}</Alert>
+            <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink">
+              <Trans>送信完了</Trans>
+            </h1>
+            <Alert variant="error">{i18n._(error)}</Alert>
           </>
         ) : (
           <LoadingSpinner size="lg" />
@@ -109,7 +119,7 @@ export default function DonePage() {
           to={withKey(`/send/${handle}/upload`, accessKey)}
           className="mx-auto block max-w-sm rounded-xl bg-brand px-4 py-3 text-[16px] font-medium text-white transition-all hover:bg-brand-deep active:scale-[0.98]"
         >
-          別の写真を送る
+          <Trans>別の写真を送る</Trans>
         </Link>
       </div>
     </div>

@@ -1,3 +1,7 @@
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react";
+import { Trans } from "@lingui/react/macro";
 import { useAtom, useAtomValue } from "jotai";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
@@ -9,6 +13,7 @@ import { senderApi } from "../../lib/api";
 import { type ErrorContext, resolveApiError } from "../../lib/api-error";
 import { runConcurrent } from "../../lib/concurrency";
 import { debugLog } from "../../lib/debug-log";
+import { i18n as globalI18n } from "../../lib/i18n";
 import {
   applyWatermark,
   embedSenderInfoInExif,
@@ -53,6 +58,7 @@ type FileProgress = {
 type OverallPhase = "idle" | "processing" | "session" | "uploading" | "done" | "failed";
 
 export default function UploadingPage() {
+  const { i18n } = useLingui();
   const { handle } = useParams<{ handle: string }>();
   const [searchParams] = useSearchParams();
   const accessKey = searchParams.get("k");
@@ -133,15 +139,21 @@ export default function UploadingPage() {
       <SenderAtmosphere tone="calm" />
       <div className="relative z-10 mx-auto max-w-3xl space-y-6">
         <div className="text-center">
-          <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink">送信中...</h1>
-          <p className="mt-1 text-[13px] text-ink-soft">ページを閉じないでください</p>
+          <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink">
+            <Trans>送信中...</Trans>
+          </h1>
+          <p className="mt-1 text-[13px] text-ink-soft">
+            <Trans>ページを閉じないでください</Trans>
+          </p>
         </div>
 
         <div className="space-y-2">
           <div className="flex justify-between text-[14px]">
-            <span className="font-medium text-ink">{overallLabel(overall)}</span>
+            <span className="font-medium text-ink">{i18n._(overallLabel(overall))}</span>
             <span className="font-mono text-ink-soft">
-              {current}/{total}枚 · {percent}%
+              <Trans>
+                {current}/{total}枚 · {percent}%
+              </Trans>
             </span>
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-surface-sand">
@@ -160,7 +172,7 @@ export default function UploadingPage() {
               <div className="flex items-center justify-between gap-3">
                 <span className="truncate pr-3 text-ink">{p.selected.file.name}</span>
                 <span className={`shrink-0 font-medium ${phaseColor(p.phase)}`}>
-                  {phaseLabel(p.phase, p.failedAt)}
+                  {i18n._(phaseLabel(p.phase, p.failedAt))}
                 </span>
               </div>
               {debug && p.phase === "failed" && p.error && (
@@ -180,7 +192,7 @@ export default function UploadingPage() {
               className="w-full"
               onClick={() => navigate(withKey(`/send/${handle}/upload`, accessKey))}
             >
-              アップロード画面に戻る
+              <Trans>アップロード画面に戻る</Trans>
             </Button>
           </div>
         )}
@@ -189,41 +201,43 @@ export default function UploadingPage() {
   );
 }
 
-function overallLabel(p: OverallPhase): string {
+// ラベルはモジュールロード時に 1 回だけ評価されるため、`t` ではなく `msg` で持ち、
+// 描画時に `i18n._()` を通してロケール切替に追従させる
+function overallLabel(p: OverallPhase): MessageDescriptor {
   switch (p) {
     case "idle":
-      return "準備中";
+      return msg`準備中`;
     case "processing":
-      return "画像を加工中";
+      return msg`画像を加工中`;
     case "session":
-      return "サーバーに接続中";
+      return msg`サーバーに接続中`;
     case "uploading":
-      return "アップロード中";
+      return msg`アップロード中`;
     case "done":
-      return "完了";
+      return msg`完了`;
     case "failed":
-      return "失敗";
+      return msg`失敗`;
   }
 }
 
-function phaseLabel(p: Phase, failedAt?: FailedAt): string {
+function phaseLabel(p: Phase, failedAt?: FailedAt): MessageDescriptor {
   switch (p) {
     case "pending":
-      return "待機";
+      return msg`待機`;
     case "converting":
-      return "HEIC変換中...";
+      return msg`HEIC変換中...`;
     case "processing":
-      return "加工中";
+      return msg`加工中`;
     case "processed":
-      return "加工済";
+      return msg`加工済`;
     case "uploading":
-      return "送信中";
+      return msg`送信中`;
     case "completed":
-      return "完了";
+      return msg`完了`;
     case "failed":
-      if (failedAt === "convert") return "変換失敗";
-      if (failedAt === "upload") return "送信失敗";
-      return "失敗";
+      if (failedAt === "convert") return msg`変換失敗`;
+      if (failedAt === "upload") return msg`送信失敗`;
+      return msg`失敗`;
   }
 }
 
@@ -375,7 +389,7 @@ async function runPipeline({
   }
   plog.log(`加工フェーズ完了: 成功 ${processed.length}/${files.length}枚`);
   if (processed.length === 0) {
-    onGlobalError("全ての画像の加工に失敗しました");
+    onGlobalError(globalI18n._(msg`全ての画像の加工に失敗しました`));
     onOverall("failed");
     return;
   }
@@ -385,7 +399,9 @@ async function runPipeline({
   // 加工完了後に空キー (?k= 未指定) で 400/403 を引いてユーザーを待たせないよう、ここで早期に弾く
   if (!accessKey) {
     onGlobalError(
-      "受信URLが無効です。送信者本人から最新の受信URL（?k=... 付き）を受け取ってください。",
+      globalI18n._(
+        msg`受信URLが無効です。受信者から最新の受信URL (?k=... 付き) を共有してもらってください。`,
+      ),
     );
     onOverall("failed");
     return;

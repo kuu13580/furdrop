@@ -9,6 +9,7 @@
 - **DB**: Cloudflare D1 (SQLite)
 - **ストレージ**: Cloudflare R2
 - **認証**: Firebase Auth (Twitter OAuth)
+- **多言語化**: Lingui (日本語=原文 / 英語)
 - **リント/フォーマット**: Biome
 - **パッケージマネージャ**: pnpm (workspaces)
 - **E2Eテスト**: Playwright
@@ -45,6 +46,7 @@ pnpm --filter frontend dev
 pnpm --filter workers dev
 
 # D1マイグレーション (ローカル)
+# dev が起動時に自動実行するので、通常は手動実行不要
 pnpm --filter workers migrate:local
 
 # D1マイグレーション (本番)
@@ -64,6 +66,15 @@ pnpm secrets:prod
 # R2バケットCORS設定適用 (workers/r2-cors.json の内容を両バケットに適用)
 # CIのdeployワークフローで自動実行される
 pnpm cors:prod
+
+# i18n カタログ更新 (ユーザー向け文言を追加・変更したら実行)
+pnpm i18n:extract
+
+# i18n ガード (カタログ乖離 + 日本語直書きのラチェット)。CI でも実行される
+pnpm i18n:check
+
+# 翻訳が進んでベースラインが減ったら更新する
+pnpm i18n:lint:update
 
 # ===== テスト =====
 # 3 層すべて (frontend ユニット + Workers 統合 + Playwright E2E) を一括実行
@@ -126,6 +137,7 @@ pnpm emulator
 - `docs/` — 設計ドキュメントとの乖離がないか
 - `.claude/rules/` — コーディングルール・規約の変更
 - `DESIGN.md` — デザイン規約 (色・タイポ・コンポーネント・レイアウト理念) の変更
+- ユーザー向け文言の追加・変更時は `pnpm i18n:extract` でカタログを更新する。日本語の直書きは `pnpm i18n:check` で落ちる
 - `frontend/src/pages/DesignPreviewPage.tsx` — **`DESIGN.md` を更新した場合は必ずプレビューも追従更新**。プレビューは DESIGN.md の生きたカナリアであり、乖離すると視覚回帰チェックの意味が失われる
 
 ## 設計ドキュメント

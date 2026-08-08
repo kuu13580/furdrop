@@ -1,3 +1,6 @@
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { deleteUser, signOut } from "firebase/auth";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { type SyntheticEvent, useCallback, useState } from "react";
@@ -17,16 +20,23 @@ import { type UserProfile, userAtom } from "../stores/user";
 
 const HANDLE_REGEX = /^[a-z0-9_]{3,32}$/;
 
-// hintHead と hintTail はモバイルで改行して 2 行表示し、デスクトップでは 1 行に詰める
+// hintHead と hintTail はモバイルで改行して 2 行表示し、デスクトップでは 1 行に詰める。
+// 1 行に詰めたとき単語の区切りが要る言語 (en 等) は、hintHead の訳文の末尾に空白を含める
+// (日本語は区切りが不要なので、空白の有無は言語ごとの判断になる)
 const EMBED_MODE_OPTIONS: {
   value: EmbedMode;
-  label: string;
-  hintHead: string;
-  hintTail: string;
+  label: MessageDescriptor;
+  hintHead: MessageDescriptor;
+  hintTail: MessageDescriptor;
 }[] = [
-  { value: "disabled", label: "無効", hintHead: "送信者の", hintTail: "画面に表示しない" },
-  { value: "optional", label: "任意", hintHead: "送信者が", hintTail: "選択できる" },
-  { value: "required", label: "必須", hintHead: "送信者は", hintTail: "必ず埋め込む" },
+  {
+    value: "disabled",
+    label: msg`無効`,
+    hintHead: msg`送信者の`,
+    hintTail: msg`画面に表示しない`,
+  },
+  { value: "optional", label: msg`任意`, hintHead: msg`送信者が`, hintTail: msg`選択できる` },
+  { value: "required", label: msg`必須`, hintHead: msg`送信者は`, hintTail: msg`必ず埋め込む` },
 ];
 
 function EmbedModeRadioGroup({
@@ -44,6 +54,7 @@ function EmbedModeRadioGroup({
   onChange: (next: EmbedMode) => void;
   disabled?: boolean;
 }) {
+  const { i18n } = useLingui();
   return (
     <div className="space-y-2">
       <div>
@@ -73,11 +84,11 @@ function EmbedModeRadioGroup({
                 onChange={() => onChange(opt.value)}
                 className="sr-only"
               />
-              <span className="font-medium">{opt.label}</span>
+              <span className="font-medium">{i18n._(opt.label)}</span>
               <span className="mt-0.5 text-[11px] text-ink-soft">
-                {opt.hintHead}
+                {i18n._(opt.hintHead)}
                 <br className="sm:hidden" />
-                {opt.hintTail}
+                {i18n._(opt.hintTail)}
               </span>
             </label>
           );
@@ -112,9 +123,11 @@ function RequireSenderNameField({
         className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
       />
       <span>
-        <span className="block text-[14px] font-medium text-ink">送信者名の入力を必須にする</span>
+        <span className="block text-[14px] font-medium text-ink">
+          <Trans>送信者名の入力を必須にする</Trans>
+        </span>
         <span className="mt-0.5 block text-[13px] text-ink-soft">
-          送信者は名前 (TwitterID等) を入力しないと写真を送れなくなります
+          <Trans>送信者は名前 (TwitterID等) を入力しないと写真を送れなくなります</Trans>
         </span>
       </span>
     </label>
@@ -122,6 +135,9 @@ function RequireSenderNameField({
 }
 
 function RegisterForm() {
+  const { t } = useLingui();
+  // t`` のプレースホルダを名前付きにするため、式のまま埋め込まない
+  const publicHost = window.location.host;
   const [authState, setAuth] = useAtom(authAtom);
   const [, setUser] = useAtom(userAtom);
   const [suggestedHandle, setSuggestedHandle] = useAtom(suggestedHandleAtom);
@@ -139,11 +155,14 @@ function RegisterForm() {
   const [requireSenderName, setRequireSenderName] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
-  const validateHandle = useCallback((value: string) => {
-    if (!value) return "ハンドルを入力してください";
-    if (!HANDLE_REGEX.test(value)) return "小文字英数字とアンダースコアのみ、3〜32文字";
-    return null;
-  }, []);
+  const validateHandle = useCallback(
+    (value: string) => {
+      if (!value) return t`ハンドルを入力してください`;
+      if (!HANDLE_REGEX.test(value)) return t`小文字英数字とアンダースコアのみ、3〜32文字`;
+      return null;
+    },
+    [t],
+  );
 
   const handleSubmit = useCallback(
     async (e: SyntheticEvent) => {
@@ -155,11 +174,11 @@ function RegisterForm() {
         return;
       }
       if (!displayName.trim()) {
-        setError("表示名を入力してください");
+        setError(t`表示名を入力してください`);
         return;
       }
       if (!agreedToTerms) {
-        setError("利用規約とプライバシーポリシーへの同意が必要です");
+        setError(t`利用規約とプライバシーポリシーへの同意が必要です`);
         return;
       }
 
@@ -185,7 +204,7 @@ function RegisterForm() {
         navigate("/dashboard", { replace: true });
       } catch (err) {
         if (err instanceof ApiError && err.code === "HANDLE_TAKEN") {
-          setHandleError("このハンドルは既に使われています");
+          setHandleError(t`このハンドルは既に使われています`);
         } else {
           setError(resolveApiError(err, "register"));
         }
@@ -201,6 +220,7 @@ function RegisterForm() {
       requireSenderName,
       agreedToTerms,
       validateHandle,
+      t,
       authState,
       setAuth,
       setUser,
@@ -213,15 +233,17 @@ function RegisterForm() {
     <div className="mx-auto max-w-md space-y-6 sm:max-w-xl">
       <div className="text-center">
         <h1 className="text-[22px] font-bold tracking-[-0.015em] text-ink sm:text-[28px]">
-          アカウント設定
+          <Trans>アカウント設定</Trans>
         </h1>
-        <p className="mt-2 text-[14px] text-ink-soft">写真を受け取るための公開URLを作成します</p>
+        <p className="mt-2 text-[14px] text-ink-soft">
+          <Trans>写真を受け取るための公開URLを作成します</Trans>
+        </p>
       </div>
       <Card>
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && <Alert>{error}</Alert>}
           <FormField
-            label="ハンドル"
+            label={t`ハンドル`}
             id="handle"
             value={handle}
             onChange={(e) => {
@@ -229,23 +251,27 @@ function RegisterForm() {
               setHandleError(null);
             }}
             error={handleError ?? undefined}
-            hint={`公開URLに使われます: ${window.location.host}/send/あなたのハンドル`}
+            hint={t`公開URLに使われます: ${publicHost}/send/あなたのハンドル`}
             placeholder="taro_camera"
             autoComplete="username"
             maxLength={32}
           />
           <FormField
-            label="表示名"
+            label={t`表示名`}
             id="display-name"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="太郎カメラ"
+            placeholder={t`太郎カメラ`}
             maxLength={50}
           />
           <div className="space-y-4 border-t border-surface-sand-deep pt-4">
-            <p className="text-[14px] font-medium text-ink">受信オプション</p>
+            <p className="text-[14px] font-medium text-ink">
+              <Trans>受信オプション</Trans>
+            </p>
             <p className="text-[13px] text-ink-soft">
-              送信者に提示するオプションを設定します。あとから設定ページで変更できます。
+              <Trans>
+                送信者に提示するオプションを設定します。あとから設定ページで変更できます。
+              </Trans>
             </p>
             <RequireSenderNameField
               name="register-require-name"
@@ -254,15 +280,15 @@ function RegisterForm() {
             />
             <EmbedModeRadioGroup
               name="register-exif"
-              title="EXIF埋め込み"
-              description="送信者がカメラモデル欄に名前を書き込みます（メタデータのみ、除去可能）"
+              title={t`EXIF埋め込み`}
+              description={t`送信者がカメラモデル欄に名前を書き込みます（メタデータのみ、除去可能）`}
               value={exifEmbedMode}
               onChange={setExifEmbedMode}
             />
             <EmbedModeRadioGroup
               name="register-watermark"
-              title="透かし"
-              description="送信者が画像にクレジットテキストを描き込みます（不可逆）"
+              title={t`透かし`}
+              description={t`送信者が画像にクレジットテキストを描き込みます（不可逆）`}
               value={watermarkMode}
               onChange={setWatermarkMode}
             />
@@ -275,22 +301,24 @@ function RegisterForm() {
               className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
             />
             <span className="text-ink">
-              <Link
-                to="/terms"
-                target="_blank"
-                className="text-brand underline-offset-2 hover:underline"
-              >
-                利用規約
-              </Link>
-              および
-              <Link
-                to="/privacy"
-                target="_blank"
-                className="ml-1 text-brand underline-offset-2 hover:underline"
-              >
-                プライバシーポリシー
-              </Link>
-              に同意します。
+              <Trans>
+                <Link
+                  to="/terms"
+                  target="_blank"
+                  className="text-brand underline-offset-2 hover:underline"
+                >
+                  利用規約
+                </Link>
+                および
+                <Link
+                  to="/privacy"
+                  target="_blank"
+                  className="ml-1 text-brand underline-offset-2 hover:underline"
+                >
+                  プライバシーポリシー
+                </Link>
+                に同意します。
+              </Trans>
             </span>
           </label>
           <Button
@@ -300,7 +328,7 @@ function RegisterForm() {
             className="w-full"
             size="lg"
           >
-            登録する
+            <Trans>登録する</Trans>
           </Button>
         </form>
       </Card>
@@ -315,6 +343,7 @@ function ReceiveOptionsCard({
   user: UserProfile;
   setUser: (u: UserProfile) => void;
 }) {
+  const { t } = useLingui();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -339,9 +368,11 @@ function ReceiveOptionsCard({
   );
 
   return (
-    <Card title="受信オプション">
+    <Card title={t`受信オプション`}>
       <p className="mb-4 text-[13px] text-ink-soft">
-        送信者に提示するオプションを設定します。「必須」にすると送信者は必ず埋め込みます。
+        <Trans>
+          送信者に提示するオプションを設定します。「必須」にすると送信者は必ず埋め込みます。
+        </Trans>
       </p>
       {error && (
         <Alert variant="error" className="mb-4">
@@ -357,16 +388,16 @@ function ReceiveOptionsCard({
         />
         <EmbedModeRadioGroup
           name="settings-exif"
-          title="EXIF埋め込み"
-          description="送信者がカメラモデル欄に名前を書き込みます（メタデータのみ、除去可能）"
+          title={t`EXIF埋め込み`}
+          description={t`送信者がカメラモデル欄に名前を書き込みます（メタデータのみ、除去可能）`}
           value={user.exif_embed_mode}
           onChange={(v) => updateOption({ exif_embed_mode: v })}
           disabled={saving}
         />
         <EmbedModeRadioGroup
           name="settings-watermark"
-          title="透かし"
-          description="送信者が画像にクレジットテキストを描き込みます（不可逆）"
+          title={t`透かし`}
+          description={t`送信者が画像にクレジットテキストを描き込みます（不可逆）`}
           value={user.watermark_mode}
           onChange={(v) => updateOption({ watermark_mode: v })}
           disabled={saving}
@@ -377,10 +408,13 @@ function ReceiveOptionsCard({
 }
 
 function AccountDeletionCard({ user }: { user: UserProfile }) {
+  const { t } = useLingui();
   const navigate = useNavigate();
   const setUser = useSetAtom(userAtom);
   const [open, setOpen] = useState(false);
   const [confirmHandle, setConfirmHandle] = useState("");
+  // <Trans> のプレースホルダを名前付きにするため、メンバー式のまま埋め込まない
+  const handle = user.handle;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -422,24 +456,25 @@ function AccountDeletionCard({ user }: { user: UserProfile }) {
 
   return (
     <>
-      <Card title="アカウント削除">
+      <Card title={t`アカウント削除`}>
         <p className="mb-4 text-[13px] leading-[1.7] text-ink-soft">
-          アカウントと、受信した全ての写真・送信セッション履歴を完全に削除します。
-          <br />
-          この操作は取り消せません。
+          <Trans>
+            アカウントと、受信した全ての写真・送信セッション履歴を完全に削除します。
+            この操作は取り消せません。
+          </Trans>
         </p>
         <Button variant="danger" onClick={() => setOpen(true)}>
-          アカウントを削除
+          <Trans>アカウントを削除</Trans>
         </Button>
       </Card>
       <Dialog
         open={open}
         onClose={handleClose}
-        title="アカウントを削除しますか？"
+        title={t`アカウントを削除しますか？`}
         footer={
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={handleClose} disabled={loading}>
-              キャンセル
+              <Trans>キャンセル</Trans>
             </Button>
             <Button
               variant="danger"
@@ -447,29 +482,41 @@ function AccountDeletionCard({ user }: { user: UserProfile }) {
               loading={loading}
               disabled={confirmHandle !== user.handle}
             >
-              削除する
+              <Trans>削除する</Trans>
             </Button>
           </div>
         }
       >
         <div className="space-y-4 text-[14px] leading-[1.7] text-ink">
-          <p>以下のデータが完全に削除されます。この操作は取り消せません。</p>
+          <p>
+            <Trans>以下のデータが完全に削除されます。この操作は取り消せません。</Trans>
+          </p>
           <ul className="list-disc space-y-1 pl-5 text-[13px] text-ink-soft">
-            <li>受信した全ての写真とサムネイル</li>
-            <li>プロフィール・受信オプション設定</li>
-            <li>公開URL ({user.handle}) の所有権</li>
+            <li>
+              <Trans>受信した全ての写真とサムネイル</Trans>
+            </li>
+            <li>
+              <Trans>プロフィール・受信オプション設定</Trans>
+            </li>
+            <li>
+              <Trans>公開URL ({handle}) の所有権</Trans>
+            </li>
           </ul>
           <p className="text-[12px] leading-[1.6] text-ink-soft">
-            ※ 法令遵守 (情プラ法第5条等) のため、送信者の通信記録 (IPアドレス・User-Agent)
-            は当該送信から最低3か月の保存期間を経過するまで残ります (利用規約第13条)。
+            <Trans>
+              ※ 法令遵守 (情プラ法第5条等) のため、送信者の通信記録 (IPアドレス・User-Agent)
+              は当該送信から最低3か月の保存期間を経過するまで残ります (利用規約第13条)。
+            </Trans>
           </p>
           <p className="text-[13px] text-ink-soft">
-            続行するには、ご自身のハンドル <code className="font-mono text-ink">{user.handle}</code>{" "}
-            を入力してください。
+            <Trans>
+              続行するには、ご自身のハンドル <code className="font-mono text-ink">{handle}</code>{" "}
+              を入力してください。
+            </Trans>
           </p>
           {error && <Alert variant="error">{error}</Alert>}
           <FormField
-            label="確認用ハンドル"
+            label={t`確認用ハンドル`}
             id="confirm-handle"
             value={confirmHandle}
             onChange={(e) => setConfirmHandle(e.target.value)}
@@ -484,27 +531,34 @@ function AccountDeletionCard({ user }: { user: UserProfile }) {
 }
 
 function ProfileSettings() {
+  const { t } = useLingui();
   const [user, setUser] = useAtom(userAtom);
 
   if (!user) return null;
 
   return (
     <div className="space-y-6">
-      <h1 className="text-[22px] font-bold tracking-[-0.015em] text-ink sm:text-[28px]">設定</h1>
-      <Card title="プロフィール">
+      <h1 className="text-[22px] font-bold tracking-[-0.015em] text-ink sm:text-[28px]">
+        <Trans>設定</Trans>
+      </h1>
+      <Card title={t`プロフィール`}>
         <dl className="space-y-3 text-[14px]">
           <div>
-            <dt className="text-ink-soft">ハンドル</dt>
+            <dt className="text-ink-soft">
+              <Trans>ハンドル</Trans>
+            </dt>
             <dd className="font-mono font-medium text-ink">{user.handle}</dd>
           </div>
           <div>
-            <dt className="text-ink-soft">表示名</dt>
+            <dt className="text-ink-soft">
+              <Trans>表示名</Trans>
+            </dt>
             <dd className="font-medium text-ink">{user.display_name}</dd>
           </div>
         </dl>
       </Card>
       <ReceiveOptionsCard user={user} setUser={setUser} />
-      <Card title="ストレージ">
+      <Card title={t`ストレージ`}>
         <StorageQuotaBar used={user.storage_used} quota={user.storage_quota} />
       </Card>
       <AccountDeletionCard user={user} />

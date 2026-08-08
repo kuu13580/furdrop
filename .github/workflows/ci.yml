@@ -3,15 +3,20 @@ name: CI
 on:
   push:
     branches: [main]
+  # base を絞らない。統合ブランチ宛ての PR でも CI を回す必要があり、
+  # 対象を列挙する方式だとブランチが増えるたびに漏れる
   pull_request:
-    branches: [main]
 
 jobs:
   check:
     name: Lint・型チェック
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - uses: pnpm/action-setup@v4
 
@@ -28,11 +33,37 @@ jobs:
       - name: 型チェック
         run: pnpm typecheck
 
+  i18n:
+    name: i18n ガード (カタログ乖離・日本語直書き)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: i18n チェック
+        run: pnpm i18n:check
+
   test-frontend:
     name: Frontend ユニットテスト (Vitest)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - uses: pnpm/action-setup@v4
 
@@ -49,8 +80,12 @@ jobs:
   test-workers:
     name: Workers 統合テスト (vitest-pool-workers + Auth Emulator)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - uses: pnpm/action-setup@v4
 
@@ -73,8 +108,12 @@ jobs:
   test-e2e:
     name: Playwright E2E (Frontend + Workers + Auth Emulator)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - uses: pnpm/action-setup@v4
 

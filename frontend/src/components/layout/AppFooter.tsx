@@ -1,3 +1,4 @@
+import { Trans } from "@lingui/react/macro";
 import { Link } from "react-router";
 
 const FEEDBACK_URL = import.meta.env.VITE_FEEDBACK_URL ?? "";
@@ -9,10 +10,10 @@ export default function AppFooter() {
         <span>FurDrop</span>
         <nav className="flex flex-wrap items-center gap-x-4 gap-y-1">
           <Link to="/terms" className="transition-colors hover:text-brand">
-            利用規約
+            <Trans>利用規約</Trans>
           </Link>
           <Link to="/privacy" className="transition-colors hover:text-brand">
-            プライバシー
+            <Trans>プライバシー</Trans>
           </Link>
           {FEEDBACK_URL && (
             <a
@@ -21,7 +22,7 @@ export default function AppFooter() {
               rel="noopener noreferrer"
               className="transition-colors hover:text-brand"
             >
-              お問い合わせ・通報
+              <Trans>お問い合わせ・通報</Trans>
             </a>
           )}
         </nav>

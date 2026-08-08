@@ -1,0 +1,7 @@
+{
+  "lib/image-processing.ts": 5,
+  "lib/watermark.ts": 1,
+  "pages/LegalPage.tsx": 1,
+  "pages/send/UploadPage.tsx": 6,
+  "pages/send/UploadingPage.tsx": 15
+}

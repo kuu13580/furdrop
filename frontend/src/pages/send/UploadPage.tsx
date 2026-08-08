@@ -1,3 +1,5 @@
+import { msg } from "@lingui/core/macro";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useAtom } from "jotai";
 import {
   type ChangeEvent,
@@ -19,6 +21,7 @@ import { extractError, trackClientError } from "../../lib/analytics";
 import { type EmbedMode, senderApi } from "../../lib/api";
 import { runConcurrent } from "../../lib/concurrency";
 import { debugLog } from "../../lib/debug-log";
+import { i18n as globalI18n } from "../../lib/i18n";
 import { generateId } from "../../lib/id";
 import { generateThumbnail, isHeic, MAX_FILE_SIZE } from "../../lib/image-processing";
 import { clearAllPhotos, deletePhotos, getPhoto, putPhoto } from "../../lib/photo-store";
@@ -90,6 +93,7 @@ function buildPreviewCandidates(files: SelectedFile[]): PreviewCandidate[] {
 }
 
 export default function UploadPage() {
+  const { t } = useLingui();
   const { handle } = useParams<{ handle: string }>();
   const [searchParams] = useSearchParams();
   const accessKey = searchParams.get("k");
@@ -174,12 +178,13 @@ export default function UploadPage() {
     const accepted: { meta: SelectedFile; file: File }[] = [];
     const rejected: string[] = [];
     for (const f of arr) {
+      const name = f.name;
       if (!isAccepted(f)) {
-        rejected.push(`${f.name}: 対応外の形式`);
+        rejected.push(t`${name}: 対応外の形式`);
         continue;
       }
       if (f.size > MAX_FILE_SIZE) {
-        rejected.push(`${f.name}: 20MBを超えています`);
+        rejected.push(t`${name}: 20MBを超えています`);
         continue;
       }
       accepted.push({
@@ -196,7 +201,7 @@ export default function UploadPage() {
     const mergedMetas = [...files, ...accepted.map((a) => a.meta)];
     const overflowedMetas: SelectedFile[] = [];
     if (mergedMetas.length > MAX_PHOTOS_PER_SESSION) {
-      rejected.push(`一度に送れるのは${MAX_PHOTOS_PER_SESSION}枚までです`);
+      rejected.push(t`一度に送れるのは${MAX_PHOTOS_PER_SESSION}枚までです`);
       overflowedMetas.push(...mergedMetas.splice(MAX_PHOTOS_PER_SESSION));
     }
     setFiles(mergedMetas);
@@ -307,6 +312,10 @@ export default function UploadPage() {
     [],
   );
 
+  // <Trans> / <Plural> のプレースホルダを名前付きにするため、式のまま埋め込まない
+  const receiverName = displayName ?? handle ?? "";
+  const fileCount = files.length;
+
   const renderDropZone = (compact: boolean) => (
     <label
       htmlFor="file-input"
@@ -347,14 +356,14 @@ export default function UploadPage() {
           compact ? "mt-2 text-[14px]" : "mt-4 text-[18px] sm:text-[22px]"
         }`}
       >
-        {compact ? "他の写真を追加" : "写真をここにドロップ"}
+        {compact ? t`他の写真を追加` : t`写真をここにドロップ`}
       </p>
       <p className={`text-ink-soft ${compact ? "mt-0.5 text-[12px]" : "mt-1 text-[14px]"}`}>
-        またはタップしてファイルを選択
+        <Trans>またはタップしてファイルを選択</Trans>
       </p>
       {!compact && (
         <p className="mt-3 font-mono text-[11px] text-ink-muted">
-          JPEG / PNG / HEIC ・ 最大 20MB / 枚 ・ 100 枚まで
+          <Trans>JPEG / PNG / HEIC ・ 最大 20MB / 枚 ・ 100 枚まで</Trans>
         </p>
       )}
     </label>
@@ -381,10 +390,10 @@ export default function UploadPage() {
             to={withKey(`/send/${handle}`, accessKey)}
             className="rounded-lg px-2 py-1 text-[14px] text-ink-soft transition-colors hover:bg-surface-sand hover:text-ink"
           >
-            &lt; 戻る
+            <Trans>&lt; 戻る</Trans>
           </Link>
           <h1 className="truncate text-[16px] font-semibold text-ink">
-            {displayName ?? handle}さんへ送信
+            <Trans>{receiverName}さんへ送信</Trans>
           </h1>
           <div className="w-12" />
         </div>
@@ -395,7 +404,9 @@ export default function UploadPage() {
           <>
             <div ref={previewSectionRef}>
               <div className="mb-2 flex items-center justify-between text-[14px]">
-                <span className="font-medium text-ink">{files.length}枚選択中</span>
+                <span className="font-medium text-ink">
+                  <Plural value={fileCount} other="#枚選択中" />
+                </span>
                 <button
                   type="button"
                   className="rounded-lg px-2 py-1 text-ink-soft transition-colors hover:bg-surface-sand hover:text-ink"
@@ -405,7 +416,7 @@ export default function UploadPage() {
                     setFiles([]);
                   }}
                 >
-                  すべてクリア
+                  <Trans>すべてクリア</Trans>
                 </button>
               </div>
               <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
@@ -421,15 +432,19 @@ export default function UploadPage() {
         {isImporting && (
           <div className="flex items-center justify-center gap-2.5 rounded-2xl border border-surface-sand-deep bg-surface/80 px-4 py-3 text-[14px] text-ink-soft">
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-surface-sand-deep border-t-brand" />
-            <span>写真を取り込み中…</span>
+            <span>
+              <Trans>写真を取り込み中…</Trans>
+            </span>
           </div>
         )}
 
         <p className="text-center text-[12px] text-ink-soft">
-          初めての方は
-          <Link to="/guide" className="ml-0.5 text-brand underline-offset-2 hover:underline">
-            使い方を見る →
-          </Link>
+          <Trans>
+            初めての方は
+            <Link to="/guide" className="ml-0.5 text-brand underline-offset-2 hover:underline">
+              使い方を見る →
+            </Link>
+          </Trans>
         </p>
 
         {error && (
@@ -447,7 +462,7 @@ export default function UploadPage() {
                     htmlFor="senderName"
                     className="flex items-center gap-1.5 text-[14px] font-medium text-ink"
                   >
-                    送信者名 / TwitterID
+                    <Trans>送信者名 / TwitterID</Trans>
                     {nameRequired && <RequiredBadge />}
                   </label>
                   <input
@@ -459,12 +474,15 @@ export default function UploadPage() {
                     className="block w-full rounded-xl border border-surface-sand-deep bg-surface px-4 py-3 text-[14px] text-ink placeholder:text-ink-muted transition-all focus:border-brand focus:outline-none focus:ring-3 focus:ring-brand/15"
                   />
                   <p className="text-[13px] text-ink-soft">
-                    受信者に表示されます
-                    {exifMode !== "disabled" && "。EXIF埋め込みにもこの名前が使われます"}
+                    {exifMode !== "disabled" ? (
+                      <Trans>受信者に表示されます。EXIF埋め込みにもこの名前が使われます</Trans>
+                    ) : (
+                      <Trans>受信者に表示されます</Trans>
+                    )}
                   </p>
                   {nameRequired && !hasSenderName && (
                     <p className="text-[13px] text-status-warn">
-                      この受信者への送信には送信者名の入力が必要です
+                      <Trans>この受信者への送信には送信者名の入力が必要です</Trans>
                     </p>
                   )}
                 </div>
@@ -484,17 +502,23 @@ export default function UploadPage() {
                         />
                         <span>
                           <span className="flex items-center gap-1.5 font-medium text-ink">
-                            EXIFカメラモデル欄に埋め込む
+                            <Trans>EXIFカメラモデル欄に埋め込む</Trans>
                             {exifMode === "required" && <RequiredBadge />}
                           </span>
                           <span className="mt-0.5 block text-[13px] text-ink-soft">
-                            メタデータに送信者名
-                            {credit && (
-                              <code className="mx-0.5 rounded bg-surface-sand px-1.5 py-0.5 font-mono text-[0.95em] text-ink">
-                                {credit}
-                              </code>
+                            {credit ? (
+                              <Trans>
+                                メタデータに送信者名
+                                <code className="mx-0.5 rounded bg-surface-sand px-1.5 py-0.5 font-mono text-[0.95em] text-ink">
+                                  {credit}
+                                </code>
+                                を書き込みます（元のカメラ情報は上書き）
+                              </Trans>
+                            ) : (
+                              <Trans>
+                                メタデータに送信者名を書き込みます（元のカメラ情報は上書き）
+                              </Trans>
                             )}
-                            を書き込みます（元のカメラ情報は上書き）
                           </span>
                         </span>
                       </label>
@@ -518,11 +542,13 @@ export default function UploadPage() {
                           />
                           <span>
                             <span className="flex items-center gap-1.5 font-medium text-ink">
-                              透かしを入れる
+                              <Trans>透かしを入れる</Trans>
                               {watermarkMode === "required" && <RequiredBadge />}
                             </span>
                             <span className="mt-0.5 block text-[13px] text-ink-soft">
-                              画像に文字や四角形を描き込みます（不可逆）。初期設定では送信者名が右下に入り、内容・位置・フォントは自由に編集できます
+                              <Trans>
+                                画像に文字や四角形を描き込みます（不可逆）。初期設定では送信者名が右下に入り、内容・位置・フォントは自由に編集できます
+                              </Trans>
                             </span>
                           </span>
                         </label>
@@ -533,13 +559,15 @@ export default function UploadPage() {
                               variant="secondary"
                               onClick={() => setWatermarkDialogOpen(true)}
                             >
-                              透かしを編集
+                              <Trans>透かしを編集</Trans>
                             </Button>
                           </div>
                         )}
                         {watermarkRequiredEmpty && (
                           <p className="mt-2 pl-6 text-[13px] text-status-warn">
-                            透かしに表示できる文字がありません。「透かしを編集」から文字を入力してください。
+                            <Trans>
+                              透かしに表示できる文字がありません。「透かしを編集」から文字を入力してください。
+                            </Trans>
                           </p>
                         )}
                       </div>
@@ -560,7 +588,9 @@ export default function UploadPage() {
               className="mt-0.5 h-4 w-4 shrink-0 accent-status-warn"
             />
             <span className="text-ink">
-              送信者名を記載しない場合、写真のクレジット表記なしでの編集・共有が行われる可能性があることに同意します
+              <Trans>
+                送信者名を記載しない場合、写真のクレジット表記なしでの編集・共有が行われる可能性があることに同意します
+              </Trans>
             </span>
           </label>
         )}
@@ -573,29 +603,35 @@ export default function UploadPage() {
             disabled={!canSubmit}
             onClick={handleSubmit}
           >
-            送信する{files.length > 0 ? ` (${files.length}枚)` : ""}
+            {fileCount > 0 ? (
+              <Plural value={fileCount} other="送信する (#枚)" />
+            ) : (
+              <Trans>送信する</Trans>
+            )}
           </Button>
         </div>
 
         {files.length > 0 && (
           <p className="mx-auto max-w-3xl text-center text-[12px] leading-relaxed text-ink-soft">
-            送信ボタンを押すと、
-            <Link
-              to="/terms"
-              target="_blank"
-              className="text-brand underline-offset-2 hover:underline"
-            >
-              利用規約
-            </Link>
-            および
-            <Link
-              to="/privacy"
-              target="_blank"
-              className="mx-0.5 text-brand underline-offset-2 hover:underline"
-            >
-              プライバシーポリシー
-            </Link>
-            に同意したものとみなされます。
+            <Trans>
+              送信ボタンを押すと、
+              <Link
+                to="/terms"
+                target="_blank"
+                className="text-brand underline-offset-2 hover:underline"
+              >
+                利用規約
+              </Link>
+              および
+              <Link
+                to="/privacy"
+                target="_blank"
+                className="ml-0.5 text-brand underline-offset-2 hover:underline"
+              >
+                プライバシーポリシー
+              </Link>
+              に同意したものとみなされます。
+            </Trans>
           </p>
         )}
 
@@ -616,7 +652,7 @@ export default function UploadPage() {
 function RequiredBadge() {
   return (
     <span className="rounded-md bg-status-warn/15 px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wide text-status-warn">
-      必須
+      <Trans>必須</Trans>
     </span>
   );
 }
@@ -629,7 +665,9 @@ const PreviewTile = memo(function PreviewTile({
   file: SelectedFile;
   onRemove: (id: string) => void;
 }) {
+  const { t } = useLingui();
   const heic = isHeic(file.file);
+  const name = file.file.name;
   const hasPreview = file.previewUrl.length > 0;
   const generating = !file.previewReady;
   return (
@@ -637,7 +675,9 @@ const PreviewTile = memo(function PreviewTile({
       {heic ? (
         <div className="flex flex-col items-center justify-center px-2 text-center text-ink-soft">
           <span className="font-mono text-[13px] font-semibold">HEIC</span>
-          <span className="mt-0.5 text-[11px]">プレビュー不可</span>
+          <span className="mt-0.5 text-[11px]">
+            <Trans>プレビュー不可</Trans>
+          </span>
           <span className="mt-1 max-w-full truncate text-[11px]">{file.file.name}</span>
         </div>
       ) : hasPreview ? (
@@ -655,7 +695,9 @@ const PreviewTile = memo(function PreviewTile({
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center px-2 text-center text-[12px] text-ink-soft">
-          <span className="font-mono font-semibold">画像</span>
+          <span className="font-mono font-semibold">
+            <Trans>画像</Trans>
+          </span>
           <span className="mt-1 max-w-full truncate">{file.file.name}</span>
         </div>
       )}
@@ -666,7 +708,7 @@ const PreviewTile = memo(function PreviewTile({
           onRemove(file.id);
         }}
         className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-ink/55 text-[13px] text-white backdrop-blur-sm transition-colors hover:bg-ink/75"
-        aria-label={`${file.file.name} を削除`}
+        aria-label={t`${name} を削除`}
       >
         ×
       </button>
@@ -735,7 +777,9 @@ async function ingestFiles(
   // iOS など端末の保存容量上限に達した場合は原因が分かる文言を出す
   if (quotaHit) {
     setError(
-      "端末の保存容量が不足しているため、一部の写真を取り込めませんでした。写真の枚数を減らすか、空き容量を確保してお試しください。",
+      globalI18n._(
+        msg`端末の保存容量が不足しているため、一部の写真を取り込めませんでした。写真の枚数を減らすか、空き容量を確保してお試しください。`,
+      ),
     );
   }
 

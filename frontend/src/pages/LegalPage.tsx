@@ -1,23 +1,24 @@
+import { Trans, useLingui } from "@lingui/react/macro";
 import type { ComponentPropsWithoutRef } from "react";
 import ReactMarkdown from "react-markdown";
 import { Link, useNavigate } from "react-router";
 import remarkGfm from "remark-gfm";
 import logoUrl from "../assets/logos/logo.png";
+import LocaleToggle from "../components/ui/LocaleToggle";
 import privacyMd from "../content/legal/privacy.md?raw";
 import termsMd from "../content/legal/terms.md?raw";
+import { SOURCE_LOCALE } from "../lib/i18n";
 
 const FEEDBACK_URL = import.meta.env.VITE_FEEDBACK_URL ?? "";
 
 type Doc = "terms" | "privacy";
 
-const TITLES: Record<Doc, string> = {
-  terms: "利用規約",
-  privacy: "プライバシーポリシー",
-};
+/** 本文の markdown 内のプレースホルダ。UI 文言ではないので翻訳しない */
+const CONTACT_PLACEHOLDER = "[お問い合わせフォーム]";
 
 function resolvePlaceholders(md: string): string {
   if (FEEDBACK_URL) {
-    return md.replaceAll("[お問い合わせフォーム]", `[お問い合わせフォーム](${FEEDBACK_URL})`);
+    return md.replaceAll(CONTACT_PLACEHOLDER, `${CONTACT_PLACEHOLDER}(${FEEDBACK_URL})`);
   }
   return md;
 }
@@ -93,8 +94,11 @@ const components: ComponentPropsWithoutRef<typeof ReactMarkdown>["components"] =
 };
 
 export default function LegalPage({ doc }: { doc: Doc }) {
+  const { i18n } = useLingui();
   const navigate = useNavigate();
   const md = resolvePlaceholders(doc === "terms" ? termsMd : privacyMd);
+  // 規約・ポリシーは日本語を正文とする。他言語では本文を訳さない代わりに理由を示す
+  const showSourceOnlyNotice = i18n.locale !== SOURCE_LOCALE;
 
   return (
     <div className="flex min-h-dvh flex-col bg-surface-canvas pb-12 text-ink antialiased">
@@ -103,16 +107,19 @@ export default function LegalPage({ doc }: { doc: Doc }) {
           <Link to="/" className="flex shrink-0 items-center">
             <img src={logoUrl} alt="FurDrop" className="h-9" />
           </Link>
-          <button
-            type="button"
-            onClick={() => {
-              if (window.history.length > 1) navigate(-1);
-              else navigate("/");
-            }}
-            className="rounded-lg px-3 py-2 text-[14px] text-ink-soft transition-colors hover:bg-surface-sand hover:text-ink"
-          >
-            戻る
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                if (window.history.length > 1) navigate(-1);
+                else navigate("/");
+              }}
+              className="rounded-lg px-3 py-2 text-[14px] text-ink-soft transition-colors hover:bg-surface-sand hover:text-ink"
+            >
+              <Trans>戻る</Trans>
+            </button>
+            <LocaleToggle />
+          </div>
         </div>
       </header>
 
@@ -120,6 +127,11 @@ export default function LegalPage({ doc }: { doc: Doc }) {
         <p className="mb-1 text-[12px] font-medium tracking-[0.08em] text-ink-muted uppercase">
           {doc === "terms" ? "Terms of Service" : "Privacy Policy"}
         </p>
+        {showSourceOnlyNotice && (
+          <p className="mb-6 rounded-xl border border-surface-sand-deep bg-surface-sand/50 px-4 py-3 text-[13px] leading-[1.6] text-ink-soft">
+            <Trans>この文書は日本語のみで提供されます。日本語版が正文です。</Trans>
+          </p>
+        )}
         <article className="legal-doc">
           <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
             {md}
@@ -129,11 +141,11 @@ export default function LegalPage({ doc }: { doc: Doc }) {
         <nav className="mt-12 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-surface-sand-deep pt-6 text-[14px]">
           {doc === "terms" ? (
             <Link to="/privacy" className="text-brand underline-offset-2 hover:underline">
-              プライバシーポリシー
+              <Trans>プライバシーポリシー</Trans>
             </Link>
           ) : (
             <Link to="/terms" className="text-brand underline-offset-2 hover:underline">
-              利用規約
+              <Trans>利用規約</Trans>
             </Link>
           )}
           {FEEDBACK_URL && (
@@ -143,7 +155,7 @@ export default function LegalPage({ doc }: { doc: Doc }) {
               rel="noopener noreferrer"
               className="text-brand underline-offset-2 hover:underline"
             >
-              お問い合わせ
+              <Trans>お問い合わせ</Trans>
             </a>
           )}
         </nav>
@@ -151,5 +163,3 @@ export default function LegalPage({ doc }: { doc: Doc }) {
     </div>
   );
 }
-
-export { TITLES as LEGAL_TITLES };

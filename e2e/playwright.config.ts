@@ -31,6 +31,10 @@ export default defineConfig({
   globalSetup: "./global-setup.ts",
   use: {
     baseURL: `http://localhost:${FRONTEND_PORT}`,
+    // 既存の spec は日本語の文言で要素を引くため、ブラウザ言語を ja に固定する
+    // (未指定だと en-US になり、翻訳済みの画面が英語で描画されて全滅する)。
+    // ロケール自体を検証する spec は localStorage / ?lang= で個別に上書きする。
+    locale: "ja-JP",
     trace: "on-first-retry",
     video: "retain-on-failure",
   },

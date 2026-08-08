@@ -5,6 +5,11 @@ declare module "*.md?raw" {
   export default src;
 }
 
+declare module "*.po" {
+  import type { Messages } from "@lingui/core";
+  export const messages: Messages;
+}
+
 interface ImportMetaEnv {
   readonly VITE_FEEDBACK_URL?: string;
   readonly VITE_FIREBASE_API_KEY?: string;

@@ -1,3 +1,4 @@
+import { Trans } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router";
 import SenderAtmosphere from "../../components/send/SenderAtmosphere";
@@ -49,6 +50,9 @@ export default function LandingPage() {
     };
   }, [handle]);
 
+  // <Trans> のプレースホルダを名前付きにするため、メンバー式のまま埋め込まない
+  const displayName = receiver?.display_name ?? "";
+
   return (
     <div className="relative flex flex-1 items-center justify-center overflow-hidden px-4 py-10 sm:py-16">
       <SenderAtmosphere tone="warm" />
@@ -60,12 +64,16 @@ export default function LandingPage() {
         ) : error === "not_found" ? (
           <div className="space-y-3 text-center">
             <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink">
-              ユーザーが見つかりません
+              <Trans>ユーザーが見つかりません</Trans>
             </h1>
-            <p className="text-[14px] text-ink-soft">URLに誤りがないかご確認ください。</p>
+            <p className="text-[14px] text-ink-soft">
+              <Trans>URLに誤りがないかご確認ください。</Trans>
+            </p>
           </div>
         ) : error || !receiver ? (
-          <Alert variant="error">読み込みに失敗しました。時間をおいて再度お試しください。</Alert>
+          <Alert variant="error">
+            <Trans>読み込みに失敗しました。時間をおいて再度お試しください。</Trans>
+          </Alert>
         ) : (
           <div className="rounded-[20px] bg-surface p-8 shadow-modal">
             <div className="space-y-5 text-center">
@@ -88,17 +96,19 @@ export default function LandingPage() {
                 <p className="mt-1 font-mono text-[14px] text-ink-soft">@{receiver.handle}</p>
               </div>
               <p className="text-[14px] text-ink-soft">
-                写真を{receiver.display_name}さんに送れます
+                <Trans>写真を{displayName}さんに送れます</Trans>
               </p>
               {receiver.is_accepting ? (
                 <Link
                   to={withKey(`/send/${receiver.handle}/upload`, accessKey)}
                   className="block rounded-xl bg-brand px-4 py-3 text-[16px] font-medium text-white transition-all hover:bg-brand-deep active:scale-[0.98]"
                 >
-                  写真を送る
+                  <Trans>写真を送る</Trans>
                 </Link>
               ) : (
-                <Alert variant="info">現在、この受信者は写真を受け付けていません。</Alert>
+                <Alert variant="info">
+                  <Trans>現在、この受信者は写真を受け付けていません。</Trans>
+                </Alert>
               )}
             </div>
           </div>

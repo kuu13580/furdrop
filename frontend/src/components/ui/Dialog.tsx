@@ -1,3 +1,4 @@
+import { useLingui } from "@lingui/react/macro";
 import { type ReactNode, useEffect } from "react";
 
 type DialogSize = "sm" | "md" | "lg" | "4xl";
@@ -22,6 +23,7 @@ type Props = {
 };
 
 export default function Dialog({ open, onClose, title, children, footer, size = "lg" }: Props) {
+  const { t } = useLingui();
   useEffect(() => {
     if (!open) return;
     const prevOverflow = document.body.style.overflow;
@@ -42,7 +44,7 @@ export default function Dialog({ open, onClose, title, children, footer, size = 
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 px-4 py-20 backdrop-blur-sm">
       <button
         type="button"
-        aria-label="閉じる"
+        aria-label={t`閉じる`}
         onClick={onClose}
         className="absolute inset-0 cursor-default bg-transparent"
       />
@@ -60,7 +62,7 @@ export default function Dialog({ open, onClose, title, children, footer, size = 
             <button
               type="button"
               onClick={onClose}
-              aria-label="閉じる"
+              aria-label={t`閉じる`}
               className="rounded-full px-2 text-[20px] leading-none text-ink-muted transition-colors hover:bg-surface-sand hover:text-ink"
             >
               ×

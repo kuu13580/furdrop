@@ -1,3 +1,5 @@
+import { useLingui } from "@lingui/react/macro";
+
 const sizes = {
   sm: "h-4 w-4",
   md: "h-6 w-6",
@@ -10,13 +12,14 @@ type Props = {
 };
 
 export default function LoadingSpinner({ size = "md", className = "" }: Props) {
+  const { t } = useLingui();
   return (
     <svg
       className={`animate-spin text-ink-muted ${sizes[size]} ${className}`}
       viewBox="0 0 24 24"
       fill="none"
       role="img"
-      aria-label="読み込み中"
+      aria-label={t`読み込み中`}
     >
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
       <path
