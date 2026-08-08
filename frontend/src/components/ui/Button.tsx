@@ -1,3 +1,4 @@
+import { useLingui } from "@lingui/react/macro";
 import type { ButtonHTMLAttributes } from "react";
 
 const variants = {
@@ -33,6 +34,7 @@ export default function Button({
   type = "button",
   ...props
 }: Props) {
+  const { t } = useLingui();
   return (
     <button
       type={type}
@@ -46,7 +48,7 @@ export default function Button({
           viewBox="0 0 24 24"
           fill="none"
           role="img"
-          aria-label="読み込み中"
+          aria-label={t`読み込み中`}
         >
           <circle
             className="opacity-25"

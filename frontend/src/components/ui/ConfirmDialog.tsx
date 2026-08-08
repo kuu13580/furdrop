@@ -1,3 +1,4 @@
+import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import Button from "./Button";
 import Dialog from "./Dialog";
@@ -30,10 +31,11 @@ export default function ConfirmDialog({
   title,
   description,
   confirmLabel = "OK",
-  cancelLabel = "キャンセル",
+  cancelLabel,
   variant = "primary",
   loading = false,
 }: Props) {
+  const { t } = useLingui();
   return (
     <Dialog
       open={open}
@@ -42,7 +44,7 @@ export default function ConfirmDialog({
       footer={
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={onClose} disabled={loading}>
-            {cancelLabel}
+            {cancelLabel ?? t`キャンセル`}
           </Button>
           <Button variant={variant} onClick={onConfirm} loading={loading}>
             {confirmLabel}
