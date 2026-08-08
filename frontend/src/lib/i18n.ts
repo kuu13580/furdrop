@@ -6,6 +6,10 @@ export type Locale = (typeof LOCALES)[number];
 /** 原文のロケール。カタログ未ロード時はこの言語の msgid が出る */
 export const SOURCE_LOCALE: Locale = "ja";
 
+// Lingui はロケール未設定で `_()` を呼ぶと例外を投げる。カタログのロード前・
+// ロード失敗時でも描画を続けられるよう、空カタログで原文ロケールを先に有効化する。
+i18n.loadAndActivate({ locale: SOURCE_LOCALE, messages: {} });
+
 /** ja / en 以外のブラウザには日本語より英語のほうが読める可能性が高い */
 export const FALLBACK_LOCALE: Locale = "en";
 
