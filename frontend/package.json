@@ -7,10 +7,14 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b",
+    "i18n:extract": "lingui extract --clean",
+    "i18n:stats": "lingui extract --clean",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@lingui/core": "^6.6.0",
+    "@lingui/react": "^6.6.0",
     "@tailwindcss/vite": "^4.2.2",
     "@zip.js/zip.js": "^2.8.26",
     "firebase": "^12.12.0",
@@ -26,6 +30,12 @@
     "tailwindcss": "^4.2.2"
   },
   "devDependencies": {
+    "@babel/core": "^8.0.1",
+    "@lingui/babel-plugin-lingui-macro": "6.6.0",
+    "@lingui/cli": "^6.6.0",
+    "@lingui/format-po": "^6.6.0",
+    "@lingui/vite-plugin": "^6.6.0",
+    "@rolldown/plugin-babel": "0.2.3",
     "@types/node": "^25.5.2",
     "@types/piexifjs": "^1.0.0",
     "@types/qrcode": "^1.5.6",
