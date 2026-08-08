@@ -65,6 +65,15 @@ pnpm secrets:prod
 # CIのdeployワークフローで自動実行される
 pnpm cors:prod
 
+# i18n カタログ更新 (ユーザー向け文言を追加・変更したら実行)
+pnpm i18n:extract
+
+# i18n ガード (カタログ乖離 + 日本語直書きのラチェット)。CI でも実行される
+pnpm i18n:check
+
+# 翻訳が進んでベースラインが減ったら更新する
+pnpm i18n:lint:update
+
 # ===== テスト =====
 # 3 層すべて (frontend ユニット + Workers 統合 + Playwright E2E) を一括実行
 # 内部で firebase emulators:exec で Auth Emulator を立ち上げる (JRE 17+ 必須)
@@ -126,6 +135,7 @@ pnpm emulator
 - `docs/` — 設計ドキュメントとの乖離がないか
 - `.claude/rules/` — コーディングルール・規約の変更
 - `DESIGN.md` — デザイン規約 (色・タイポ・コンポーネント・レイアウト理念) の変更
+- ユーザー向け文言の追加・変更時は `pnpm i18n:extract` でカタログを更新する。日本語の直書きは `pnpm i18n:check` で落ちる
 - `frontend/src/pages/DesignPreviewPage.tsx` — **`DESIGN.md` を更新した場合は必ずプレビューも追従更新**。プレビューは DESIGN.md の生きたカナリアであり、乖離すると視覚回帰チェックの意味が失われる
 
 ## 設計ドキュメント

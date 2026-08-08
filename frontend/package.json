@@ -8,7 +8,7 @@
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "i18n:extract": "lingui extract --clean",
-    "i18n:check": "lingui extract --clean && lingui compile --strict",
+    "i18n:stats": "lingui extract --clean",
     "test": "vitest run",
     "test:watch": "vitest"
   },

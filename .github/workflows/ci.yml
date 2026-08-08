@@ -28,6 +28,24 @@ jobs:
       - name: 型チェック
         run: pnpm typecheck
 
+  i18n:
+    name: i18n ガード (カタログ乖離・日本語直書き)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: i18n チェック
+        run: pnpm i18n:check
+
   test-frontend:
     name: Frontend ユニットテスト (Vitest)
     runs-on: ubuntu-latest
