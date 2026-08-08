@@ -789,7 +789,7 @@ pnpm generate
 # 設定ファイルを生成 (本番用 .env.prod を使用。CIでのみ使用)
 pnpm generate:prod
 
-# workers の dev は自動で generate を実行する
+# workers の dev は自動で generate と migrate:local を実行する
 pnpm --filter workers dev
 ```
 

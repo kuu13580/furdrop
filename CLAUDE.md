@@ -45,6 +45,7 @@ pnpm --filter frontend dev
 pnpm --filter workers dev
 
 # D1マイグレーション (ローカル)
+# dev が起動時に自動実行するので、通常は手動実行不要
 pnpm --filter workers migrate:local
 
 # D1マイグレーション (本番)
