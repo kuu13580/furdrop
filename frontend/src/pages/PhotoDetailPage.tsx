@@ -1,3 +1,4 @@
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router";
 import Button from "../components/ui/Button";
@@ -10,6 +11,7 @@ import { formatBytes, formatDateTime } from "../lib/format";
 import type { Photo } from "../types/photo";
 
 export default function PhotoDetailPage() {
+  const { t, i18n } = useLingui();
   const { photoId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -111,9 +113,11 @@ export default function PhotoDetailPage() {
   if (!photo) {
     return (
       <div className="py-16 text-center">
-        <p className="text-[14px] text-ink-soft">写真が見つかりません</p>
+        <p className="text-[14px] text-ink-soft">
+          <Trans>写真が見つかりません</Trans>
+        </p>
         <Button variant="ghost" onClick={() => navigate("/gallery")} className="mt-4">
-          ギャラリーに戻る
+          <Trans>ギャラリーに戻る</Trans>
         </Button>
       </div>
     );
@@ -128,11 +132,11 @@ export default function PhotoDetailPage() {
           onClick={() => navigate("/gallery")}
           className="rounded-lg px-2 py-1 text-[14px] text-ink-soft transition-colors hover:bg-surface-sand hover:text-ink"
         >
-          &larr; ギャラリー
+          <Trans>&larr; ギャラリー</Trans>
         </button>
         <div className="flex gap-2">
           <Button size="sm" variant="secondary" onClick={handleDownload} loading={downloading}>
-            ダウンロード
+            <Trans>ダウンロード</Trans>
           </Button>
           <Button
             size="sm"
@@ -140,7 +144,7 @@ export default function PhotoDetailPage() {
             onClick={() => setDeleteConfirmOpen(true)}
             loading={deleting}
           >
-            削除
+            <Trans>削除</Trans>
           </Button>
         </div>
       </div>
@@ -176,7 +180,7 @@ export default function PhotoDetailPage() {
                 {photo.view_url && (
                   <img
                     src={photo.view_url}
-                    alt={photo.sender_name ?? "写真"}
+                    alt={photo.sender_name ?? t`写真`}
                     onLoad={() => setViewLoaded(true)}
                     onError={onImageError("photo-detail-view", "original")}
                     className={`absolute inset-0 h-full w-full object-contain transition-opacity duration-300 ${
@@ -189,7 +193,7 @@ export default function PhotoDetailPage() {
           })()
         ) : (
           <div className="flex h-64 w-full items-center justify-center rounded-2xl bg-surface-sand text-[14px] text-ink-muted">
-            画像を読み込めません
+            <Trans>画像を読み込めません</Trans>
           </div>
         )}
 
@@ -197,7 +201,7 @@ export default function PhotoDetailPage() {
           <button
             type="button"
             onClick={goPrev}
-            aria-label="前の写真"
+            aria-label={t`前の写真`}
             className="absolute top-1/2 left-2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-surface/90 text-ink shadow-card transition-colors hover:bg-surface sm:left-4"
           >
             <svg
@@ -211,7 +215,7 @@ export default function PhotoDetailPage() {
               strokeLinecap="round"
               strokeLinejoin="round"
               role="img"
-              aria-label="前へ"
+              aria-label={t`前へ`}
             >
               <polyline points="15 18 9 12 15 6" />
             </svg>
@@ -221,7 +225,7 @@ export default function PhotoDetailPage() {
           <button
             type="button"
             onClick={goNext}
-            aria-label="次の写真"
+            aria-label={t`次の写真`}
             className="absolute top-1/2 right-2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-surface/90 text-ink shadow-card transition-colors hover:bg-surface sm:right-4"
           >
             <svg
@@ -235,7 +239,7 @@ export default function PhotoDetailPage() {
               strokeLinecap="round"
               strokeLinejoin="round"
               role="img"
-              aria-label="次へ"
+              aria-label={t`次へ`}
             >
               <polyline points="9 18 15 12 9 6" />
             </svg>
@@ -244,29 +248,37 @@ export default function PhotoDetailPage() {
       </div>
 
       {/* メタデータ */}
-      <Card title="写真情報">
+      <Card title={t`写真情報`}>
         <dl className="space-y-2 text-[14px]">
           {photo.sender_name && (
             <div className="flex justify-between">
-              <dt className="text-ink-soft">送信者</dt>
+              <dt className="text-ink-soft">
+                <Trans>送信者</Trans>
+              </dt>
               <dd className="font-medium text-ink">{photo.sender_name}</dd>
             </div>
           )}
           <div className="flex justify-between">
-            <dt className="text-ink-soft">サイズ</dt>
+            <dt className="text-ink-soft">
+              <Trans>サイズ</Trans>
+            </dt>
             <dd className="font-mono text-ink">{formatBytes(photo.file_size)}</dd>
           </div>
           {photo.width && photo.height && (
             <div className="flex justify-between">
-              <dt className="text-ink-soft">解像度</dt>
+              <dt className="text-ink-soft">
+                <Trans>解像度</Trans>
+              </dt>
               <dd className="font-mono text-ink">
                 {photo.width} &times; {photo.height}
               </dd>
             </div>
           )}
           <div className="flex justify-between">
-            <dt className="text-ink-soft">受信日</dt>
-            <dd className="font-mono text-ink">{formatDateTime(photo.created_at)}</dd>
+            <dt className="text-ink-soft">
+              <Trans>受信日</Trans>
+            </dt>
+            <dd className="font-mono text-ink">{formatDateTime(photo.created_at, i18n.locale)}</dd>
           </div>
         </dl>
       </Card>
@@ -275,10 +287,9 @@ export default function PhotoDetailPage() {
         open={deleteConfirmOpen}
         onClose={() => setDeleteConfirmOpen(false)}
         onConfirm={handleDelete}
-        title="この写真を削除しますか？"
-        description="削除された写真は復元できません。"
-        confirmLabel="削除する"
-        cancelLabel="キャンセル"
+        title={t`この写真を削除しますか？`}
+        description={t`削除された写真は復元できません。`}
+        confirmLabel={t`削除する`}
         variant="danger"
         loading={deleting}
       />
