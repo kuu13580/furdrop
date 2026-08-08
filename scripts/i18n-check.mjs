@@ -47,9 +47,40 @@ try {
 }
 
 // --- 3. 未翻訳の件数 (報告のみ) ---
-const po = readFileSync(join(ROOT, CATALOGS, "en/messages.po"), "utf8");
-const total = (po.match(/^msgid "(?!")/gm) ?? []).length;
-const missing = (po.match(/^msgstr ""$/gm) ?? []).length - 1; // ヘッダ分を引く
-console.log(`ℹ en の未翻訳: ${Math.max(0, missing)} / ${total}`);
+// msgid / msgstr は改行を含むと継続行に折り返される。行単位で見ると
+// 折り返し分を数え落とすので、継続行を畳んでからエントリ単位で判定する
+function parsePo(source) {
+  const entries = [];
+  let key = null;
+  let buf = { msgid: "", msgstr: "" };
+  for (const line of source.split("\n")) {
+    const head = /^(msgid|msgstr) "((?:[^"\\]|\\.)*)"$/.exec(line);
+    if (head) {
+      key = head[1];
+      buf[key] = head[2];
+      if (key === "msgid") buf.msgstr = "";
+      continue;
+    }
+    const cont = /^"((?:[^"\\]|\\.)*)"$/.exec(line);
+    if (cont && key) {
+      buf[key] += cont[1];
+      continue;
+    }
+    if (line.trim() === "" && buf.msgid) {
+      entries.push({ ...buf });
+      buf = { msgid: "", msgstr: "" };
+      key = null;
+    }
+  }
+  if (buf.msgid) entries.push({ ...buf });
+  return entries.filter((e) => e.msgid !== "");
+}
+
+const entries = parsePo(readFileSync(join(ROOT, CATALOGS, "en/messages.po"), "utf8"));
+const missing = entries.filter((e) => e.msgstr === "").length;
+console.log(`ℹ en の未翻訳: ${missing} / ${entries.length}`);
+if (missing > 0) {
+  for (const e of entries.filter((x) => x.msgstr === "")) console.log(`   - ${e.msgid}`);
+}
 
 process.exit(failed ? 1 : 0);
