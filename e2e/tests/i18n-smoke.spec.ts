@@ -43,6 +43,9 @@ const TRANSLATED: Target[] = [
 
 const JAPANESE = /[぀-ヿ一-鿿]/;
 
+/** 1 回の実行で受信者を何人も作るので、Date.now() だけに頼らず連番も足す */
+let handleSeq = 0;
+
 /**
  * 対象ページを開く。認証必須ページはログインと写真 1 枚の seed まで済ませる
  * (空状態だけ見ても、写真がある状態でしか出ない文言を取りこぼすため)。
@@ -60,7 +63,7 @@ async function openTarget(page: Page, target: Target, locale: "ja" | "en") {
   }
 
   const user = await createEmulatorUser();
-  const handle = `e2e_i18n_${Date.now()}`;
+  const handle = `e2e_i18n_${Date.now()}_${handleSeq++}`;
   const { sendKey } = await registerReceiver(user, handle, "E2E i18n");
 
   if (target.auth) {

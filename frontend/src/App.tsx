@@ -62,14 +62,29 @@ function DebugUrlSync() {
   return null;
 }
 
-/** `?lang=` を検知してロケールに同期する (DebugUrlSync と同じ sticky な挙動) */
+/**
+ * `?lang=` を検知してロケールに同期する (DebugUrlSync と同じ sticky な挙動)。
+ *
+ * 適用したら URL からは外す。`?lang=` は localStorage より優先されるため、
+ * 残したままトグルで切り替えるとリロードで巻き戻ってしまう。除去は Router 経由で
+ * 行い、history を直接触らない (searchParams と食い違わせないため)。
+ */
 function LocaleUrlSync() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const setLocale = useSetAtom(setLocaleAtom);
   useEffect(() => {
     const v = searchParams.get(LOCALE_QUERY_PARAM);
-    if (v === "ja" || v === "en") setLocale(v);
-  }, [searchParams, setLocale]);
+    if (v !== "ja" && v !== "en") return;
+    setLocale(v);
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete(LOCALE_QUERY_PARAM);
+        return next;
+      },
+      { replace: true },
+    );
+  }, [searchParams, setSearchParams, setLocale]);
   return null;
 }
 

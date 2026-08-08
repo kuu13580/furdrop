@@ -2,6 +2,7 @@ import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
 import { useAtomValue, useSetAtom } from "jotai";
+import { useId } from "react";
 import type { Locale } from "../../lib/i18n";
 import { localeAtom, setLocaleAtom } from "../../stores/locale";
 
@@ -20,6 +21,9 @@ export default function LocaleToggle({ className = "" }: { className?: string })
   const locale = useAtomValue(localeAtom);
   const setLocale = useSetAtom(setLocaleAtom);
   const { i18n } = useLingui();
+  // ヘッダーは PC 用とモバイル用で 2 つ描画される。name を共有すると
+  // ブラウザ側で 1 つの radio group として扱われてしまう
+  const groupName = useId();
 
   return (
     <div
@@ -39,7 +43,7 @@ export default function LocaleToggle({ className = "" }: { className?: string })
           >
             <input
               type="radio"
-              name="locale"
+              name={groupName}
               value={opt.value}
               checked={checked}
               onChange={() => setLocale(opt.value)}

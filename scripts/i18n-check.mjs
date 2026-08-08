@@ -22,16 +22,23 @@ function run(cmd, args, opts = {}) {
 let failed = false;
 
 // --- 1. カタログが最新か ---
-run("pnpm", ["--filter", "frontend", "i18n:extract"]);
 // POT-Creation-Date は抽出のたびに変わるので差分から除く
-const diff = run("git", ["diff", "HEAD", "--unified=0", "--", CATALOGS])
-  .split("\n")
-  .filter((l) => /^[+-][^+-]/.test(l) && !l.includes("POT-Creation-Date"))
-  .join("\n")
-  .trim();
-if (diff) {
+function catalogDiff() {
+  return run("git", ["diff", "HEAD", "--unified=0", "--", CATALOGS])
+    .split("\n")
+    .filter((l) => /^[+-][^+-]/.test(l) && !l.includes("POT-Creation-Date"))
+    .join("\n")
+    .trim();
+}
+
+// 抽出の前後で比べ、抽出によって増えた差分だけを見る。
+// 全体を見ると、翻訳を書きかけの未コミット変更があるだけで落ちてしまう
+const before = catalogDiff();
+run("pnpm", ["--filter", "frontend", "i18n:extract"]);
+const after = catalogDiff();
+if (after !== before) {
   console.error("✘ i18n カタログが古いです。`pnpm i18n:extract` を実行してコミットしてください:\n");
-  console.error(diff);
+  console.error(after);
   failed = true;
 } else {
   console.log("✔ カタログは最新");
