@@ -1,3 +1,4 @@
+import { Trans, useLingui } from "@lingui/react/macro";
 import { type PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from "react";
 import { tryLoadBitmap } from "../../lib/image-processing";
 import {
@@ -75,9 +76,12 @@ export default function WatermarkDialog({
   candidates,
   getFile,
 }: Props) {
+  const { t, i18n } = useLingui();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const bitmapRef = useRef<ImageBitmap | null>(null);
-  const [previewError, setPreviewError] = useState<string | null>(null);
+  // 文言ではなく理由を持つ。decode の effect に `t` を巻き込むと、
+  // 依存配列に載せた瞬間にロケール変更で再 decode が走ってしまう
+  const [previewError, setPreviewError] = useState<"no-candidates" | "undecodable" | null>(null);
   const [previewReady, setPreviewReady] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
   /** プレビュー対象の候補 id。null = 初期自動選択 (先頭から最初に decode 成功した候補) */
@@ -187,7 +191,7 @@ export default function WatermarkDialog({
     if (candidates.length === 0) {
       setPreviewReady(false);
       setPreviewLoading(false);
-      setPreviewError("プレビューできる画像がありません");
+      setPreviewError("no-candidates");
       return;
     }
     if (selectedCandidateId !== null && loadedIdRef.current === selectedCandidateId) return;
@@ -229,11 +233,7 @@ export default function WatermarkDialog({
         }
       }
       if (!cancelled) {
-        setPreviewError(
-          selectedCandidateId === null
-            ? "プレビューできる画像がありません"
-            : "この画像はプレビューできません",
-        );
+        setPreviewError(selectedCandidateId === null ? "no-candidates" : "undecodable");
         setPreviewLoading(false);
       }
     })();
@@ -621,12 +621,12 @@ export default function WatermarkDialog({
     <Dialog
       open={open}
       onClose={onClose}
-      title="透かしの設定"
+      title={t`透かしの設定`}
       size="4xl"
       footer={
         <div className="flex justify-end">
           <Button variant="primary" onClick={onClose}>
-            完了
+            <Trans>完了</Trans>
           </Button>
         </div>
       }
@@ -645,7 +645,7 @@ export default function WatermarkDialog({
                 <canvas
                   ref={canvasRef}
                   role="img"
-                  aria-label="透かしのプレビュー。要素をドラッグして配置できます"
+                  aria-label={t`透かしのプレビュー。要素をドラッグして配置できます`}
                   onPointerDown={handlePointerDown}
                   onPointerMove={handlePointerMove}
                   onPointerUp={handlePointerUp}
@@ -661,17 +661,25 @@ export default function WatermarkDialog({
                 {previewLoading && (
                   <div className="absolute inset-0 flex items-center justify-center gap-2 bg-surface-canvas/80 text-[13px] text-ink-soft">
                     <LoadingSpinner size="sm" />
-                    <span>プレビューを読み込み中…</span>
+                    <span>
+                      <Trans>プレビューを読み込み中…</Trans>
+                    </span>
                   </div>
                 )}
                 {previewReady && showDragHint && (
                   <p className="pointer-events-none absolute bottom-1.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-ink/60 px-2.5 py-0.5 text-[11px] text-white backdrop-blur-sm">
-                    ドラッグで配置、ピンチ / ホイールでズーム
+                    <Trans>ドラッグで配置、ピンチ / ホイールでズーム</Trans>
                   </p>
                 )}
               </>
             ) : (
-              <p className="px-4 text-center text-[13px] text-ink-soft">{previewError}</p>
+              <p className="px-4 text-center text-[13px] text-ink-soft">
+                {previewError === "undecodable" ? (
+                  <Trans>この画像はプレビューできません</Trans>
+                ) : (
+                  <Trans>プレビューできる画像がありません</Trans>
+                )}
+              </p>
             )}
           </div>
 
@@ -684,7 +692,7 @@ export default function WatermarkDialog({
                     key={c.id}
                     type="button"
                     onClick={() => setSelectedCandidateId(c.id)}
-                    aria-label={`${c.name} をプレビュー`}
+                    aria-label={t`${c.name} をプレビュー`}
                     aria-pressed={active}
                     className={`relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border-2 transition-colors ${
                       active ? "border-brand" : "border-transparent hover:border-surface-sand-deep"
@@ -705,7 +713,9 @@ export default function WatermarkDialog({
 
           {mixedAspect && (
             <p className="rounded-xl border border-status-warn/30 bg-status-warn/10 px-3 py-2 text-[13px] text-ink">
-              縦横比の違う写真が混ざっています。サムネイルを切り替えて、他の写真での位置も確認してください
+              <Trans>
+                縦横比の違う写真が混ざっています。サムネイルを切り替えて、他の写真での位置も確認してください
+              </Trans>
             </p>
           )}
         </div>
@@ -713,14 +723,16 @@ export default function WatermarkDialog({
         <div className="space-y-4 md:min-w-0 md:flex-[4]">
           {/* 要素の追加はチップ (レイヤー一覧) と分離した見出し行に置く */}
           <div className="flex min-h-8 items-center justify-between gap-2">
-            <p className="text-[13px] font-medium text-ink-soft">要素</p>
+            <p className="text-[13px] font-medium text-ink-soft">
+              <Trans>要素</Trans>
+            </p>
             {elements.length < MAX_WATERMARK_ELEMENTS && (
               <div className="flex gap-1.5">
                 <Button size="sm" variant="secondary" onClick={() => addElement("text")}>
-                  ＋ 文字を追加
+                  <Trans>＋ 文字を追加</Trans>
                 </Button>
                 <Button size="sm" variant="secondary" onClick={() => addElement("rect")}>
-                  ＋ 四角形を追加
+                  <Trans>＋ 四角形を追加</Trans>
                 </Button>
               </div>
             )}
@@ -748,10 +760,14 @@ export default function WatermarkDialog({
                   {el.kind === "rect" ? (
                     <span className="flex items-center gap-1.5">
                       <span className="inline-block h-2.5 w-4 rounded-[3px] bg-current opacity-60" />
-                      四角形
+                      <Trans>四角形</Trans>
                     </span>
                   ) : (
-                    label || <span className="font-sans text-ink-muted">文字を入力</span>
+                    label || (
+                      <span className="font-sans text-ink-muted">
+                        <Trans>文字を入力</Trans>
+                      </span>
+                    )
                   )}
                 </button>
               );
@@ -765,11 +781,11 @@ export default function WatermarkDialog({
                   <div>
                     <div className="mb-1 flex items-baseline justify-between">
                       <label htmlFor="wmText" className="text-[13px] font-medium text-ink-soft">
-                        テキスト
+                        <Trans>テキスト</Trans>
                       </label>
                       {selected.autoText && (
                         <span className="text-[11px] text-ink-muted">
-                          送信者名に連動中（編集すると解除）
+                          <Trans>送信者名に連動中（編集すると解除）</Trans>
                         </span>
                       )}
                     </div>
@@ -780,8 +796,8 @@ export default function WatermarkDialog({
                       value={selectedText}
                       placeholder={
                         selected.autoText
-                          ? "送信者名を入力すると自動で入ります"
-                          : "透かしにする文字"
+                          ? t`送信者名を入力すると自動で入ります`
+                          : t`透かしにする文字`
                       }
                       onChange={(e) => updateSelected({ text: e.target.value, autoText: false })}
                       className="block w-full resize-y rounded-xl border border-surface-sand-deep bg-surface px-3 py-2 text-[14px] text-ink placeholder:text-ink-muted transition-all focus:border-brand focus:outline-none focus:ring-3 focus:ring-brand/15"
@@ -789,7 +805,7 @@ export default function WatermarkDialog({
                     />
                     {selected.autoText && !credit && (
                       <p className="mt-1.5 rounded-xl border border-status-warn/30 bg-status-warn/10 px-3 py-2 text-[13px] text-ink">
-                        送信者名が未入力です。このテキストには送信者名が使われます
+                        <Trans>送信者名が未入力です。このテキストには送信者名が使われます</Trans>
                       </p>
                     )}
                   </div>
@@ -802,12 +818,12 @@ export default function WatermarkDialog({
                   >
                     <summary className="flex cursor-pointer list-none items-center justify-between rounded-xl px-3 py-2 text-[13px] font-medium text-ink-soft transition-colors hover:bg-surface-sand">
                       <span className="flex items-baseline gap-2">
-                        フォント
+                        <Trans>フォント</Trans>
                         <span
                           className="text-[15px] text-ink"
                           style={{ fontFamily: watermarkFontStack(selected.fontId) }}
                         >
-                          {getWatermarkFont(selected.fontId).label}
+                          {i18n._(getWatermarkFont(selected.fontId).label)}
                         </span>
                       </span>
                       <ChevronIcon />
@@ -816,7 +832,7 @@ export default function WatermarkDialog({
                       {FONTS_BY_CATEGORY.map((cat) => (
                         <div key={cat.id}>
                           <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-muted">
-                            {cat.label}
+                            {i18n._(cat.label)}
                           </p>
                           <div className="grid grid-cols-2 gap-1 sm:grid-cols-3">
                             {cat.fonts.map((f) => {
@@ -834,7 +850,7 @@ export default function WatermarkDialog({
                                   }`}
                                   style={{ fontFamily: watermarkFontStack(f.id) }}
                                 >
-                                  {f.label}
+                                  {i18n._(f.label)}
                                 </button>
                               );
                             })}
@@ -850,7 +866,7 @@ export default function WatermarkDialog({
                 {selected.kind === "text" ? (
                   <SliderField
                     id="wmSize"
-                    label={`サイズ (${(selected.fontSizeRatio * 100).toFixed(1)}%)`}
+                    label={t`サイズ (${(selected.fontSizeRatio * 100).toFixed(1)}%)`}
                     range={WATERMARK_RANGES.fontSizeRatio}
                     value={selected.fontSizeRatio}
                     onChange={(v) => updateSelected({ fontSizeRatio: v })}
@@ -859,21 +875,21 @@ export default function WatermarkDialog({
                   <>
                     <SliderField
                       id="wmRectW"
-                      label={`幅 (長辺の${Math.round(selected.rectW * 100)}%)`}
+                      label={t`幅 (長辺の${Math.round(selected.rectW * 100)}%)`}
                       range={WATERMARK_RANGES.rectW}
                       value={selected.rectW}
                       onChange={(v) => updateSelected({ rectW: v })}
                     />
                     <SliderField
                       id="wmRectH"
-                      label={`高さ (長辺の${Math.round(selected.rectH * 100)}%)`}
+                      label={t`高さ (長辺の${Math.round(selected.rectH * 100)}%)`}
                       range={WATERMARK_RANGES.rectH}
                       value={selected.rectH}
                       onChange={(v) => updateSelected({ rectH: v })}
                     />
                     <SliderField
                       id="wmRectR"
-                      label={`角丸 (${Math.round(selected.rectRadius * 200)}%)`}
+                      label={t`角丸 (${Math.round(selected.rectRadius * 200)}%)`}
                       range={WATERMARK_RANGES.rectRadius}
                       value={selected.rectRadius}
                       onChange={(v) => updateSelected({ rectRadius: v })}
@@ -882,7 +898,7 @@ export default function WatermarkDialog({
                 )}
                 <SliderField
                   id="wmOpacity"
-                  label={`透明度 (${Math.round(selected.opacity * 100)}%)`}
+                  label={t`透明度 (${Math.round(selected.opacity * 100)}%)`}
                   range={WATERMARK_RANGES.opacity}
                   value={selected.opacity}
                   onChange={(v) => updateSelected({ opacity: v })}
@@ -891,9 +907,9 @@ export default function WatermarkDialog({
 
               <div>
                 <p className="mb-1.5 block text-[13px] font-medium text-ink-soft">
-                  色
+                  <Trans>色</Trans>
                   <span className="ml-1.5 font-normal text-ink-muted">
-                    （背景の明るさで明暗が自動調整されます）
+                    <Trans>（背景の明るさで明暗が自動調整されます）</Trans>
                   </span>
                 </p>
                 <div className="flex flex-wrap items-center gap-2">
@@ -904,9 +920,9 @@ export default function WatermarkDialog({
                         key={p.id}
                         type="button"
                         onClick={() => updateSelected({ color: p.id })}
-                        aria-label={p.label}
+                        aria-label={i18n._(p.label)}
                         aria-pressed={active}
-                        title={p.label}
+                        title={i18n._(p.label)}
                         className={`h-8 w-8 rounded-full border-2 transition-transform ${
                           active ? "scale-110 border-brand" : "border-surface-sand-deep"
                         }`}
@@ -917,7 +933,7 @@ export default function WatermarkDialog({
                     );
                   })}
                   <label
-                    title="カスタム色（明暗の自動調整なし・固定色）"
+                    title={t`カスタム色（明暗の自動調整なし・固定色）`}
                     className={`h-8 w-8 cursor-pointer rounded-full border-2 transition-transform ${
                       isCustomWatermarkColor(selected.color)
                         ? "scale-110 border-brand"
@@ -931,7 +947,7 @@ export default function WatermarkDialog({
                   >
                     <input
                       type="color"
-                      aria-label="カスタム色"
+                      aria-label={t`カスタム色`}
                       value={isCustomWatermarkColor(selected.color) ? selected.color : "#ff6b4a"}
                       onChange={(e) => updateSelected({ color: e.target.value })}
                       className="sr-only"
@@ -949,7 +965,9 @@ export default function WatermarkDialog({
                       onChange={(e) => updateSelected({ stroke: e.target.checked })}
                       className="h-4 w-4 accent-brand"
                     />
-                    <span>縁取り（アウトラインで視認性UP）</span>
+                    <span>
+                      <Trans>縁取り（アウトラインで視認性UP）</Trans>
+                    </span>
                   </label>
                 ) : (
                   <span />
@@ -959,15 +977,17 @@ export default function WatermarkDialog({
                   onClick={removeSelected}
                   className="rounded-lg px-2.5 py-1.5 text-[13px] text-status-danger transition-colors hover:bg-status-danger-tint"
                 >
-                  この要素を削除
+                  <Trans>この要素を削除</Trans>
                 </button>
               </div>
             </div>
           ) : (
             <p className="rounded-xl bg-surface-sand px-3 py-2.5 text-center text-[13px] text-ink-soft">
-              {elements.length > 0
-                ? "プレビューの要素かチップをタップすると編集できます"
-                : "「＋ 文字を追加」「＋ 四角形を追加」から透かしの要素を追加できます"}
+              {elements.length > 0 ? (
+                <Trans>プレビューの要素かチップをタップすると編集できます</Trans>
+              ) : (
+                <Trans>「＋ 文字を追加」「＋ 四角形を追加」から透かしの要素を追加できます</Trans>
+              )}
             </p>
           )}
         </div>
@@ -1025,6 +1045,7 @@ function drawSelectionOutline(ctx: CanvasRenderingContext2D, layout: WatermarkEl
   ctx.restore();
 }
 
+/** 開閉状態は summary のテキストで伝わるため、アイコンは読み上げ対象から外す */
 function ChevronIcon() {
   return (
     <svg
@@ -1037,8 +1058,7 @@ function ChevronIcon() {
       strokeWidth="2.5"
       strokeLinecap="round"
       strokeLinejoin="round"
-      role="img"
-      aria-label="開閉"
+      aria-hidden="true"
       className="text-ink-muted transition-transform group-open:rotate-180"
     >
       <polyline points="6 9 12 15 18 9" />

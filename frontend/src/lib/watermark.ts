@@ -1,3 +1,6 @@
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
+import { i18n } from "./i18n";
 import { generateId } from "./id";
 
 export const clamp = (v: number, min: number, max: number): number =>
@@ -17,17 +20,18 @@ export const clamp = (v: number, min: number, max: number): number =>
 
 export type WatermarkFontCategory = "basic" | "pop" | "impact" | "hand";
 
-export const WATERMARK_FONT_CATEGORIES: { id: WatermarkFontCategory; label: string }[] = [
-  { id: "basic", label: "定番" },
-  { id: "pop", label: "丸ゴ・ポップ" },
-  { id: "impact", label: "インパクト" },
-  { id: "hand", label: "手書き・デザイン" },
-];
+export const WATERMARK_FONT_CATEGORIES: { id: WatermarkFontCategory; label: MessageDescriptor }[] =
+  [
+    { id: "basic", label: msg`定番` },
+    { id: "pop", label: msg`丸ゴ・ポップ` },
+    { id: "impact", label: msg`インパクト` },
+    { id: "hand", label: msg`手書き・デザイン` },
+  ];
 
 type WatermarkFontDef = {
   id: string;
   /** ピッカー表示名 (そのフォント自身でレンダリングされる) */
-  label: string;
+  label: MessageDescriptor;
   /** Google Fonts の family 名 */
   family: string;
   /** css2 API の family クエリ (URL エンコード済み、weight 指定込み) */
@@ -48,7 +52,7 @@ export const WATERMARK_FONTS = [
   // 定番
   {
     id: "noto-sans",
-    label: "ゴシック",
+    label: msg`ゴシック`,
     family: "Noto Sans JP",
     query: "Noto+Sans+JP:wght@700",
     weight: 700,
@@ -57,7 +61,7 @@ export const WATERMARK_FONTS = [
   },
   {
     id: "zen-kaku",
-    label: "角ゴシック",
+    label: msg`角ゴシック`,
     family: "Zen Kaku Gothic New",
     query: "Zen+Kaku+Gothic+New:wght@700",
     weight: 700,
@@ -66,7 +70,7 @@ export const WATERMARK_FONTS = [
   },
   {
     id: "biz-ud",
-    label: "UDゴシック",
+    label: msg`UDゴシック`,
     family: "BIZ UDGothic",
     query: "BIZ+UDGothic:wght@700",
     weight: 700,
@@ -75,7 +79,7 @@ export const WATERMARK_FONTS = [
   },
   {
     id: "noto-serif",
-    label: "明朝",
+    label: msg`明朝`,
     family: "Noto Serif JP",
     query: "Noto+Serif+JP:wght@700",
     weight: 700,
@@ -84,7 +88,7 @@ export const WATERMARK_FONTS = [
   },
   {
     id: "shippori",
-    label: "しっぽり明朝",
+    label: msg`しっぽり明朝`,
     family: "Shippori Mincho",
     query: "Shippori+Mincho:wght@700",
     weight: 700,
@@ -93,7 +97,7 @@ export const WATERMARK_FONTS = [
   },
   {
     id: "zen-old-mincho",
-    label: "オールド明朝",
+    label: msg`オールド明朝`,
     family: "Zen Old Mincho",
     query: "Zen+Old+Mincho:wght@700",
     weight: 700,
@@ -103,7 +107,7 @@ export const WATERMARK_FONTS = [
   // 丸ゴ・ポップ
   {
     id: "zen-maru",
-    label: "丸ゴシック",
+    label: msg`丸ゴシック`,
     family: "Zen Maru Gothic",
     query: "Zen+Maru+Gothic:wght@700",
     weight: 700,
@@ -112,7 +116,7 @@ export const WATERMARK_FONTS = [
   },
   {
     id: "mplus-rounded",
-    label: "Mプラス丸",
+    label: msg`Mプラス丸`,
     family: "M PLUS Rounded 1c",
     query: "M+PLUS+Rounded+1c:wght@700",
     weight: 700,
@@ -121,7 +125,7 @@ export const WATERMARK_FONTS = [
   },
   {
     id: "kiwi-maru",
-    label: "キウイ丸",
+    label: msg`キウイ丸`,
     family: "Kiwi Maru",
     query: "Kiwi+Maru:wght@500",
     weight: 500,
@@ -130,7 +134,7 @@ export const WATERMARK_FONTS = [
   },
   {
     id: "mochiy-pop",
-    label: "モッチーポップ",
+    label: msg`モッチーポップ`,
     family: "Mochiy Pop One",
     query: "Mochiy+Pop+One",
     weight: 400,
@@ -139,7 +143,7 @@ export const WATERMARK_FONTS = [
   },
   {
     id: "hachi-maru",
-    label: "はちまるポップ",
+    label: msg`はちまるポップ`,
     family: "Hachi Maru Pop",
     query: "Hachi+Maru+Pop",
     weight: 400,
@@ -148,7 +152,7 @@ export const WATERMARK_FONTS = [
   },
   {
     id: "potta",
-    label: "ポッタ",
+    label: msg`ポッタ`,
     family: "Potta One",
     query: "Potta+One",
     weight: 400,
@@ -158,7 +162,7 @@ export const WATERMARK_FONTS = [
   // インパクト
   {
     id: "dela-gothic",
-    label: "デラゴシック",
+    label: msg`デラゴシック`,
     family: "Dela Gothic One",
     query: "Dela+Gothic+One",
     weight: 400,
@@ -167,7 +171,7 @@ export const WATERMARK_FONTS = [
   },
   {
     id: "rocknroll",
-    label: "ロックンロール",
+    label: msg`ロックンロール`,
     family: "RocknRoll One",
     query: "RocknRoll+One",
     weight: 400,
@@ -176,7 +180,7 @@ export const WATERMARK_FONTS = [
   },
   {
     id: "reggae",
-    label: "レゲエ",
+    label: msg`レゲエ`,
     family: "Reggae One",
     query: "Reggae+One",
     weight: 400,
@@ -185,7 +189,7 @@ export const WATERMARK_FONTS = [
   },
   {
     id: "rampart",
-    label: "ランパート",
+    label: msg`ランパート`,
     family: "Rampart One",
     query: "Rampart+One",
     weight: 400,
@@ -194,7 +198,7 @@ export const WATERMARK_FONTS = [
   },
   {
     id: "train",
-    label: "トレイン",
+    label: msg`トレイン`,
     family: "Train One",
     query: "Train+One",
     weight: 400,
@@ -203,7 +207,7 @@ export const WATERMARK_FONTS = [
   },
   {
     id: "dot-gothic",
-    label: "ドットゴシック",
+    label: msg`ドットゴシック`,
     family: "DotGothic16",
     query: "DotGothic16",
     weight: 400,
@@ -213,7 +217,7 @@ export const WATERMARK_FONTS = [
   // 手書き・デザイン
   {
     id: "yusei-magic",
-    label: "油性マジック",
+    label: msg`油性マジック`,
     family: "Yusei Magic",
     query: "Yusei+Magic",
     weight: 400,
@@ -222,7 +226,7 @@ export const WATERMARK_FONTS = [
   },
   {
     id: "yomogi",
-    label: "よもぎ",
+    label: msg`よもぎ`,
     family: "Yomogi",
     query: "Yomogi",
     weight: 400,
@@ -231,7 +235,7 @@ export const WATERMARK_FONTS = [
   },
   {
     id: "klee",
-    label: "クレー",
+    label: msg`クレー`,
     family: "Klee One",
     query: "Klee+One:wght@600",
     weight: 600,
@@ -240,7 +244,7 @@ export const WATERMARK_FONTS = [
   },
   {
     id: "kurenaido",
-    label: "紅道",
+    label: msg`紅道`,
     family: "Zen Kurenaido",
     query: "Zen+Kurenaido",
     weight: 400,
@@ -249,7 +253,7 @@ export const WATERMARK_FONTS = [
   },
   {
     id: "kaisei-decol",
-    label: "解星デコール",
+    label: msg`解星デコール`,
     family: "Kaisei Decol",
     query: "Kaisei+Decol:wght@700",
     weight: 700,
@@ -258,7 +262,7 @@ export const WATERMARK_FONTS = [
   },
   {
     id: "yuji-syuku",
-    label: "佑字 肅",
+    label: msg`佑字 肅`,
     family: "Yuji Syuku",
     query: "Yuji+Syuku",
     weight: 400,
@@ -353,7 +357,7 @@ export function preloadWatermarkFontLabels(): void {
   if (typeof document === "undefined" || !document.fonts) return;
   void ensureWatermarkFontCss().then(() => {
     for (const def of WATERMARK_FONTS) {
-      document.fonts.load(`${def.weight} 16px "${def.family}"`, def.label).catch(() => {});
+      document.fonts.load(`${def.weight} 16px "${def.family}"`, i18n._(def.label)).catch(() => {});
     }
   });
 }
@@ -367,19 +371,19 @@ export function preloadWatermarkFontLabels(): void {
  */
 export type WatermarkPaletteDef = {
   id: string;
-  label: string;
+  label: MessageDescriptor;
   light: string;
   dark: string;
 };
 
 export const WATERMARK_PALETTES = [
-  { id: "mono", label: "白 / 黒", light: "#ffffff", dark: "#111111" },
-  { id: "coral", label: "コーラル", light: "#ffa07e", dark: "#93341a" },
-  { id: "amber", label: "アンバー", light: "#ffc85c", dark: "#7a4e00" },
-  { id: "green", label: "グリーン", light: "#93dba0", dark: "#1f5c30" },
-  { id: "sky", label: "スカイ", light: "#85c8f2", dark: "#114e7e" },
-  { id: "violet", label: "バイオレット", light: "#c6acee", dark: "#482578" },
-  { id: "pink", label: "ピンク", light: "#f7a8c8", dark: "#8a2b57" },
+  { id: "mono", label: msg`白 / 黒`, light: "#ffffff", dark: "#111111" },
+  { id: "coral", label: msg`コーラル`, light: "#ffa07e", dark: "#93341a" },
+  { id: "amber", label: msg`アンバー`, light: "#ffc85c", dark: "#7a4e00" },
+  { id: "green", label: msg`グリーン`, light: "#93dba0", dark: "#1f5c30" },
+  { id: "sky", label: msg`スカイ`, light: "#85c8f2", dark: "#114e7e" },
+  { id: "violet", label: msg`バイオレット`, light: "#c6acee", dark: "#482578" },
+  { id: "pink", label: msg`ピンク`, light: "#f7a8c8", dark: "#8a2b57" },
 ] as const satisfies readonly WatermarkPaletteDef[];
 
 export type WatermarkPaletteId = (typeof WATERMARK_PALETTES)[number]["id"];
