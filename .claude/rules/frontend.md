@@ -48,7 +48,7 @@ paths:
 
 ## 多言語化 (i18n)
 
-- ユーザーに見える文言は必ず Lingui のマクロで包む。JSX は `<Trans>`、文字列が要る箇所 (`aria-label` / `placeholder` / `title` / props) は `useLingui()` の `` t`` ``
+- ユーザーに見える文言は必ず Lingui のマクロで包む。JSX は `<Trans>`、文字列が要る箇所 (`aria-label` / `placeholder` / `title` / props) は `useLingui()` が返す `t` (タグ付きテンプレート)
 - **モジュールスコープの定数・テーブルは `t` ではなく `msg`**。ロード時に 1 回だけ評価されるため `t` ではロケール切替に追従しない。描画時に `i18n._(descriptor)` で解決する
 - 件数を含む文言は `<Plural>` / `plural()` を使う。`{n}枚` を素の補間で書かない
 - プレースホルダは名前付きにする。`{photo.sender_name}` のようなメンバー式は `{0}` になり翻訳者が読めないので、いったんローカル変数に受ける
