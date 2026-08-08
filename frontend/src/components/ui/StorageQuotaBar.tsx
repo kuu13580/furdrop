@@ -1,3 +1,4 @@
+import { Trans } from "@lingui/react/macro";
 import { formatBytes } from "../../lib/format";
 
 type Props = {
@@ -15,7 +16,9 @@ export default function StorageQuotaBar({ used, quota, className = "" }: Props) 
   return (
     <div className={`space-y-2 ${className}`}>
       <div className="flex justify-between text-[14px]">
-        <span className="text-ink-soft">ストレージ</span>
+        <span className="text-ink-soft">
+          <Trans>ストレージ</Trans>
+        </span>
         <span className="font-mono text-ink-soft">
           {formatBytes(used)} / {formatBytes(quota)}
           <span className="ml-1 text-ink-muted">({percent.toFixed(1)}%)</span>
@@ -28,9 +31,13 @@ export default function StorageQuotaBar({ used, quota, className = "" }: Props) 
         />
       </div>
       <p className="text-[12px] leading-[1.4] text-ink-muted">
-        {percent >= 95
-          ? "容量がほぼ上限です。新しい写真を受け取れません。不要な写真を削除してください。"
-          : "上限を超えると新しい写真を受け取れなくなります。"}
+        {percent >= 95 ? (
+          <Trans>
+            容量がほぼ上限です。新しい写真を受け取れません。不要な写真を削除してください。
+          </Trans>
+        ) : (
+          <Trans>上限を超えると新しい写真を受け取れなくなります。</Trans>
+        )}
       </p>
     </div>
   );

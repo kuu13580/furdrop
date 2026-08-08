@@ -1,6 +1,8 @@
+import { msg } from "@lingui/core/macro";
 import { BlobReader, BlobWriter, ZipWriter } from "@zip.js/zip.js";
 import { receiverApi } from "./api";
 import { runConcurrent } from "./concurrency";
+import { i18n } from "./i18n";
 
 const FETCH_CONCURRENCY = 4;
 
@@ -82,7 +84,7 @@ export async function downloadAsZip(args: DownloadAsZipArgs): Promise<void> {
 
     const allFailed = results.every((r) => r.status === "rejected");
     if (allFailed) {
-      throw new Error("全ての写真のダウンロードに失敗しました");
+      throw new Error(i18n._(msg`全ての写真のダウンロードに失敗しました`));
     }
   } catch (err) {
     // 中断・致命エラー時は ZIP を破棄

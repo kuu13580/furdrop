@@ -1,3 +1,4 @@
+import { Trans } from "@lingui/react/macro";
 import { useAtomValue } from "jotai";
 import { Navigate, Outlet, useLocation } from "react-router";
 import { authAtom } from "../stores/auth";
@@ -10,7 +11,9 @@ export default function AuthGuard() {
   if (authState.status === "loading") {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-surface-canvas">
-        <p className="text-[14px] text-ink-muted">読み込み中...</p>
+        <p className="text-[14px] text-ink-muted">
+          <Trans>読み込み中...</Trans>
+        </p>
       </div>
     );
   }

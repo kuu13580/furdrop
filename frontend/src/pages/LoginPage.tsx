@@ -1,3 +1,4 @@
+import { Trans, useLingui } from "@lingui/react/macro";
 import { getAdditionalUserInfo, signInWithPopup, TwitterAuthProvider } from "firebase/auth";
 import { useAtomValue, useSetAtom } from "jotai";
 import { useCallback, useState } from "react";
@@ -9,6 +10,7 @@ import { authAtom } from "../stores/auth";
 import { sanitizeHandle, suggestedHandleAtom } from "../stores/signup";
 
 export default function LoginPage() {
+  const { t } = useLingui();
   const authState = useAtomValue(authAtom);
   const navigate = useNavigate();
   const setSuggestedHandle = useSetAtom(suggestedHandleAtom);
@@ -43,13 +45,15 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-dvh items-center justify-center bg-surface-canvas px-4 text-ink antialiased">
       <div className="w-full max-w-sm space-y-6 text-center">
-        <Link to="/" aria-label="トップへ" className="inline-block">
+        <Link to="/" aria-label={t`トップへ`} className="inline-block">
           <img src={logoUrl} alt="FurDrop" className="mx-auto h-20" />
         </Link>
         <p className="text-[16px] leading-[1.5] text-ink-soft">
-          写真を受け取るための
-          <br />
-          あなた専用URLを作ろう
+          <Trans>
+            写真を受け取るための
+            <br />
+            あなた専用URLを作ろう
+          </Trans>
         </p>
         {error && (
           <div
@@ -65,18 +69,20 @@ export default function LoginPage() {
           disabled={loading || authState.status === "loading"}
           className="w-full rounded-xl bg-ink px-4 py-3 text-[16px] font-medium text-white transition-all hover:bg-ink-soft active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
         >
-          {loading ? "ログイン中..." : "Twitterでログイン"}
+          {loading ? t`ログイン中...` : t`Twitterでログイン`}
         </button>
         <p className="text-[12px] text-ink-muted">
-          ログインすると
-          <Link to="/terms" className="mx-1 text-brand underline-offset-2 hover:underline">
-            利用規約
-          </Link>
-          および
-          <Link to="/privacy" className="mx-1 text-brand underline-offset-2 hover:underline">
-            プライバシーポリシー
-          </Link>
-          に同意したものとみなされます。
+          <Trans>
+            ログインすると
+            <Link to="/terms" className="mx-1 text-brand underline-offset-2 hover:underline">
+              利用規約
+            </Link>
+            および
+            <Link to="/privacy" className="ml-1 text-brand underline-offset-2 hover:underline">
+              プライバシーポリシー
+            </Link>
+            に同意したものとみなされます。
+          </Trans>
         </p>
       </div>
     </div>

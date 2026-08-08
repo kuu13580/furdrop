@@ -1,3 +1,4 @@
+import { Trans, useLingui } from "@lingui/react/macro";
 import { signOut } from "firebase/auth";
 import { useCallback, useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router";
@@ -20,6 +21,7 @@ const mobileNavLinkClass = ({ isActive }: { isActive: boolean }) =>
   }`;
 
 export default function AppLayout() {
+  const { t } = useLingui();
   const [menuOpen, setMenuOpen] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -67,20 +69,20 @@ export default function AppLayout() {
           {/* デスクトップナビ (sm+) */}
           <nav className="hidden items-center gap-6 sm:flex">
             <NavLink to="/dashboard" className={navLinkClass}>
-              ダッシュボード
+              <Trans>ダッシュボード</Trans>
             </NavLink>
             <NavLink to="/gallery" className={navLinkClass}>
-              ギャラリー
+              <Trans>ギャラリー</Trans>
             </NavLink>
             <NavLink to="/settings" className={navLinkClass}>
-              設定
+              <Trans>設定</Trans>
             </NavLink>
             <button
               type="button"
               onClick={() => setLogoutConfirmOpen(true)}
               className="rounded-lg px-2 py-1 text-[13px] text-ink-muted transition-colors hover:bg-surface-sand hover:text-ink-soft"
             >
-              ログアウト
+              <Trans>ログアウト</Trans>
             </button>
             <LocaleToggle />
           </nav>
@@ -92,7 +94,7 @@ export default function AppLayout() {
             {/* モバイルハンバーガー (sm未満) */}
             <button
               type="button"
-              aria-label={menuOpen ? "メニューを閉じる" : "メニューを開く"}
+              aria-label={menuOpen ? t`メニューを閉じる` : t`メニューを開く`}
               aria-expanded={menuOpen}
               aria-controls="app-mobile-menu"
               onClick={() => setMenuOpen((v) => !v)}
@@ -133,7 +135,7 @@ export default function AppLayout() {
         <>
           <button
             type="button"
-            aria-label="メニューを閉じる"
+            aria-label={t`メニューを閉じる`}
             onClick={() => setMenuOpen(false)}
             className="fixed inset-0 top-14 z-10 bg-ink/40 backdrop-blur-sm sm:hidden"
           />
@@ -143,13 +145,13 @@ export default function AppLayout() {
           >
             <nav className="mx-auto flex max-w-5xl flex-col gap-1 px-4 py-3">
               <NavLink to="/dashboard" className={mobileNavLinkClass}>
-                ダッシュボード
+                <Trans>ダッシュボード</Trans>
               </NavLink>
               <NavLink to="/gallery" className={mobileNavLinkClass}>
-                ギャラリー
+                <Trans>ギャラリー</Trans>
               </NavLink>
               <NavLink to="/settings" className={mobileNavLinkClass}>
-                設定
+                <Trans>設定</Trans>
               </NavLink>
               <button
                 type="button"
@@ -159,7 +161,7 @@ export default function AppLayout() {
                 }}
                 className="mt-1 rounded-xl px-4 py-3 text-left text-[14px] font-medium text-ink-soft transition-colors hover:bg-surface-sand"
               >
-                ログアウト
+                <Trans>ログアウト</Trans>
               </button>
             </nav>
           </div>
@@ -175,10 +177,9 @@ export default function AppLayout() {
         open={logoutConfirmOpen}
         onClose={() => setLogoutConfirmOpen(false)}
         onConfirm={handleLogout}
-        title="ログアウトしますか？"
-        description="再度ログインするには Twitter 認証が必要です。"
-        confirmLabel="ログアウト"
-        cancelLabel="キャンセル"
+        title={t`ログアウトしますか？`}
+        description={t`再度ログインするには Twitter 認証が必要です。`}
+        confirmLabel={t`ログアウト`}
         variant="danger"
         loading={loggingOut}
       />
