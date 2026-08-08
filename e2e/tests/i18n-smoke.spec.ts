@@ -1,5 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
-import { createEmulatorUser, registerReceiver } from "../helpers/auth";
+import { createEmulatorUser, registerReceiver, signInOnPage } from "../helpers/auth";
+import { seedOnePhotoFor } from "../helpers/seed-photo";
 
 /**
  * en ロケールで日本語が残っていないかを実画面で検証する。
@@ -18,7 +19,8 @@ type Target = {
   name: string;
   /** 受信者のセットアップが要る画面は handle から path を組み立てる */
   path: string | ((ctx: { handle: string; sendKey: string }) => string);
-  needsReceiver?: boolean;
+  /** 認証必須ページ。受信者を作ってログインし、写真を 1 枚 seed してから開く */
+  auth?: boolean;
 };
 
 const TRANSLATED: Target[] = [
@@ -28,32 +30,46 @@ const TRANSLATED: Target[] = [
   {
     name: "送信者ランディング",
     path: ({ handle, sendKey }) => `/send/${handle}?k=${sendKey}`,
-    needsReceiver: true,
   },
   {
     name: "アップロード画面",
     path: ({ handle, sendKey }) => `/send/${handle}/upload?k=${sendKey}`,
-    needsReceiver: true,
   },
+  { name: "ログイン", path: "/login" },
+  { name: "ダッシュボード", path: "/dashboard", auth: true },
+  { name: "ギャラリー", path: "/gallery", auth: true },
+  { name: "設定", path: "/settings", auth: true },
 ];
 
 const JAPANESE = /[぀-ヿ一-鿿]/;
 
-async function resolvePath(target: Target): Promise<string> {
-  if (typeof target.path === "string") return target.path;
-  const user = await createEmulatorUser();
-  const handle = `e2e_i18n_${Date.now()}`;
-  const { sendKey } = await registerReceiver(user, handle, "E2E i18n");
-  return target.path({ handle, sendKey });
-}
-
-/** ロケール指定は localStorage に注入する。`?lang=` は withKey 等で落ちる経路があるため */
-async function gotoWithLocale(page: Page, path: string, locale: "ja" | "en") {
+/**
+ * 対象ページを開く。認証必須ページはログインと写真 1 枚の seed まで済ませる
+ * (空状態だけ見ても、写真がある状態でしか出ない文言を取りこぼすため)。
+ */
+async function openTarget(page: Page, target: Target, locale: "ja" | "en") {
   await page.addInitScript((l) => {
     window.localStorage.setItem("furdrop.locale", l);
   }, locale);
   // トップの装飾写真は picsum.photos の外部画像。networkidle を外部依存にしないため落とす
   await page.route("https://picsum.photos/**", (route) => route.abort());
+
+  if (typeof target.path === "string" && !target.auth) {
+    await page.goto(target.path, { waitUntil: "networkidle" });
+    return;
+  }
+
+  const user = await createEmulatorUser();
+  const handle = `e2e_i18n_${Date.now()}`;
+  const { sendKey } = await registerReceiver(user, handle, "E2E i18n");
+
+  if (target.auth) {
+    await seedOnePhotoFor(handle, sendKey, { senderName: "e2e_sender" });
+    await page.goto("/login");
+    await signInOnPage(page, user);
+  }
+
+  const path = typeof target.path === "string" ? target.path : target.path({ handle, sendKey });
   await page.goto(path, { waitUntil: "networkidle" });
 }
 
@@ -84,14 +100,14 @@ for (const target of TRANSLATED) {
   test(`${target.name}: en では日本語が表示されない (目的: ロケール切替の実画面検証)`, async ({
     page,
   }) => {
-    await gotoWithLocale(page, await resolvePath(target), "en");
+    await openTarget(page, target, "en");
     expect(withoutUntranslatable(await visibleText(page))).toEqual([]);
   });
 
   test(`${target.name}: ja では日本語が表示される (目的: 切替が効いていることの裏取り)`, async ({
     page,
   }) => {
-    await gotoWithLocale(page, await resolvePath(target), "ja");
+    await openTarget(page, target, "ja");
     const found = (await visibleText(page)).filter((t) => JAPANESE.test(t));
     expect(found.length).toBeGreaterThan(0);
   });
