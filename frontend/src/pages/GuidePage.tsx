@@ -5,6 +5,7 @@ import { type ReactNode, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import logoUrl from "../assets/logos/logo.png";
 import LocaleToggle from "../components/ui/LocaleToggle";
+import { SOURCE_LOCALE } from "../lib/i18n";
 
 const FEEDBACK_URL = import.meta.env.VITE_FEEDBACK_URL ?? "";
 const PUBLIC_HOST = import.meta.env.VITE_PUBLIC_HOST ?? "furdrop.app";
@@ -27,8 +28,7 @@ type Step = {
 /**
  * 「使い方ガイド」ページ。
  * 送信者・受信者をタブで切り替え、実際の画面に沿った手順を表示する。
- * スクリーンショットは placehold.jp を仮置きし、各 caption に
- * 差し替え用の指示コメントを残してある。
+ * 図版は `pnpm shots` で `/__shots/:slug` から日英ぶん撮る。
  */
 export default function GuidePage() {
   const { t } = useLingui();
@@ -215,6 +215,14 @@ function TabButton({
   );
 }
 
+/**
+ * 図版は UI ごと日英で撮り分けてある (`pnpm shots`)。原文ロケールは接尾辞なし、
+ * それ以外は `-<locale>` 付き。命名は OG 画像 (og.png / og-en.png) と揃えている。
+ */
+function shotSrc(src: string, locale: string) {
+  return locale === SOURCE_LOCALE ? src : src.replace(/\.png$/, `-${locale}.png`);
+}
+
 function StepCard({ step }: { step: Step }) {
   const { i18n } = useLingui();
   return (
@@ -249,7 +257,7 @@ function StepCard({ step }: { step: Step }) {
       <figure className="self-start md:order-last">
         <div className="overflow-hidden rounded-2xl border border-surface-sand-deep bg-surface-canvas">
           <img
-            src={step.image.src}
+            src={shotSrc(step.image.src, i18n.locale)}
             alt={i18n._(step.image.alt)}
             loading="lazy"
             className="block h-auto w-full"

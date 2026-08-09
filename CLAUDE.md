@@ -70,6 +70,10 @@ pnpm cors:prod
 # OG 画像 (日英) を再生成する。LP のコピーを変えたら実行
 python3 frontend/scripts/generate-og.py
 
+# 使い方ガイドの図版 (日英) を撮り直す。UI や `__shots__` のモックを変えたら実行
+# `--locale en` / `--slug sender-step3` で絞れる
+pnpm shots
+
 # i18n カタログ更新 (ユーザー向け文言を追加・変更したら実行)
 pnpm i18n:extract
 

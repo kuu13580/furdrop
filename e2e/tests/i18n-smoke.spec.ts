@@ -116,6 +116,26 @@ for (const target of TRANSLATED) {
   });
 }
 
+test("使い方ガイド: en では英語の図版を参照する (目的: 撮り漏れ・撮り忘れの検出)", async ({
+  page,
+}) => {
+  await openTarget(page, { name: "使い方ガイド", path: "/guide" }, "en");
+
+  // 送信者・受信者タブの両方を見る。タブの sublabel は装飾の英語で翻訳されない
+  for (const tab of ["Sender", "Receiver"]) {
+    await page.getByRole("tab", { name: new RegExp(tab) }).click();
+    const srcs = await page
+      .locator("figure img")
+      .evaluateAll((els) => els.map((el) => el.getAttribute("src") ?? ""));
+    expect(srcs.length).toBeGreaterThan(0);
+    for (const src of srcs) {
+      expect(src).toMatch(/-en\.png$/);
+      // 参照だけあってファイルが無い状態を落とす
+      expect((await page.request.get(src)).status()).toBe(200);
+    }
+  }
+});
+
 test("/en/ は英語 LP へ転送される (目的: 広告リンク先の入口が生きていること)", async ({ page }) => {
   // クローラー向けに英語 OGP を静的に返すだけの入口。人間は JS で LP へ送られる
   await page.goto("/en/", { waitUntil: "networkidle" });

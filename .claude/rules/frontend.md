@@ -56,3 +56,10 @@ paths:
 - 訳す対象は「画面に出る文字列」だけ。`debugLog` の出力やグリフ読み込み用の文字は対象外
 - 文言を追加・変更したら `pnpm i18n:extract` でカタログを更新し、`frontend/src/locales/en/messages.po` の訳文まで埋める
 - 画面を翻訳し終えたら `e2e/tests/i18n-smoke.spec.ts` の `TRANSLATED` に追加する。静的解析では拾えない「マクロで包んだのに切替に追従しない」ケースを実画面で検出するため
+
+## 使い方ガイドの図版
+
+- 図版は `frontend/src/pages/__shots__/ShotsPage.tsx` の値固定モックを `pnpm shots` で撮ったもの。原文ロケールは接尾辞なし、それ以外は `-<locale>.png` (OG 画像と同じ命名)
+- **このモックは Lingui の抽出対象外**。dev 専用の文言を本番カタログに混ぜないため、`<Trans>` ではなく `useShot()` の ja/en 対で持つ。en 側は実 UI とずれないよう `locales/en/messages.po` の訳文をそのまま写す
+- モックは実 UI の写しであって実 UI そのものではないため、**画面を変えても自動では追従しない**。送信フォーム・受信オプション・受信URL 周りを変えたらモックも直して撮り直す
+- 撮り直したら必ず目視で確認する
