@@ -75,7 +75,13 @@ async function startDevServer() {
     stdio: "ignore",
     detached: true,
   });
-  await waitUntilUp();
+  try {
+    await waitUntilUp();
+  } catch (e) {
+    // 起動に失敗した vite を孤児にすると 4000 番を掴んだまま残る
+    if (child.pid) process.kill(-child.pid, "SIGTERM");
+    throw e;
+  }
   return child;
 }
 
