@@ -276,7 +276,7 @@ UploaderPage
 **コンポーネント構成:**
 ```
 DashboardPage
-  +-- PublicUrlCard            // user.receive_url (?k=KEY 付き) を origin と結合して表示
+  +-- PublicUrlCard            // user.receive_url を origin と結合して表示 (受付停止中は注意を出す)
   |     +-- CopyButton        // Clipboard API
   |     +-- QrCodeButton      // qrcode ライブラリ
   |     +-- ShareButton       // Web Share API / Twitter Intent
@@ -285,7 +285,7 @@ DashboardPage
   +-- RecentPhotosPreview     // 直近3枚のサムネイル
 ```
 
-`user.receive_url` は Workers の `/auth/me` が `send_keys` から最古のキー 1 件を選んで `?k=KEY` 付きで返す。フロント側はキーの存在を意識しない (R16)。
+`user.receive_url` は Workers の `/auth/me` が組み立てて返す。`require_send_key` が有効なら `send_keys` の最古のキー 1 件を `?k=KEY` として付け、opt-out 中は付けずに素の `/send/:handle` を返す (R16)。フロント側はキーの有無を意識せず、コピー・QR・シェアはすべて `receive_url` に追従する。
 
 ### S07: フォトギャラリー
 

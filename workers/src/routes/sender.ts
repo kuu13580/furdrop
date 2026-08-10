@@ -62,22 +62,22 @@ const getReceiverRoute = createRoute({
 sender.openapi(getReceiverRoute, async (c) => {
   const { handle } = c.req.valid("param");
 
-  // handle 列挙の速度を落とす。キーを外した受信者 (require_send_key=0) は
-  // handle さえ当てれば送信できてしまうので、その探索コストを上げておく
-  const senderIp = c.req.header("CF-Connecting-IP") ?? "unknown";
-  const { success: rateLimitOk } = await c.env.RATE_LIMITER_PROFILE.limit({ key: senderIp });
-  if (!rateLimitOk) {
-    c.header("Retry-After", "60");
-    return c.json({ error: { code: "RATE_LIMITED", message: "Too many requests" } }, 429);
-  }
-
   const user = await c.env.DB.prepare(
     "SELECT handle, display_name, avatar_url, is_active, storage_used, storage_quota, exif_embed_mode, watermark_mode, require_sender_name, require_send_key FROM users WHERE handle = ?",
   )
     .bind(handle)
     .first();
 
+  // handle 列挙の速度を落とす (R16 opt-out した受信者は handle だけで送れてしまうため)。
+  // 空振りしたときだけ数えるので、実在するハンドルしか開かない正規の送信者は
+  // イベント会場の共有 IP から一斉にアクセスしても影響を受けない
   if (!user) {
+    const senderIp = c.req.header("CF-Connecting-IP") ?? "unknown";
+    const { success } = await c.env.RATE_LIMITER_PROFILE.limit({ key: senderIp });
+    if (!success) {
+      c.header("Retry-After", "60");
+      return c.json({ error: { code: "RATE_LIMITED", message: "Too many requests" } }, 429);
+    }
     return c.json({ error: { code: "NOT_FOUND", message: "User not found" } }, 404);
   }
 

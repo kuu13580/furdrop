@@ -35,8 +35,8 @@ type = "ratelimit"
 namespace_id = "1002"
 simple = { limit = 30, period = 60 }
 
-# プロフィール GET は handle 列挙の入口 (R16 opt-out した受信者は handle だけで送れる)。
-# 同一 NAT のイベント来場者を潰さないよう、機械的な走査だけが当たる緩さにする
+# プロフィール GET の空振り (存在しない handle) だけを数えて列挙を鈍らせる。
+# R16 opt-out した受信者は handle だけで送れてしまうため
 [[unsafe.bindings]]
 name = "RATE_LIMITER_PROFILE"
 type = "ratelimit"

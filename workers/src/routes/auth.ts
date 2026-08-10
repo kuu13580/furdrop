@@ -293,67 +293,64 @@ auth.openapi(updateOptionsRoute, async (c) => {
   const uid = c.get("uid");
   const body = c.req.valid("json");
 
-  // 現在値を取得し、未指定フィールドのデフォルトとして使う
-  // (動的SQL組み立てを避けるため、UPDATE は常に全カラム + updated_at を固定SQLで書く)
-  const current = await c.env.DB.prepare(`SELECT ${USER_COLUMNS} FROM users WHERE id = ?`)
-    .bind(uid)
-    .first();
+  const asFlag = (v: boolean | undefined) => (v === undefined ? null : v ? 1 : 0);
 
-  if (!current) {
-    return c.json({ error: { code: "NOT_FOUND", message: "User not registered" } }, 404);
-  }
-
-  const nextExif = body.exif_embed_mode ?? asMode(current.exif_embed_mode);
-  const nextWatermark = body.watermark_mode ?? asMode(current.watermark_mode);
-  const nextRequireName = body.require_sender_name ?? asBool(current.require_sender_name);
-  const nextIsActive = body.is_active ?? asBool(current.is_active);
-  const nextRequireSendKey = body.require_send_key ?? asBool(current.require_send_key);
-
-  const noChange =
-    nextExif === asMode(current.exif_embed_mode) &&
-    nextWatermark === asMode(current.watermark_mode) &&
-    nextRequireName === asBool(current.require_sender_name) &&
-    nextIsActive === asBool(current.is_active) &&
-    nextRequireSendKey === asBool(current.require_send_key);
-
-  if (!noChange) {
+  // 未指定フィールドは NULL を bind し、COALESCE で書き込み時点の現在値を残す。
+  // 設定画面は複数カードから独立に PATCH を投げるので、読み取った値を全カラムに
+  // 書き戻すと後着のリクエストが他方の変更を巻き戻してしまう
+  if (Object.keys(body).length > 0) {
     const now = Math.floor(Date.now() / 1000);
     await c.env.DB.prepare(
-      "UPDATE users SET exif_embed_mode = ?, watermark_mode = ?, require_sender_name = ?, is_active = ?, require_send_key = ?, updated_at = ? WHERE id = ?",
+      `UPDATE users SET
+         exif_embed_mode     = COALESCE(?, exif_embed_mode),
+         watermark_mode      = COALESCE(?, watermark_mode),
+         require_sender_name = COALESCE(?, require_sender_name),
+         is_active           = COALESCE(?, is_active),
+         require_send_key    = COALESCE(?, require_send_key),
+         updated_at          = ?
+       WHERE id = ?`,
     )
       .bind(
-        nextExif,
-        nextWatermark,
-        nextRequireName ? 1 : 0,
-        nextIsActive ? 1 : 0,
-        nextRequireSendKey ? 1 : 0,
+        body.exif_embed_mode ?? null,
+        body.watermark_mode ?? null,
+        asFlag(body.require_sender_name),
+        asFlag(body.is_active),
+        asFlag(body.require_send_key),
         now,
         uid,
       )
       .run();
   }
 
+  const user = await c.env.DB.prepare(`SELECT ${USER_COLUMNS} FROM users WHERE id = ?`)
+    .bind(uid)
+    .first();
+
+  if (!user) {
+    return c.json({ error: { code: "NOT_FOUND", message: "User not registered" } }, 404);
+  }
+
   const receiveUrl = await buildReceiveUrl(
     c.env.DB,
     uid,
-    current.handle as string,
-    nextRequireSendKey,
+    user.handle as string,
+    asBool(user.require_send_key),
   );
 
   return c.json(
     {
       user: {
-        id: current.id as string,
-        handle: current.handle as string,
-        display_name: current.display_name as string,
-        storage_used: current.storage_used as number,
-        storage_quota: current.storage_quota as number,
+        id: user.id as string,
+        handle: user.handle as string,
+        display_name: user.display_name as string,
+        storage_used: user.storage_used as number,
+        storage_quota: user.storage_quota as number,
         receive_url: receiveUrl,
-        is_active: nextIsActive,
-        exif_embed_mode: nextExif,
-        watermark_mode: nextWatermark,
-        require_sender_name: nextRequireName,
-        require_send_key: nextRequireSendKey,
+        is_active: asBool(user.is_active),
+        exif_embed_mode: asMode(user.exif_embed_mode),
+        watermark_mode: asMode(user.watermark_mode),
+        require_sender_name: asBool(user.require_sender_name),
+        require_send_key: asBool(user.require_send_key),
       },
     },
     200,

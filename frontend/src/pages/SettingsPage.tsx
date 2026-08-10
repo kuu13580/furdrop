@@ -376,16 +376,17 @@ function AcceptanceCard({
       setSaving(true);
       setError(null);
       try {
-        // receive_url は require_send_key の切替で ?k= の有無が変わるのでレスポンス側を採用する
+        // レスポンスをそのまま採用する。カードごとに独立した PATCH が飛ぶので、
+        // 手元の user にマージすると後着の応答が他方の変更を巻き戻す
         const { user: updated } = await authApi.updateOptions(patch);
-        setUser({ ...user, ...patch, receive_url: updated.receive_url });
+        setUser(updated);
       } catch (err) {
         setError(resolveApiError(err, "updateOptions"));
       } finally {
         setSaving(false);
       }
     },
-    [user, setUser],
+    [setUser],
   );
 
   const handleOptOut = useCallback(async () => {
@@ -484,15 +485,15 @@ function ReceiveOptionsCard({
       setSaving(true);
       setError(null);
       try {
-        await authApi.updateOptions(patch);
-        setUser({ ...user, ...patch });
+        const { user: updated } = await authApi.updateOptions(patch);
+        setUser(updated);
       } catch (err) {
         setError(resolveApiError(err, "updateOptions"));
       } finally {
         setSaving(false);
       }
     },
-    [user, setUser],
+    [setUser],
   );
 
   return (

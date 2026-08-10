@@ -259,14 +259,14 @@ Content-Type: application/json
 |---|---|---|
 | `POST /send/:handle/sessions` | 5 / 60秒 / IP | 429 + `Retry-After: 60` |
 | `POST /send/:handle/sessions/:id/photos` | 30 / 60秒 / IP | 429 + `Retry-After: 60` |
-| `GET /send/:handle` | 60 / 60秒 / IP | 429 + `Retry-After: 60` |
+| `GET /send/:handle` (handle 不在時のみ) | 60 / 60秒 / IP | 429 + `Retry-After: 60` |
 | その他 GET 系 | 制限なし | — |
 
 `GET /send/:handle` の制限は handle 列挙の速度を落とすためのもの (R16 opt-out した受信者は
-handle さえ当たれば送信されうる)。イベント会場の同一 NAT から多数の送信者がランディングを
-開くケースを潰さないよう、上限は明らかに機械的な走査だけが当たる緩さにしている。
-Rate Limiting binding のカウンタは Cloudflare のロケーションごとにローカルで、分散した
-送信元には効きが落ちる。本質的な守りは R11 の受付停止であり、これは補助的な措置。
+handle さえ当たれば送信されうる)。**空振り (404) のときだけカウントする**ので、実在する
+ハンドルしか開かない正規の送信者は、イベント会場の同一 NAT から一斉にランディングを開いても
+影響を受けない。Rate Limiting binding のカウンタは Cloudflare のロケーションごとにローカルで、
+分散した送信元には効きが落ちる。本質的な守りは R11 の受付停止であり、これは補助的な措置。
 
 キーは `CF-Connecting-IP` を使用。Cloudflare Rate Limiting binding は 10秒/60秒窓のみ対応のため、原案の「30/h・300/h」は 60秒窓に圧縮して実装。
 
@@ -672,7 +672,7 @@ flowchart TD
 
 | エンドポイント | 認証 | 認可ルール |
 |---|---|---|
-| GET /send/:handle | 不要 | handleが存在 (レート制限 60/60秒/IP) |
+| GET /send/:handle | 不要 | handleが存在 (不在時のみレート制限 60/60秒/IP) |
 | POST /send/:handle/sessions | 不要 | handle存在 + (require_send_key=1 なら send_keys に key 一致, R16) + is_active + クォータ未超過 |
 | POST .../photos | 不要 | sessionがそのhandleに属する |
 | PATCH .../confirm | 不要 | photoがそのsessionに属する |

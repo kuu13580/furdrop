@@ -163,8 +163,8 @@ msgid "<0>利用規約</0>および<1>プライバシーポリシー</1>に同�
 msgstr "I agree to the <0>Terms of Service</0> and the <1>Privacy Policy</1>."
 
 #: src/pages/GuidePage.tsx
-msgid "<0>受信URLを知っている人だけから受け取る</0>：オフにすると、URLの末尾の文字列がなくても、ハンドルを知っている人なら誰でも送れるようになります。名刺やSNSで<1>@ハンドル</1>だけを見せたいときに"
-msgstr "<0>Only accept photos from people who know my receive URL</0>: turn it off and anyone who knows your handle can send, even without the string at the end of the URL. Handy when you want to show just <1>@handle</1> on a business card or social profile"
+msgid "<0>受信URLを知っている人だけから受け取る</0>：オフにすると、URLの末尾の文字列がなくても、ハンドルを知っている人なら誰でも送れるようになります。名刺やSNSで<1>@ハンドル</1>だけを見せて受け取りたいときに使えます"
+msgstr "<0>Only accept photos from people who know my receive URL</0>: turn it off and anyone who knows your handle can send, even without the string at the end of the URL. Useful when you want to show just <1>@handle</1> on a business card or social profile."
 
 #: src/pages/GuidePage.tsx
 msgid "<0>緑</0>：余裕あり（〜79%）"

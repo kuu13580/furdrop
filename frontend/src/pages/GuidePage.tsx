@@ -605,7 +605,7 @@ const RECEIVER_STEPS: Step[] = [
               <strong className="text-ink">受信URLを知っている人だけから受け取る</strong>
               ：オフにすると、URLの末尾の文字列がなくても、ハンドルを知っている人なら誰でも送れるようになります。名刺やSNSで
               <em className="not-italic text-ink">@ハンドル</em>
-              だけを見せたいときに
+              だけを見せて受け取りたいときに使えます
             </Trans>
           </li>
         </ul>
