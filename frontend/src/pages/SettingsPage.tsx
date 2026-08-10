@@ -313,7 +313,7 @@ function RegisterForm() {
                 <Link
                   to="/privacy"
                   target="_blank"
-                  className="ml-1 text-brand underline-offset-2 hover:underline"
+                  className="text-brand underline-offset-2 hover:underline"
                 >
                   プライバシーポリシー
                 </Link>

@@ -14,6 +14,7 @@
     "secrets:prod": "dotenvx run -f .env.prod -- node scripts/deploy-secrets.mjs",
     "cors:prod": "node scripts/apply-r2-cors.mjs",
     "seed": "node scripts/seed.mjs",
+    "shots": "pnpm --filter e2e shots",
     "i18n:extract": "pnpm --filter frontend i18n:extract",
     "i18n:lint": "node scripts/i18n-lint.mjs",
     "i18n:lint:update": "node scripts/i18n-lint.mjs --update",

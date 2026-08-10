@@ -74,11 +74,11 @@ export default function LoginPage() {
         <p className="text-[12px] text-ink-muted">
           <Trans>
             ログインすると
-            <Link to="/terms" className="mx-1 text-brand underline-offset-2 hover:underline">
+            <Link to="/terms" className="text-brand underline-offset-2 hover:underline">
               利用規約
             </Link>
             および
-            <Link to="/privacy" className="ml-1 text-brand underline-offset-2 hover:underline">
+            <Link to="/privacy" className="text-brand underline-offset-2 hover:underline">
               プライバシーポリシー
             </Link>
             に同意したものとみなされます。

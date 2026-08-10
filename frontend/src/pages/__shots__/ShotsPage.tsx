@@ -5,8 +5,11 @@
  * - Playwright は `/__shots/:slug` 配下で各カードを一意の `data-shot` セレクタで掴む
  * - 各カードは AppLayout / SenderLayout を経由しないため Footer 干渉なし
  * - スタイルは DESIGN.md & 既存 UI 部品 (Card / Button / StorageQuotaBar) を踏襲
+ *
+ * 撮影は `pnpm shots` (e2e/scripts/capture-guide-shots.mjs) から行う。
  */
 
+import { useLingui } from "@lingui/react/macro";
 import QRCode from "qrcode";
 import { useEffect, useRef } from "react";
 import { useParams } from "react-router";
@@ -16,7 +19,24 @@ import StorageQuotaBar from "../../components/ui/StorageQuotaBar";
 
 const PUBLIC_HOST = "furdrop.app";
 const SAMPLE_HANDLE = "sora_studio";
-const SAMPLE_DISPLAY = "そら写真館";
+/** 日英で同じ見た目になるよう、サンプルの受信者名はロケールによらず共通にする */
+const SAMPLE_DISPLAY = "Sora Studio";
+const SAMPLE_KEY = "V1StGXR8_Z5jdHi6B-myT";
+const RECEIVE_URL = `https://${PUBLIC_HOST}/send/${SAMPLE_HANDLE}?k=${SAMPLE_KEY}`;
+
+/**
+ * このページは Lingui の抽出対象外 (lingui.config.ts)。dev 専用のモック文言を
+ * 本番カタログに混ぜないため、`<Trans>` ではなく ja/en の対を直接持つ。
+ * en 側は実 UI とずれないよう `locales/en/messages.po` の訳文をそのまま写すこと。
+ * ロケールはヘッダーのトグルと同じ i18n を見るので `?lang=en` で切り替わる。
+ */
+function useShot() {
+  const { i18n } = useLingui();
+  const en = i18n.locale === "en";
+  return {
+    c: <T,>(ja: T, enText: T): T => (en ? enText : ja),
+  };
+}
 
 const SAMPLE_SENDER = "@kuukemo";
 const SENDER_NAMES = [
@@ -71,6 +91,7 @@ function FakePhoto({ idx, className = "" }: { idx: number; className?: string })
 /* ─────────────────── 送信者 ─────────────────── */
 
 function SenderStep1() {
+  const { c } = useShot();
   return (
     <Frame slug="sender-step1" pad="p-10" width={560}>
       <div className="rounded-[20px] bg-surface p-8 shadow-modal">
@@ -84,12 +105,14 @@ function SenderStep1() {
             </h1>
             <p className="mt-1 font-mono text-[14px] text-ink-soft">@{SAMPLE_HANDLE}</p>
           </div>
-          <p className="text-[14px] text-ink-soft">写真を{SAMPLE_DISPLAY}さんに送れます</p>
+          <p className="text-[14px] text-ink-soft">
+            {c(`写真を${SAMPLE_DISPLAY}さんに送れます`, `You can send photos to ${SAMPLE_DISPLAY}`)}
+          </p>
           <button
             type="button"
             className="block w-full rounded-xl bg-brand px-4 py-3 text-[16px] font-medium text-white"
           >
-            写真を送る
+            {c("写真を送る", "Send photos")}
           </button>
         </div>
       </div>
@@ -98,13 +121,16 @@ function SenderStep1() {
 }
 
 function SenderStep2() {
+  const { c } = useShot();
   return (
     <Frame slug="sender-step2" pad="p-8" width={840}>
       <div className="space-y-6">
         <div className="flex items-center justify-between gap-2">
-          <span className="rounded-lg px-2 py-1 text-[14px] text-ink-soft">&lt; 戻る</span>
+          <span className="rounded-lg px-2 py-1 text-[14px] text-ink-soft">
+            {c("< 戻る", "< Back")}
+          </span>
           <h1 className="truncate text-[16px] font-semibold text-ink">
-            {SAMPLE_DISPLAY}さんへ送信
+            {c(`${SAMPLE_DISPLAY}さんへ送信`, `Send to ${SAMPLE_DISPLAY}`)}
           </h1>
           <div className="w-12" />
         </div>
@@ -126,23 +152,28 @@ function SenderStep2() {
             </svg>
           </div>
           <p className="mt-4 text-[18px] font-semibold tracking-[-0.01em] text-ink">
-            写真をここにドロップ
+            {c("写真をここにドロップ", "Drop your photos here")}
           </p>
-          <p className="mt-1 text-[14px] text-ink-soft">またはタップしてファイルを選択</p>
+          <p className="mt-1 text-[14px] text-ink-soft">
+            {c("またはタップしてファイルを選択", "or tap to choose files")}
+          </p>
           <p className="mt-3 font-mono text-[11px] text-ink-muted">
-            JPEG / PNG / HEIC ・ 最大 20MB / 枚 ・ 100 枚まで
+            {c(
+              "JPEG / PNG / HEIC ・ 最大 20MB / 枚 ・ 100 枚まで",
+              "JPEG / PNG / HEIC · up to 20MB each · 100 photos max",
+            )}
           </p>
         </div>
 
         <div>
           <div className="mb-2 flex items-center justify-between text-[14px]">
-            <span className="font-medium text-ink">6枚選択中</span>
-            <span className="text-ink-soft">すべてクリア</span>
+            <span className="font-medium text-ink">{c("6枚選択中", "6 photos selected")}</span>
+            <span className="text-ink-soft">{c("すべてクリア", "Clear all")}</span>
           </div>
           <div className="grid grid-cols-6 gap-2">
-            {PHOTO_COLORS.map((c, i) => (
+            {PHOTO_COLORS.map((color, i) => (
               <div
-                key={c}
+                key={color}
                 className="relative flex aspect-square items-center justify-center overflow-hidden rounded-2xl bg-surface-canvas"
               >
                 <FakePhoto idx={i} className="h-[78%] w-[78%]" />
@@ -159,13 +190,19 @@ function SenderStep2() {
 }
 
 function SenderStep3() {
+  const { c } = useShot();
+  const credit = (
+    <code className="mx-0.5 rounded bg-surface-sand px-1.5 py-0.5 font-mono text-[0.95em] text-ink">
+      {SAMPLE_SENDER}
+    </code>
+  );
   return (
     <Frame slug="sender-step3" pad="p-10" width={720}>
       <Card>
         <div className="space-y-4">
           <div className="space-y-1.5">
             <label htmlFor="sn" className="block text-[14px] font-medium text-ink">
-              送信者名 / TwitterID
+              {c("送信者名 / TwitterID", "Your name / Twitter ID")}
             </label>
             <input
               id="sn"
@@ -174,33 +211,11 @@ function SenderStep3() {
               className="block w-full rounded-xl border border-surface-sand-deep bg-surface px-4 py-3 text-[14px] text-ink"
             />
             <p className="text-[13px] text-ink-soft">
-              受信者に表示されます。EXIF・透かしには
-              <code className="mx-0.5 rounded bg-surface-sand px-1.5 py-0.5 font-mono text-[0.95em] text-ink">
-                撮影：{SAMPLE_SENDER}
-              </code>
-              の形式で埋め込まれます
+              {c(
+                "受信者に表示されます。EXIF埋め込みにもこの名前が使われます",
+                "Shown to the recipient. This name is also used for the EXIF embed",
+              )}
             </p>
-          </div>
-
-          <div className="space-y-1.5">
-            <p className="block text-[13px] font-medium text-ink-soft">クレジット表記</p>
-            <div className="grid grid-cols-4 gap-1 rounded-xl bg-surface-sand p-1">
-              {[
-                { label: "撮影：〜", active: true },
-                { label: "Photo by 〜", active: false },
-                { label: "© 〜", active: false },
-                { label: "名前のみ", active: false },
-              ].map((o) => (
-                <div
-                  key={o.label}
-                  className={`flex items-center justify-center rounded-lg px-2 py-1.5 text-center text-[13px] ${
-                    o.active ? "bg-surface text-ink shadow-card" : "text-ink-soft"
-                  }`}
-                >
-                  {o.label}
-                </div>
-              ))}
-            </div>
           </div>
 
           <div className="space-y-3 border-t border-surface-sand-deep pt-4">
@@ -212,9 +227,17 @@ function SenderStep3() {
                 className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
               />
               <span>
-                <span className="font-medium text-ink">EXIFカメラモデル欄に埋め込む</span>
+                <span className="font-medium text-ink">
+                  {c("EXIFカメラモデル欄に埋め込む", "Embed in the EXIF camera model field")}
+                </span>
                 <span className="mt-0.5 block text-[13px] text-ink-soft">
-                  メタデータに「撮影：{SAMPLE_SENDER}」を書き込みます（元のカメラ情報は上書き）
+                  {c(
+                    <>メタデータに送信者名{credit}を書き込みます（元のカメラ情報は上書き）</>,
+                    <>
+                      Writes your name {credit} into the metadata (the original camera info is
+                      overwritten)
+                    </>,
+                  )}
                 </span>
               </span>
             </label>
@@ -227,15 +250,20 @@ function SenderStep3() {
                   className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
                 />
                 <span>
-                  <span className="font-medium text-ink">透かしを入れる</span>
+                  <span className="font-medium text-ink">
+                    {c("透かしを入れる", "Add a watermark")}
+                  </span>
                   <span className="mt-0.5 block text-[13px] text-ink-soft">
-                    画像に「撮影：{SAMPLE_SENDER}」を描き込みます（不可逆）
+                    {c(
+                      "画像に文字や四角形を描き込みます（不可逆）。初期設定では送信者名が右下に入り、内容・位置・フォントは自由に編集できます",
+                      "Draws text and shapes onto the image (this cannot be undone). By default your name goes in the bottom right, and you can freely edit the text, position and font",
+                    )}
                   </span>
                 </span>
               </label>
               <div className="mt-2 pl-6">
                 <Button size="sm" variant="secondary">
-                  透かしを編集
+                  {c("透かしを編集", "Edit watermark")}
                 </Button>
               </div>
             </div>
@@ -247,6 +275,7 @@ function SenderStep3() {
 }
 
 function SenderStep4() {
+  const { c } = useShot();
   return (
     <Frame slug="sender-step4" pad="p-10" width={720}>
       <div className="space-y-6 text-center">
@@ -257,12 +286,12 @@ function SenderStep4() {
           ✓
         </div>
         <h1 className="text-[28px] font-bold leading-[1.2] tracking-[-0.015em] text-ink">
-          6枚の写真を送信しました！
+          {c("6枚の写真を送信しました！", "Sent 6 photos!")}
         </h1>
         <div className="grid grid-cols-6 gap-2">
-          {PHOTO_COLORS.map((c, i) => (
+          {PHOTO_COLORS.map((color, i) => (
             <div
-              key={c}
+              key={color}
               className="flex aspect-square items-center justify-center overflow-hidden rounded-2xl bg-surface shadow-card"
             >
               <FakePhoto idx={i} className="h-[78%] w-[78%]" />
@@ -273,7 +302,7 @@ function SenderStep4() {
           type="button"
           className="mx-auto block max-w-sm rounded-xl bg-brand px-4 py-3 text-[16px] font-medium text-white"
         >
-          別の写真を送る
+          {c("別の写真を送る", "Send more photos")}
         </button>
       </div>
     </Frame>
@@ -283,18 +312,26 @@ function SenderStep4() {
 /* ─────────────────── 受信者 ─────────────────── */
 
 function ReceiverStep1() {
+  const { c } = useShot();
   return (
     <Frame slug="receiver-step1" pad="p-10" width={620}>
       <div className="space-y-6">
         <div className="text-center">
-          <h1 className="text-[28px] font-bold tracking-[-0.015em] text-ink">アカウント設定</h1>
-          <p className="mt-2 text-[14px] text-ink-soft">写真を受け取るための公開URLを作成します</p>
+          <h1 className="text-[28px] font-bold tracking-[-0.015em] text-ink">
+            {c("アカウント設定", "Account setup")}
+          </h1>
+          <p className="mt-2 text-[14px] text-ink-soft">
+            {c(
+              "写真を受け取るための公開URLを作成します",
+              "Create the public URL you'll use to receive photos",
+            )}
+          </p>
         </div>
         <Card>
           <div className="space-y-4">
             <div className="space-y-1.5">
               <label htmlFor="h" className="block text-[14px] font-medium text-ink">
-                ハンドル
+                {c("ハンドル", "Handle")}
               </label>
               <input
                 id="h"
@@ -303,12 +340,15 @@ function ReceiverStep1() {
                 className="block w-full rounded-xl border border-surface-sand-deep bg-surface px-4 py-3 text-[14px] text-ink"
               />
               <p className="text-[13px] text-ink-muted">
-                公開URLに使われます: {PUBLIC_HOST}/send/あなたのハンドル
+                {c(
+                  `公開URLに使われます: ${PUBLIC_HOST}/send/あなたのハンドル`,
+                  `Used in your public URL: ${PUBLIC_HOST}/send/your_handle`,
+                )}
               </p>
             </div>
             <div className="space-y-1.5">
               <label htmlFor="dn" className="block text-[14px] font-medium text-ink">
-                表示名
+                {c("表示名", "Display name")}
               </label>
               <input
                 id="dn"
@@ -317,21 +357,19 @@ function ReceiverStep1() {
                 className="block w-full rounded-xl border border-surface-sand-deep bg-surface px-4 py-3 text-[14px] text-ink"
               />
             </div>
-            <div className="space-y-3 border-t border-surface-sand-deep pt-4">
-              <p className="text-[14px] font-medium text-ink">受信オプション</p>
-              <p className="text-[13px] text-ink-soft">
-                送信者に提示するオプションを設定します。あとから設定ページで変更できます。
+            <div className="space-y-4 border-t border-surface-sand-deep pt-4">
+              <p className="text-[14px] font-medium text-ink">
+                {c("受信オプション", "Receiving options")}
               </p>
-              <EmbedModeFake
-                title="EXIF埋め込み"
-                desc="送信者がカメラモデル欄に名前を書き込みます（メタデータのみ、除去可能）"
-                active="optional"
-              />
-              <EmbedModeFake
-                title="透かし"
-                desc="送信者が画像にクレジットテキストを描き込みます（不可逆）"
-                active="disabled"
-              />
+              <p className="text-[13px] text-ink-soft">
+                {c(
+                  "送信者に提示するオプションを設定します。あとから設定ページで変更できます。",
+                  "Choose what to offer senders. You can change this later on the settings page.",
+                )}
+              </p>
+              <RequireSenderNameFake />
+              <EmbedModeFake kind="exif" active="optional" />
+              <EmbedModeFake kind="watermark" active="disabled" />
             </div>
             <label className="flex items-start gap-2.5 border-t border-surface-sand-deep pt-4 text-[13px]">
               <input
@@ -341,16 +379,25 @@ function ReceiverStep1() {
                 className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
               />
               <span className="text-ink">
-                <span className="text-brand underline-offset-2">利用規約</span>および
-                <span className="ml-1 text-brand underline-offset-2">プライバシーポリシー</span>
-                に同意します。
+                {c(
+                  <>
+                    <span className="text-brand underline-offset-2">利用規約</span>および
+                    <span className="text-brand underline-offset-2">プライバシーポリシー</span>
+                    に同意します。
+                  </>,
+                  <>
+                    I agree to the{" "}
+                    <span className="text-brand underline-offset-2">Terms of Service</span> and the{" "}
+                    <span className="text-brand underline-offset-2">Privacy Policy</span>.
+                  </>,
+                )}
               </span>
             </label>
             <button
               type="button"
               className="w-full rounded-xl bg-brand px-5 py-3 text-[16px] font-medium text-white"
             >
-              登録する
+              {c("登録する", "Create account")}
             </button>
           </div>
         </Card>
@@ -359,24 +406,70 @@ function ReceiverStep1() {
   );
 }
 
+/** 送信者名必須トグル (R14) のモック。登録フォームと設定画面の両方に出る */
+function RequireSenderNameFake() {
+  const { c } = useShot();
+  return (
+    <label className="flex items-start gap-2.5">
+      <input type="checkbox" checked readOnly className="mt-0.5 h-4 w-4 shrink-0 accent-brand" />
+      <span>
+        <span className="block text-[14px] font-medium text-ink">
+          {c("送信者名の入力を必須にする", "Require senders to enter a name")}
+        </span>
+        <span className="mt-0.5 block text-[13px] text-ink-soft">
+          {c(
+            "送信者は名前 (TwitterID等) を入力しないと写真を送れなくなります",
+            "Senders can't send photos without entering a name (a Twitter ID, for example)",
+          )}
+        </span>
+      </span>
+    </label>
+  );
+}
+
 function EmbedModeFake({
-  title,
-  desc,
+  kind,
   active,
 }: {
-  title: string;
-  desc: string;
+  kind: "exif" | "watermark";
   active: "disabled" | "optional" | "required";
 }) {
+  const { c } = useShot();
+  const title = kind === "exif" ? c("EXIF埋め込み", "EXIF embed") : c("透かし", "Watermark");
+  const desc =
+    kind === "exif"
+      ? c(
+          "送信者がカメラモデル欄に名前を書き込みます（メタデータのみ、除去可能）",
+          "Senders write their name into the camera model field (metadata only, removable)",
+        )
+      : c(
+          "送信者が画像にクレジットテキストを描き込みます（不可逆）",
+          "Senders draw credit text onto the image itself (cannot be undone)",
+        );
   const opts: {
     v: "disabled" | "optional" | "required";
     label: string;
     head: string;
     tail: string;
   }[] = [
-    { v: "disabled", label: "無効", head: "送信者の", tail: "画面に表示しない" },
-    { v: "optional", label: "任意", head: "送信者が", tail: "選択できる" },
-    { v: "required", label: "必須", head: "送信者は", tail: "必ず埋め込む" },
+    {
+      v: "disabled",
+      label: c("無効", "Off"),
+      head: c("送信者の", "Not shown to "),
+      tail: c("画面に表示しない", "senders"),
+    },
+    {
+      v: "optional",
+      label: c("任意", "Optional"),
+      head: c("送信者が", "Senders "),
+      tail: c("選択できる", "can choose"),
+    },
+    {
+      v: "required",
+      label: c("必須", "Required"),
+      head: c("送信者は", "Senders "),
+      tail: c("必ず埋め込む", "always embed"),
+    },
   ];
   return (
     <div className="space-y-2">
@@ -408,37 +501,35 @@ function EmbedModeFake({
 }
 
 function ReceiverStep2() {
+  const { c } = useShot();
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     if (ref.current) {
-      QRCode.toCanvas(ref.current, `https://${PUBLIC_HOST}/send/${SAMPLE_HANDLE}`, {
-        width: 200,
-        margin: 2,
-      });
+      QRCode.toCanvas(ref.current, RECEIVE_URL, { width: 200, margin: 2 });
     }
   }, []);
   return (
     <Frame slug="receiver-step2" pad="p-10" width={620}>
-      <Card title="あなたの受信URL">
+      <Card title={c("あなたの受信URL", "Your receiving URL")}>
         <div className="space-y-3">
           <p className="break-all rounded-xl bg-surface-canvas px-3 py-2 font-mono text-[14px] text-ink">
-            https://{PUBLIC_HOST}/send/{SAMPLE_HANDLE}
+            {RECEIVE_URL}
           </p>
           <div className="flex flex-wrap gap-2">
             <span className="rounded-xl border border-surface-sand-deep bg-surface-sand px-3 py-2 text-[14px] font-medium text-ink">
-              コピー
+              {c("コピー", "Copy")}
             </span>
             <span className="rounded-xl border border-surface-sand-deep bg-surface-sand-hover px-3 py-2 text-[14px] font-medium text-ink">
               QR
             </span>
             <span className="rounded-xl border border-surface-sand-deep bg-surface-sand px-3 py-2 text-[14px] font-medium text-ink">
-              シェア
+              {c("シェア", "Share")}
             </span>
           </div>
           <div className="flex flex-col items-center gap-3 py-2">
             <canvas ref={ref} className="rounded-xl" />
             <span className="rounded-xl border border-surface-sand-deep bg-surface-sand px-3 py-1.5 text-[13px] font-medium text-ink">
-              QRをダウンロード
+              {c("QRをダウンロード", "Download QR")}
             </span>
           </div>
         </div>
@@ -448,9 +539,10 @@ function ReceiverStep2() {
 }
 
 function ReceiverStep3() {
+  const { c } = useShot();
   return (
     <Frame slug="receiver-step3" pad="p-10" width={620}>
-      <Card title="ストレージ">
+      <Card title={c("ストレージ", "Storage")}>
         <StorageQuotaBar
           used={Math.floor(2.3 * 1024 * 1024 * 1024)}
           quota={10 * 1024 * 1024 * 1024}
@@ -461,23 +553,20 @@ function ReceiverStep3() {
 }
 
 function ReceiverStep4() {
+  const { c } = useShot();
   return (
     <Frame slug="receiver-step4" pad="p-10" width={620}>
-      <Card title="受信オプション">
+      <Card title={c("受信オプション", "Receiving options")}>
         <p className="mb-4 text-[13px] text-ink-soft">
-          送信者に提示するオプションを設定します。「必須」にすると送信者は必ず埋め込みます。
+          {c(
+            "送信者に提示するオプションを設定します。「必須」にすると送信者は必ず埋め込みます。",
+            'Choose what to offer senders. Setting an option to "Required" means senders always embed it.',
+          )}
         </p>
         <div className="space-y-5">
-          <EmbedModeFake
-            title="EXIF埋め込み"
-            desc="送信者がカメラモデル欄に名前を書き込みます（メタデータのみ、除去可能）"
-            active="optional"
-          />
-          <EmbedModeFake
-            title="透かし"
-            desc="送信者が画像にクレジットテキストを描き込みます（不可逆）"
-            active="optional"
-          />
+          <RequireSenderNameFake />
+          <EmbedModeFake kind="exif" active="optional" />
+          <EmbedModeFake kind="watermark" active="optional" />
         </div>
       </Card>
     </Frame>
@@ -485,20 +574,22 @@ function ReceiverStep4() {
 }
 
 function ReceiverStep5() {
+  const { c } = useShot();
   return (
     <Frame slug="receiver-step5" pad="p-10" width={780}>
       <div className="space-y-4">
         <div className="flex items-end justify-between">
           <h1 className="text-[28px] font-bold tracking-[-0.015em] text-ink">
-            ギャラリー <span className="text-[18px] font-medium text-ink-muted">(6)</span>
+            {c("ギャラリー", "Gallery")}{" "}
+            <span className="text-[18px] font-medium text-ink-muted">(6)</span>
           </h1>
-          <span className="text-[14px] font-medium text-brand">選択 / DL</span>
+          <span className="text-[14px] font-medium text-brand">{c("選択/DL", "Select")}</span>
         </div>
         <div className="grid grid-cols-3 gap-2 rounded-xl bg-surface-sand p-1">
           {[
-            { label: "新着順", active: true },
-            { label: "日付別", active: false },
-            { label: "撮影者別", active: false },
+            { label: c("新着順", "Newest"), active: true },
+            { label: c("日付別", "By date"), active: false },
+            { label: c("撮影者別", "By photographer"), active: false },
           ].map((t) => (
             <div
               key={t.label}
