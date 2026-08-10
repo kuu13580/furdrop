@@ -3,6 +3,7 @@ import { useAtomValue, useSetAtom } from "jotai";
 import QRCode from "qrcode";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
+import Alert from "../components/ui/Alert";
 import Card from "../components/ui/Card";
 import LoadingSpinner from "../components/ui/LoadingSpinner";
 import StorageQuotaBar from "../components/ui/StorageQuotaBar";
@@ -11,7 +12,7 @@ import { receiverApi } from "../lib/api";
 import { userAtom } from "../stores/user";
 import type { Photo } from "../types/photo";
 
-function PublicUrlCard({ receiveUrl }: { receiveUrl: string }) {
+function PublicUrlCard({ receiveUrl, isAccepting }: { receiveUrl: string; isAccepting: boolean }) {
   const { t } = useLingui();
   const [copied, setCopied] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
@@ -53,6 +54,13 @@ function PublicUrlCard({ receiveUrl }: { receiveUrl: string }) {
   return (
     <Card title={t`あなたの受信URL`}>
       <div className="space-y-3">
+        {!isAccepting && (
+          <Alert variant="info">
+            <Trans>
+              写真の受付を停止中です。このURLを開いても写真は送れません。設定から再開できます。
+            </Trans>
+          </Alert>
+        )}
         <p className="break-all rounded-xl bg-surface-canvas px-3 py-2 font-mono text-[14px] text-ink">
           {receiveUrl}
         </p>
@@ -220,7 +228,10 @@ export default function DashboardPage() {
       <h1 className="text-[22px] font-bold tracking-[-0.015em] text-ink sm:text-[28px]">
         <Trans>ダッシュボード</Trans>
       </h1>
-      <PublicUrlCard receiveUrl={`${window.location.origin}${user.receive_url}`} />
+      <PublicUrlCard
+        receiveUrl={`${window.location.origin}${user.receive_url}`}
+        isAccepting={user.is_active}
+      />
       <Card title={t`ストレージ`}>
         <StorageQuotaBar used={user.storage_used} quota={user.storage_quota} />
       </Card>

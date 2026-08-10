@@ -59,4 +59,46 @@ describe("PATCH /auth/options", () => {
     expect(updated.body.user.exif_embed_mode).toBe("required"); // 維持
     expect(updated.body.user.watermark_mode).toBe("disabled"); // 更新
   });
+
+  it("require_send_key を false にすると receive_url から ?k= が落ちる (R16 opt-out)", async () => {
+    const { idToken, uid } = await createEmulatorUser();
+    await seedUser({ uid, handle: "dave_opts" });
+
+    const before = await apiJson<{ user: { receive_url: string; require_send_key: boolean } }>(
+      "/auth/me",
+      { headers: authHeader(idToken) },
+    );
+    expect(before.body.user.require_send_key).toBe(true);
+    expect(before.body.user.receive_url).toContain("?k=");
+
+    const off = await apiJson<{ user: { receive_url: string; require_send_key: boolean } }>(
+      "/auth/options",
+      { method: "PATCH", headers: authHeader(idToken), body: { require_send_key: false } },
+    );
+    expect(off.body.user.require_send_key).toBe(false);
+    expect(off.body.user.receive_url).toBe("/send/dave_opts");
+
+    // send_keys は消さないので、戻せば同じ URL が復活する
+    const on = await apiJson<{ user: { receive_url: string } }>("/auth/options", {
+      method: "PATCH",
+      headers: authHeader(idToken),
+      body: { require_send_key: true },
+    });
+    expect(on.body.user.receive_url).toBe(before.body.user.receive_url);
+  });
+
+  it("is_active を false にすると /send/:handle の is_accepting が false になる (R11 受付停止)", async () => {
+    const { idToken, uid } = await createEmulatorUser();
+    await seedUser({ uid, handle: "erin_opts" });
+
+    const updated = await apiJson<{ user: { is_active: boolean } }>("/auth/options", {
+      method: "PATCH",
+      headers: authHeader(idToken),
+      body: { is_active: false },
+    });
+    expect(updated.body.user.is_active).toBe(false);
+
+    const profile = await apiJson<{ receiver: { is_accepting: boolean } }>("/send/erin_opts");
+    expect(profile.body.receiver.is_accepting).toBe(false);
+  });
 });

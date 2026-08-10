@@ -20,7 +20,7 @@ bucket_name = "furdrop-originals"
 binding = "R2_THUMBS"
 bucket_name = "furdrop-thumbs"
 
-# Rate limiting (X05): 送信者IPベースで POST 系エンドポイントを保護
+# Rate limiting (X05): 送信者IPベースで匿名送信フローを保護
 # 60秒窓のみサポートのため、原案 30/h は 5/60s に圧縮（バースト対策で実効十分）
 [[unsafe.bindings]]
 name = "RATE_LIMITER_SESSION"
@@ -34,6 +34,14 @@ name = "RATE_LIMITER_PHOTOS"
 type = "ratelimit"
 namespace_id = "1002"
 simple = { limit = 30, period = 60 }
+
+# プロフィール GET は handle 列挙の入口 (R16 opt-out した受信者は handle だけで送れる)。
+# 同一 NAT のイベント来場者を潰さないよう、機械的な走査だけが当たる緩さにする
+[[unsafe.bindings]]
+name = "RATE_LIMITER_PROFILE"
+type = "ratelimit"
+namespace_id = "1003"
+simple = { limit = 60, period = 60 }
 
 [vars]
 ENVIRONMENT = "production"

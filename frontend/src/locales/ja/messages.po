@@ -127,6 +127,10 @@ msgid "< 戻る"
 msgstr "< 戻る"
 
 #: src/pages/GuidePage.tsx
+msgid "<0>「受信オプション」</0>では、送信者がどこまで自分の名前を写真に残せるかを決められます。"
+msgstr "<0>「受信オプション」</0>では、送信者がどこまで自分の名前を写真に残せるかを決められます。"
+
+#: src/pages/GuidePage.tsx
 msgid "<0>EXIFカメラモデル欄に埋め込む</0>：写真のメタデータに名前を残します（あとから消すことも可能）"
 msgstr "<0>EXIFカメラモデル欄に埋め込む</0>：写真のメタデータに名前を残します（あとから消すことも可能）"
 
@@ -150,9 +154,17 @@ msgstr "<0>コピー</0>：URLをクリップボードにコピーして、SNS�
 msgid "<0>シェア</0>：スマホの共有メニュー（または X 投稿フォーム）が立ち上がります"
 msgstr "<0>シェア</0>：スマホの共有メニュー（または X 投稿フォーム）が立ち上がります"
 
+#: src/pages/GuidePage.tsx
+msgid "<0>写真を受け付ける</0>：オフにすると受付を一時停止できます。意図しない写真が届いたときの止め方です"
+msgstr "<0>写真を受け付ける</0>：オフにすると受付を一時停止できます。意図しない写真が届いたときの止め方です"
+
 #: src/pages/SettingsPage.tsx
 msgid "<0>利用規約</0>および<1>プライバシーポリシー</1>に同意します。"
 msgstr "<0>利用規約</0>および<1>プライバシーポリシー</1>に同意します。"
+
+#: src/pages/GuidePage.tsx
+msgid "<0>受信URLを知っている人だけから受け取る</0>：オフにすると、URLの末尾の文字列がなくても、ハンドルを知っている人なら誰でも送れるようになります。名刺やSNSで<1>@ハンドル</1>だけを見せたいときに"
+msgstr "<0>受信URLを知っている人だけから受け取る</0>：オフにすると、URLの末尾の文字列がなくても、ハンドルを知っている人なら誰でも送れるようになります。名刺やSNSで<1>@ハンドル</1>だけを見せたいときに"
 
 #: src/pages/GuidePage.tsx
 msgid "<0>緑</0>：余裕あり（〜79%）"
@@ -290,6 +302,10 @@ msgstr "UDゴシック"
 msgid "URLに誤りがないかご確認ください。"
 msgstr "URLに誤りがないかご確認ください。"
 
+#: src/pages/GuidePage.tsx
+msgid "URLの末尾には推測できない文字列が付いていて、これを知っている人だけが写真を送れます。URLは途中で切らず、そのまま共有してください。"
+msgstr "URLの末尾には推測できない文字列が付いていて、これを知っている人だけが写真を送れます。URLは途中で切らず、そのまま共有してください。"
+
 #: src/pages/LandingPage.tsx
 msgid "URLを作る"
 msgstr "URLを作る"
@@ -301,10 +317,6 @@ msgstr "URLを作る →"
 #: src/pages/LandingPage.tsx
 msgid "URLを共有"
 msgstr "URLを共有"
-
-#: src/pages/GuidePage.tsx
-msgid "URLを知っている人だけが写真を送れます。誰にでも公開する必要はありません。"
-msgstr "URLを知っている人だけが写真を送れます。誰にでも公開する必要はありません。"
 
 #: src/pages/LandingPage.tsx
 msgid "URLを知っている人だけが送信できる"
@@ -427,6 +439,10 @@ msgstr "エラーが発生しました。時間をおいてもう一度お試し
 #: src/lib/watermark.ts
 msgid "オールド明朝"
 msgstr "オールド明朝"
+
+#: src/pages/SettingsPage.tsx
+msgid "オフにすると受信ページに受付停止中と表示され、新しい写真は届かなくなります"
+msgstr "オフにすると受信ページに受付停止中と表示され、新しい写真は届かなくなります"
 
 #: src/pages/LegalPage.tsx
 msgid "お問い合わせ"
@@ -968,6 +984,10 @@ msgstr "個人情報は<0/>交換しない"
 msgid "個別到達で探す手間なし"
 msgstr "個別到達で探す手間なし"
 
+#: src/pages/SettingsPage.tsx
+msgid "元に戻すと、いまと同じ受信URLがそのまま使えます"
+msgstr "元に戻すと、いまと同じ受信URLがそのまま使えます"
+
 #: src/components/ui/ScrollToTopButton.tsx
 msgid "先頭にスクロール"
 msgstr "先頭にスクロール"
@@ -1050,6 +1070,18 @@ msgstr "写真が見つかりません"
 msgid "写真の受け取りに特化"
 msgstr "写真の受け取りに特化"
 
+#: src/pages/SettingsPage.tsx
+msgid "写真の受付"
+msgstr "写真の受付"
+
+#: src/pages/GuidePage.tsx
+msgid "写真の受付チェックボックスと受信オプションの3段階ラジオボタン"
+msgstr "写真の受付チェックボックスと受信オプションの3段階ラジオボタン"
+
+#: src/pages/DashboardPage.tsx
+msgid "写真の受付を停止中です。このURLを開いても写真は送れません。設定から再開できます。"
+msgstr "写真の受付を停止中です。このURLを開いても写真は送れません。設定から再開できます。"
+
 #: src/pages/DashboardPage.tsx
 msgid "写真はこちらから送ってください！\n"
 "{receiveUrl}"
@@ -1071,6 +1103,10 @@ msgstr "写真をここにドロップ"
 #: src/pages/send/UploadPage.tsx
 msgid "写真を取り込み中…"
 msgstr "写真を取り込み中…"
+
+#: src/pages/SettingsPage.tsx
+msgid "写真を受け付ける"
+msgstr "写真を受け付ける"
 
 #: src/pages/LoginPage.tsx
 msgid "写真を受け取るための<0/>あなた専用URLを作ろう"
@@ -1150,6 +1186,10 @@ msgstr "参加者にもアカウント登録が必要"
 msgid "友達から共有リンクを受け取った？"
 msgstr "友達から共有リンクを受け取った？"
 
+#: src/pages/GuidePage.tsx
+msgid "受け付け方を決める"
+msgstr "受け付け方を決める"
+
 #: src/pages/LandingPage.tsx
 msgid "受け取り側"
 msgstr "受け取り側"
@@ -1203,12 +1243,20 @@ msgid "受信URLとコピー・QR・シェアボタン"
 msgstr "受信URLとコピー・QR・シェアボタン"
 
 #: src/pages/SettingsPage.tsx
+msgid "受信URLの末尾には推測できない文字列が付きます。オフにすると、ハンドルを知っている人なら誰でも写真を送れるようになります"
+msgstr "受信URLの末尾には推測できない文字列が付きます。オフにすると、ハンドルを知っている人なら誰でも写真を送れるようになります"
+
+#: src/pages/SettingsPage.tsx
+msgid "受信URLの末尾の文字列がなくても写真が届くようになり、ハンドル (@{handle}) を知っている人なら誰でも送信できる状態になります。"
+msgstr "受信URLの末尾の文字列がなくても写真が届くようになり、ハンドル (@{handle}) を知っている人なら誰でも送信できる状態になります。"
+
+#: src/pages/SettingsPage.tsx
+msgid "受信URLを知っている人だけから受け取る"
+msgstr "受信URLを知っている人だけから受け取る"
+
+#: src/pages/SettingsPage.tsx
 msgid "受信オプション"
 msgstr "受信オプション"
-
-#: src/pages/GuidePage.tsx
-msgid "受信オプションの3段階ラジオボタン"
-msgstr "受信オプションの3段階ラジオボタン"
 
 #: src/pages/SettingsPage.tsx
 msgid "受信した全ての写真とサムネイル"
@@ -1281,6 +1329,10 @@ msgstr "各項目に <0>無効 / 任意 / 必須</0> の3段階があります�
 #: src/components/send/WatermarkDialog.tsx
 msgid "四角形"
 msgstr "四角形"
+
+#: src/pages/GuidePage.tsx
+msgid "埋め込みは迷ったら「任意」がおすすめ。送る人の判断にゆだねつつ、選択肢は提示できます。"
+msgstr "埋め込みは迷ったら「任意」がおすすめ。送る人の判断にゆだねつつ、選択肢は提示できます。"
 
 #: src/pages/send/UploadingPage.tsx
 msgid "変換失敗"
@@ -1363,6 +1415,10 @@ msgstr "必ず埋め込む"
 msgid "必須"
 msgstr "必須"
 
+#: src/pages/SettingsPage.tsx
+msgid "意図しない写真が届いたときは「写真を受け付ける」をオフにすればすぐ止められます"
+msgstr "意図しない写真が届いたときは「写真を受け付ける」をオフにすればすぐ止められます"
+
 #: src/pages/GuidePage.tsx
 #: src/pages/LegalPage.tsx
 msgid "戻る"
@@ -1403,10 +1459,6 @@ msgstr "撮影者ごとの整理機能なし"
 #: src/pages/GalleryPage.tsx
 msgid "撮影者別"
 msgstr "撮影者別"
-
-#: src/pages/GuidePage.tsx
-msgid "撮影者情報の受け入れ設定"
-msgstr "撮影者情報の受け入れ設定"
 
 #: src/pages/LandingPage.tsx
 msgid "撮影者情報の埋込なし"
@@ -1644,8 +1696,8 @@ msgid "設定で続きから"
 msgstr "設定で続きから"
 
 #: src/pages/GuidePage.tsx
-msgid "設定ページの<0>「受信オプション」</0>で、送信者がどこまで自分の名前を写真に残せるかを決められます。"
-msgstr "設定ページの<0>「受信オプション」</0>で、送信者がどこまで自分の名前を写真に残せるかを決められます。"
+msgid "設定ページの<0>「写真の受付」</0>で、いつ・誰から受け取るかを切り替えられます。"
+msgstr "設定ページの<0>「写真の受付」</0>で、いつ・誰から受け取るかを切り替えられます。"
 
 #: src/pages/LandingPage.tsx
 msgid "詳しい使い方を見る"
@@ -1669,9 +1721,13 @@ msgstr "読み込み中"
 msgid "読み込み中..."
 msgstr "読み込み中..."
 
-#: src/pages/GuidePage.tsx
-msgid "迷ったら「任意」がおすすめ。送る人の判断にゆだねつつ、選択肢は提示できます。"
-msgstr "迷ったら「任意」がおすすめ。送る人の判断にゆだねつつ、選択肢は提示できます。"
+#: src/pages/SettingsPage.tsx
+msgid "誰でも送れるようにする"
+msgstr "誰でも送れるようにする"
+
+#: src/pages/SettingsPage.tsx
+msgid "誰でも送れる状態にしますか？"
+msgstr "誰でも送れる状態にしますか？"
 
 #: src/pages/LandingPage.tsx
 msgid "送りたい写真がある"

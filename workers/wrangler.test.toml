@@ -38,6 +38,12 @@ type = "ratelimit"
 namespace_id = "9002"
 simple = { limit = 10000, period = 60 }
 
+[[unsafe.bindings]]
+name = "RATE_LIMITER_PROFILE"
+type = "ratelimit"
+namespace_id = "9003"
+simple = { limit = 10000, period = 60 }
+
 [vars]
 # ENVIRONMENT=development にすることで dev/* ルートが有効化され、
 # R2 PUT を /dev/images/upload/... プロキシで本物の R2 (miniflare) に投入できる。

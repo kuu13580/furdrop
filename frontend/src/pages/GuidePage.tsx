@@ -520,7 +520,9 @@ const RECEIVER_STEPS: Step[] = [
           </li>
         </ul>
         <p className="text-[13px] text-ink-muted">
-          <Trans>URLを知っている人だけが写真を送れます。誰にでも公開する必要はありません。</Trans>
+          <Trans>
+            URLの末尾には推測できない文字列が付いていて、これを知っている人だけが写真を送れます。URLは途中で切らず、そのまま共有してください。
+          </Trans>
         </p>
       </>
     ),
@@ -580,15 +582,37 @@ const RECEIVER_STEPS: Step[] = [
   },
   {
     num: "04",
-    title: msg`撮影者情報の受け入れ設定`,
+    title: msg`受け付け方を決める`,
     highlight: true,
     body: (
       <>
         <p>
           <Trans>
             設定ページの
+            <strong className="font-semibold text-ink">「写真の受付」</strong>
+            で、いつ・誰から受け取るかを切り替えられます。
+          </Trans>
+        </p>
+        <ul className="list-disc space-y-1.5 pl-5 text-[13.5px] marker:text-ink-muted">
+          <li>
+            <Trans>
+              <strong className="text-ink">写真を受け付ける</strong>
+              ：オフにすると受付を一時停止できます。意図しない写真が届いたときの止め方です
+            </Trans>
+          </li>
+          <li>
+            <Trans>
+              <strong className="text-ink">受信URLを知っている人だけから受け取る</strong>
+              ：オフにすると、URLの末尾の文字列がなくても、ハンドルを知っている人なら誰でも送れるようになります。名刺やSNSで
+              <em className="not-italic text-ink">@ハンドル</em>
+              だけを見せたいときに
+            </Trans>
+          </li>
+        </ul>
+        <p>
+          <Trans>
             <strong className="font-semibold text-ink">「受信オプション」</strong>
-            で、送信者がどこまで自分の名前を写真に残せるかを決められます。
+            では、送信者がどこまで自分の名前を写真に残せるかを決められます。
           </Trans>
           <br />
           <Trans>
@@ -660,8 +684,8 @@ const RECEIVER_STEPS: Step[] = [
     ),
     image: {
       src: "/guide/receiver-step4.png",
-      alt: msg`受信オプションの3段階ラジオボタン`,
-      caption: msg`迷ったら「任意」がおすすめ。送る人の判断にゆだねつつ、選択肢は提示できます。`,
+      alt: msg`写真の受付チェックボックスと受信オプションの3段階ラジオボタン`,
+      caption: msg`埋め込みは迷ったら「任意」がおすすめ。送る人の判断にゆだねつつ、選択肢は提示できます。`,
     },
   },
   {

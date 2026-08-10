@@ -95,4 +95,55 @@ describe("POST /send/:handle/sessions", () => {
     expect(status).toBe(403);
     expect(body.error.code).toBe("FORBIDDEN");
   });
+
+  it("require_send_key=0 なら key 省略でも 201 (R16 opt-out: URLを知らなくても送れる状態)", async () => {
+    const { handle } = await seedUser({
+      uid: "uid-sess-optout",
+      handle: "sess_optout",
+      require_send_key: 0,
+    });
+    const { status } = await apiJson<{ session_id: string }>(`/send/${handle}/sessions`, {
+      method: "POST",
+      body: { photo_count: 1 },
+    });
+    expect(status).toBe(201);
+  });
+
+  it("require_send_key=0 なら古い / 誤った key が付いていても 201 (配布済みURLを壊さない)", async () => {
+    const { handle } = await seedUser({
+      uid: "uid-sess-optout-stalekey",
+      handle: "sess_optout_stale",
+      require_send_key: 0,
+    });
+    const { status } = await apiJson<{ session_id: string }>(`/send/${handle}/sessions`, {
+      method: "POST",
+      body: { key: "stale-key-from-an-old-url", photo_count: 1 },
+    });
+    expect(status).toBe(201);
+  });
+
+  it("require_send_key=0 でも受付停止中なら 403 FORBIDDEN (opt-out 時の安全弁が効く)", async () => {
+    const { handle } = await seedUser({
+      uid: "uid-sess-optout-paused",
+      handle: "sess_optout_paused",
+      require_send_key: 0,
+      is_active: 0,
+    });
+    const { status, body } = await apiJson<{ error: { code: string } }>(
+      `/send/${handle}/sessions`,
+      { method: "POST", body: { photo_count: 1 } },
+    );
+    expect(status).toBe(403);
+    expect(body.error.code).toBe("FORBIDDEN");
+  });
+
+  it("require_send_key=1 で key 省略なら 403 INVALID_KEY (既定はキー必須のまま)", async () => {
+    const { handle } = await seedUser({ uid: "uid-sess-nokey", handle: "sess_nokey" });
+    const { status, body } = await apiJson<{ error: { code: string } }>(
+      `/send/${handle}/sessions`,
+      { method: "POST", body: { photo_count: 1 } },
+    );
+    expect(status).toBe(403);
+    expect(body.error.code).toBe("INVALID_KEY");
+  });
 });

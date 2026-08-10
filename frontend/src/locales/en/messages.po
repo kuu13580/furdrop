@@ -127,6 +127,10 @@ msgid "< 戻る"
 msgstr "< Back"
 
 #: src/pages/GuidePage.tsx
+msgid "<0>「受信オプション」</0>では、送信者がどこまで自分の名前を写真に残せるかを決められます。"
+msgstr "Under <0>Receiving options</0>, you decide how much of their name senders may leave on a photo."
+
+#: src/pages/GuidePage.tsx
 msgid "<0>EXIFカメラモデル欄に埋め込む</0>：写真のメタデータに名前を残します（あとから消すことも可能）"
 msgstr "<0>Embed in the EXIF camera model field</0>: leaves your name in the photo's metadata (removable later)"
 
@@ -150,9 +154,17 @@ msgstr "<0>Copy</0>: copy the URL to your clipboard and paste it into social pos
 msgid "<0>シェア</0>：スマホの共有メニュー（または X 投稿フォーム）が立ち上がります"
 msgstr "<0>Share</0>: opens your phone's share sheet (or the X post composer)"
 
+#: src/pages/GuidePage.tsx
+msgid "<0>写真を受け付ける</0>：オフにすると受付を一時停止できます。意図しない写真が届いたときの止め方です"
+msgstr "<0>Accept photos</0>: turn it off to pause receiving. This is how you stop unwanted photos"
+
 #: src/pages/SettingsPage.tsx
 msgid "<0>利用規約</0>および<1>プライバシーポリシー</1>に同意します。"
 msgstr "I agree to the <0>Terms of Service</0> and the <1>Privacy Policy</1>."
+
+#: src/pages/GuidePage.tsx
+msgid "<0>受信URLを知っている人だけから受け取る</0>：オフにすると、URLの末尾の文字列がなくても、ハンドルを知っている人なら誰でも送れるようになります。名刺やSNSで<1>@ハンドル</1>だけを見せたいときに"
+msgstr "<0>Only accept photos from people who know my receive URL</0>: turn it off and anyone who knows your handle can send, even without the string at the end of the URL. Handy when you want to show just <1>@handle</1> on a business card or social profile"
 
 #: src/pages/GuidePage.tsx
 msgid "<0>緑</0>：余裕あり（〜79%）"
@@ -290,6 +302,10 @@ msgstr "BIZ UDGothic"
 msgid "URLに誤りがないかご確認ください。"
 msgstr "Please check that the URL is correct."
 
+#: src/pages/GuidePage.tsx
+msgid "URLの末尾には推測できない文字列が付いていて、これを知っている人だけが写真を送れます。URLは途中で切らず、そのまま共有してください。"
+msgstr "The URL ends with an unguessable string, and only people who know it can send you photos. Share the whole URL without trimming it."
+
 #: src/pages/LandingPage.tsx
 msgid "URLを作る"
 msgstr "Create your URL"
@@ -301,10 +317,6 @@ msgstr "Create URL →"
 #: src/pages/LandingPage.tsx
 msgid "URLを共有"
 msgstr "Share the URL"
-
-#: src/pages/GuidePage.tsx
-msgid "URLを知っている人だけが写真を送れます。誰にでも公開する必要はありません。"
-msgstr "Only people who know the URL can send you photos. You never have to make it fully public."
 
 #: src/pages/LandingPage.tsx
 msgid "URLを知っている人だけが送信できる"
@@ -427,6 +439,10 @@ msgstr "Something went wrong. Please wait a moment and try again"
 #: src/lib/watermark.ts
 msgid "オールド明朝"
 msgstr "Zen Old Mincho"
+
+#: src/pages/SettingsPage.tsx
+msgid "オフにすると受信ページに受付停止中と表示され、新しい写真は届かなくなります"
+msgstr "When off, your send page shows that you are not accepting photos and no new photos arrive"
 
 #: src/pages/LegalPage.tsx
 msgid "お問い合わせ"
@@ -968,6 +984,10 @@ msgstr "No personal details<0/>exchanged"
 msgid "個別到達で探す手間なし"
 msgstr "Arrives individually, nothing to search"
 
+#: src/pages/SettingsPage.tsx
+msgid "元に戻すと、いまと同じ受信URLがそのまま使えます"
+msgstr "Turning it back on restores the exact same receive URL"
+
 #: src/components/ui/ScrollToTopButton.tsx
 msgid "先頭にスクロール"
 msgstr "Scroll to top"
@@ -1050,6 +1070,18 @@ msgstr "Photo not found"
 msgid "写真の受け取りに特化"
 msgstr "Built for receiving photos"
 
+#: src/pages/SettingsPage.tsx
+msgid "写真の受付"
+msgstr "Accepting photos"
+
+#: src/pages/GuidePage.tsx
+msgid "写真の受付チェックボックスと受信オプションの3段階ラジオボタン"
+msgstr "Accepting-photos checkboxes and the three-level receiving option radio buttons"
+
+#: src/pages/DashboardPage.tsx
+msgid "写真の受付を停止中です。このURLを開いても写真は送れません。設定から再開できます。"
+msgstr "You are not accepting photos right now. Opening this URL will not let anyone send. You can resume it in Settings."
+
 #: src/pages/DashboardPage.tsx
 msgid "写真はこちらから送ってください！\n"
 "{receiveUrl}"
@@ -1071,6 +1103,10 @@ msgstr "Drop your photos here"
 #: src/pages/send/UploadPage.tsx
 msgid "写真を取り込み中…"
 msgstr "Importing photos…"
+
+#: src/pages/SettingsPage.tsx
+msgid "写真を受け付ける"
+msgstr "Accept photos"
 
 #: src/pages/LoginPage.tsx
 msgid "写真を受け取るための<0/>あなた専用URLを作ろう"
@@ -1150,6 +1186,10 @@ msgstr "Attendees have to sign up too"
 msgid "友達から共有リンクを受け取った？"
 msgstr "Got a link from a friend?"
 
+#: src/pages/GuidePage.tsx
+msgid "受け付け方を決める"
+msgstr "Decide how you accept photos"
+
 #: src/pages/LandingPage.tsx
 msgid "受け取り側"
 msgstr "Receiver"
@@ -1203,12 +1243,20 @@ msgid "受信URLとコピー・QR・シェアボタン"
 msgstr "The receiving URL with copy, QR and share buttons"
 
 #: src/pages/SettingsPage.tsx
+msgid "受信URLの末尾には推測できない文字列が付きます。オフにすると、ハンドルを知っている人なら誰でも写真を送れるようになります"
+msgstr "Your receive URL ends with an unguessable string. When off, anyone who knows your handle can send you photos"
+
+#: src/pages/SettingsPage.tsx
+msgid "受信URLの末尾の文字列がなくても写真が届くようになり、ハンドル (@{handle}) を知っている人なら誰でも送信できる状態になります。"
+msgstr "Photos will arrive even without the string at the end of your receive URL, so anyone who knows your handle (@{handle}) will be able to send."
+
+#: src/pages/SettingsPage.tsx
+msgid "受信URLを知っている人だけから受け取る"
+msgstr "Only accept photos from people who know my receive URL"
+
+#: src/pages/SettingsPage.tsx
 msgid "受信オプション"
 msgstr "Receiving options"
-
-#: src/pages/GuidePage.tsx
-msgid "受信オプションの3段階ラジオボタン"
-msgstr "The three-way radio buttons for receiving options"
 
 #: src/pages/SettingsPage.tsx
 msgid "受信した全ての写真とサムネイル"
@@ -1281,6 +1329,10 @@ msgstr "Each option has three levels: <0>Off / Optional / Required</0>."
 #: src/components/send/WatermarkDialog.tsx
 msgid "四角形"
 msgstr "Shape"
+
+#: src/pages/GuidePage.tsx
+msgid "埋め込みは迷ったら「任意」がおすすめ。送る人の判断にゆだねつつ、選択肢は提示できます。"
+msgstr "For embedding, \"Optional\" is a good default: senders get the choice without being forced."
 
 #: src/pages/send/UploadingPage.tsx
 msgid "変換失敗"
@@ -1363,6 +1415,10 @@ msgstr "always embed"
 msgid "必須"
 msgstr "Required"
 
+#: src/pages/SettingsPage.tsx
+msgid "意図しない写真が届いたときは「写真を受け付ける」をオフにすればすぐ止められます"
+msgstr "If unwanted photos arrive, turn off \"Accept photos\" to stop them right away"
+
 #: src/pages/GuidePage.tsx
 #: src/pages/LegalPage.tsx
 msgid "戻る"
@@ -1403,10 +1459,6 @@ msgstr "No per-photographer organization"
 #: src/pages/GalleryPage.tsx
 msgid "撮影者別"
 msgstr "By photographer"
-
-#: src/pages/GuidePage.tsx
-msgid "撮影者情報の受け入れ設定"
-msgstr "Decide what credit you accept"
 
 #: src/pages/LandingPage.tsx
 msgid "撮影者情報の埋込なし"
@@ -1644,8 +1696,8 @@ msgid "設定で続きから"
 msgstr "Finish setting up"
 
 #: src/pages/GuidePage.tsx
-msgid "設定ページの<0>「受信オプション」</0>で、送信者がどこまで自分の名前を写真に残せるかを決められます。"
-msgstr "Under <0>\"Receiving options\"</0> on the settings page, you decide how far senders can go in leaving their name on your photos."
+msgid "設定ページの<0>「写真の受付」</0>で、いつ・誰から受け取るかを切り替えられます。"
+msgstr "Use <0>Accepting photos</0> on the settings page to control when and from whom you receive."
 
 #: src/pages/LandingPage.tsx
 msgid "詳しい使い方を見る"
@@ -1669,9 +1721,13 @@ msgstr "Loading"
 msgid "読み込み中..."
 msgstr "Loading..."
 
-#: src/pages/GuidePage.tsx
-msgid "迷ったら「任意」がおすすめ。送る人の判断にゆだねつつ、選択肢は提示できます。"
-msgstr "When in doubt, \"Optional\" is a good default — senders decide, but the choice is offered."
+#: src/pages/SettingsPage.tsx
+msgid "誰でも送れるようにする"
+msgstr "Let anyone send"
+
+#: src/pages/SettingsPage.tsx
+msgid "誰でも送れる状態にしますか？"
+msgstr "Let anyone send you photos?"
 
 #: src/pages/LandingPage.tsx
 msgid "送りたい写真がある"
