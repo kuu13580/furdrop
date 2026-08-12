@@ -17,10 +17,15 @@ const UserSchema = z.object({
   storage_used: z.number(),
   storage_quota: z.number(),
   receive_url: z.string(),
+  is_active: z.boolean(),
   exif_embed_mode: EmbedModeSchema,
   watermark_mode: EmbedModeSchema,
   require_sender_name: z.boolean(),
+  require_send_key: z.boolean(),
 });
+
+const USER_COLUMNS =
+  "id, handle, display_name, storage_used, storage_quota, is_active, exif_embed_mode, watermark_mode, require_sender_name, require_send_key";
 
 type EmbedMode = z.infer<typeof EmbedModeSchema>;
 
@@ -32,12 +37,16 @@ function asMode(v: unknown): EmbedMode {
  * 受信 URL を ?k=KEY 付きで組み立てる。
  * 受信者にはキーごとのレコードがあるが、ダッシュボードに出すのは「いちばん古いキー」1 つだけ。
  * キーが 1 件も無いケースは通常起こらないが (register 時に必ず 1 件作る)、フォールバックで素の URL を返す。
+ * requireSendKey が false のときはキーを検証しないので、URL からも落として短くする。
  */
 async function buildReceiveUrl(
   db: D1Database,
   receiverId: string,
   handle: string,
+  requireSendKey: boolean,
 ): Promise<string> {
+  if (!requireSendKey) return `/send/${handle}`;
+
   const row = await db
     .prepare(
       "SELECT key_value FROM send_keys WHERE receiver_id = ? ORDER BY created_at ASC, id ASC LIMIT 1",
@@ -93,14 +102,17 @@ auth.openapi(registerRoute, async (c) => {
     c.req.valid("json");
 
   // UID重複チェック (べき等性: 既存ユーザーをそのまま返す)
-  const existing = await c.env.DB.prepare(
-    "SELECT id, handle, display_name, storage_used, storage_quota, exif_embed_mode, watermark_mode, require_sender_name FROM users WHERE id = ?",
-  )
+  const existing = await c.env.DB.prepare(`SELECT ${USER_COLUMNS} FROM users WHERE id = ?`)
     .bind(uid)
     .first();
 
   if (existing) {
-    const receiveUrl = await buildReceiveUrl(c.env.DB, uid, existing.handle as string);
+    const receiveUrl = await buildReceiveUrl(
+      c.env.DB,
+      uid,
+      existing.handle as string,
+      asBool(existing.require_send_key),
+    );
     return c.json(
       {
         user: {
@@ -110,9 +122,11 @@ auth.openapi(registerRoute, async (c) => {
           storage_used: existing.storage_used as number,
           storage_quota: existing.storage_quota as number,
           receive_url: receiveUrl,
+          is_active: asBool(existing.is_active),
           exif_embed_mode: asMode(existing.exif_embed_mode),
           watermark_mode: asMode(existing.watermark_mode),
           require_sender_name: asBool(existing.require_sender_name),
+          require_send_key: asBool(existing.require_send_key),
         },
       },
       201,
@@ -173,9 +187,11 @@ auth.openapi(registerRoute, async (c) => {
         storage_used: 0,
         storage_quota: 10737418240,
         receive_url: `/send/${handle}?k=${keyValue}`,
+        is_active: true,
         exif_embed_mode: exifMode,
         watermark_mode: watermarkMode,
         require_sender_name: requireSenderName,
+        require_send_key: true,
       },
     },
     201,
@@ -204,9 +220,7 @@ const meRoute = createRoute({
 auth.openapi(meRoute, async (c) => {
   const uid = c.get("uid");
 
-  const user = await c.env.DB.prepare(
-    "SELECT id, handle, display_name, storage_used, storage_quota, exif_embed_mode, watermark_mode, require_sender_name FROM users WHERE id = ?",
-  )
+  const user = await c.env.DB.prepare(`SELECT ${USER_COLUMNS} FROM users WHERE id = ?`)
     .bind(uid)
     .first();
 
@@ -214,7 +228,12 @@ auth.openapi(meRoute, async (c) => {
     return c.json({ error: { code: "NOT_FOUND", message: "User not registered" } }, 404);
   }
 
-  const receiveUrl = await buildReceiveUrl(c.env.DB, uid, user.handle as string);
+  const receiveUrl = await buildReceiveUrl(
+    c.env.DB,
+    uid,
+    user.handle as string,
+    asBool(user.require_send_key),
+  );
 
   return c.json(
     {
@@ -225,9 +244,11 @@ auth.openapi(meRoute, async (c) => {
         storage_used: user.storage_used as number,
         storage_quota: user.storage_quota as number,
         receive_url: receiveUrl,
+        is_active: asBool(user.is_active),
         exif_embed_mode: asMode(user.exif_embed_mode),
         watermark_mode: asMode(user.watermark_mode),
         require_sender_name: asBool(user.require_sender_name),
+        require_send_key: asBool(user.require_send_key),
       },
     },
     200,
@@ -249,6 +270,8 @@ const updateOptionsRoute = createRoute({
             exif_embed_mode: EmbedModeSchema.optional(),
             watermark_mode: EmbedModeSchema.optional(),
             require_sender_name: z.boolean().optional(),
+            is_active: z.boolean().optional(),
+            require_send_key: z.boolean().optional(),
           }),
         },
       },
@@ -270,50 +293,64 @@ auth.openapi(updateOptionsRoute, async (c) => {
   const uid = c.get("uid");
   const body = c.req.valid("json");
 
-  // 現在値を取得し、未指定フィールドのデフォルトとして使う
-  // (動的SQL組み立てを避けるため、UPDATE は常に全カラム + updated_at を固定SQLで書く)
-  const current = await c.env.DB.prepare(
-    "SELECT id, handle, display_name, storage_used, storage_quota, exif_embed_mode, watermark_mode, require_sender_name FROM users WHERE id = ?",
-  )
-    .bind(uid)
-    .first();
+  const asFlag = (v: boolean | undefined) => (v === undefined ? null : v ? 1 : 0);
 
-  if (!current) {
-    return c.json({ error: { code: "NOT_FOUND", message: "User not registered" } }, 404);
-  }
-
-  const nextExif = body.exif_embed_mode ?? asMode(current.exif_embed_mode);
-  const nextWatermark = body.watermark_mode ?? asMode(current.watermark_mode);
-  const nextRequireName = body.require_sender_name ?? asBool(current.require_sender_name);
-
-  const noChange =
-    nextExif === asMode(current.exif_embed_mode) &&
-    nextWatermark === asMode(current.watermark_mode) &&
-    nextRequireName === asBool(current.require_sender_name);
-
-  if (!noChange) {
+  // 未指定フィールドは NULL を bind し、COALESCE で書き込み時点の現在値を残す。
+  // 設定画面は複数カードから独立に PATCH を投げるので、読み取った値を全カラムに
+  // 書き戻すと後着のリクエストが他方の変更を巻き戻してしまう
+  if (Object.keys(body).length > 0) {
     const now = Math.floor(Date.now() / 1000);
     await c.env.DB.prepare(
-      "UPDATE users SET exif_embed_mode = ?, watermark_mode = ?, require_sender_name = ?, updated_at = ? WHERE id = ?",
+      `UPDATE users SET
+         exif_embed_mode     = COALESCE(?, exif_embed_mode),
+         watermark_mode      = COALESCE(?, watermark_mode),
+         require_sender_name = COALESCE(?, require_sender_name),
+         is_active           = COALESCE(?, is_active),
+         require_send_key    = COALESCE(?, require_send_key),
+         updated_at          = ?
+       WHERE id = ?`,
     )
-      .bind(nextExif, nextWatermark, nextRequireName ? 1 : 0, now, uid)
+      .bind(
+        body.exif_embed_mode ?? null,
+        body.watermark_mode ?? null,
+        asFlag(body.require_sender_name),
+        asFlag(body.is_active),
+        asFlag(body.require_send_key),
+        now,
+        uid,
+      )
       .run();
   }
 
-  const receiveUrl = await buildReceiveUrl(c.env.DB, uid, current.handle as string);
+  const user = await c.env.DB.prepare(`SELECT ${USER_COLUMNS} FROM users WHERE id = ?`)
+    .bind(uid)
+    .first();
+
+  if (!user) {
+    return c.json({ error: { code: "NOT_FOUND", message: "User not registered" } }, 404);
+  }
+
+  const receiveUrl = await buildReceiveUrl(
+    c.env.DB,
+    uid,
+    user.handle as string,
+    asBool(user.require_send_key),
+  );
 
   return c.json(
     {
       user: {
-        id: current.id as string,
-        handle: current.handle as string,
-        display_name: current.display_name as string,
-        storage_used: current.storage_used as number,
-        storage_quota: current.storage_quota as number,
+        id: user.id as string,
+        handle: user.handle as string,
+        display_name: user.display_name as string,
+        storage_used: user.storage_used as number,
+        storage_quota: user.storage_quota as number,
         receive_url: receiveUrl,
-        exif_embed_mode: nextExif,
-        watermark_mode: nextWatermark,
-        require_sender_name: nextRequireName,
+        is_active: asBool(user.is_active),
+        exif_embed_mode: asMode(user.exif_embed_mode),
+        watermark_mode: asMode(user.watermark_mode),
+        require_sender_name: asBool(user.require_sender_name),
+        require_send_key: asBool(user.require_send_key),
       },
     },
     200,

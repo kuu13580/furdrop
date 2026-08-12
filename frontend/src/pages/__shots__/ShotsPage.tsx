@@ -406,24 +406,57 @@ function ReceiverStep1() {
   );
 }
 
-/** 送信者名必須トグル (R14) のモック。登録フォームと設定画面の両方に出る */
-function RequireSenderNameFake() {
-  const { c } = useShot();
+function CheckboxFake({ title, desc }: { title: string; desc: string }) {
   return (
     <label className="flex items-start gap-2.5">
       <input type="checkbox" checked readOnly className="mt-0.5 h-4 w-4 shrink-0 accent-brand" />
       <span>
-        <span className="block text-[14px] font-medium text-ink">
-          {c("送信者名の入力を必須にする", "Require senders to enter a name")}
-        </span>
-        <span className="mt-0.5 block text-[13px] text-ink-soft">
-          {c(
-            "送信者は名前 (TwitterID等) を入力しないと写真を送れなくなります",
-            "Senders can't send photos without entering a name (a Twitter ID, for example)",
-          )}
-        </span>
+        <span className="block text-[14px] font-medium text-ink">{title}</span>
+        <span className="mt-0.5 block text-[13px] text-ink-soft">{desc}</span>
       </span>
     </label>
+  );
+}
+
+/** 送信者名必須トグル (R14) のモック。登録フォームと設定画面の両方に出る */
+function RequireSenderNameFake() {
+  const { c } = useShot();
+  return (
+    <CheckboxFake
+      title={c("送信者名の入力を必須にする", "Require senders to enter a name")}
+      desc={c(
+        "送信者は名前 (TwitterID等) を入力しないと写真を送れなくなります",
+        "Senders can't send photos without entering a name (a Twitter ID, for example)",
+      )}
+    />
+  );
+}
+
+/** 受付停止 (R11) とキー opt-out (R16) のモック */
+function AcceptanceFake() {
+  const { c } = useShot();
+  return (
+    <Card title={c("写真の受付", "Accepting photos")}>
+      <div className="space-y-5">
+        <CheckboxFake
+          title={c("写真を受け付ける", "Accept photos")}
+          desc={c(
+            "オフにすると受信ページに受付停止中と表示され、新しい写真は届かなくなります",
+            "When off, your send page shows that you are not accepting photos and no new photos arrive",
+          )}
+        />
+        <CheckboxFake
+          title={c(
+            "受信URLを知っている人だけから受け取る",
+            "Only accept photos from people who know my receive URL",
+          )}
+          desc={c(
+            "受信URLの末尾には推測できない文字列が付きます。オフにすると、ハンドルを知っている人なら誰でも写真を送れるようになります",
+            "Your receive URL ends with an unguessable string. When off, anyone who knows your handle can send you photos",
+          )}
+        />
+      </div>
+    </Card>
   );
 }
 
@@ -556,19 +589,22 @@ function ReceiverStep4() {
   const { c } = useShot();
   return (
     <Frame slug="receiver-step4" pad="p-10" width={620}>
-      <Card title={c("受信オプション", "Receiving options")}>
-        <p className="mb-4 text-[13px] text-ink-soft">
-          {c(
-            "送信者に提示するオプションを設定します。「必須」にすると送信者は必ず埋め込みます。",
-            'Choose what to offer senders. Setting an option to "Required" means senders always embed it.',
-          )}
-        </p>
-        <div className="space-y-5">
-          <RequireSenderNameFake />
-          <EmbedModeFake kind="exif" active="optional" />
-          <EmbedModeFake kind="watermark" active="optional" />
-        </div>
-      </Card>
+      <div className="space-y-4">
+        <AcceptanceFake />
+        <Card title={c("受信オプション", "Receiving options")}>
+          <p className="mb-4 text-[13px] text-ink-soft">
+            {c(
+              "送信者に提示するオプションを設定します。「必須」にすると送信者は必ず埋め込みます。",
+              'Choose what to offer senders. Setting an option to "Required" means senders always embed it.',
+            )}
+          </p>
+          <div className="space-y-5">
+            <RequireSenderNameFake />
+            <EmbedModeFake kind="exif" active="optional" />
+            <EmbedModeFake kind="watermark" active="optional" />
+          </div>
+        </Card>
+      </div>
     </Frame>
   );
 }

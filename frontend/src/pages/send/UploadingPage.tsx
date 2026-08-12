@@ -301,6 +301,25 @@ async function runPipeline({
     files.map((f) => ({ name: f.file.name, type: f.file.type, size: f.file.size })),
   );
 
+  // ?k= の無いURLは、受信者がキーを外している (require_send_key=0) 場合だけ正当。
+  // 判断はサーバの設定に委ね、取得に失敗したときは「キーが要る」側に倒す。
+  // 加工を始める前に弾かないと、送信者は全部の変換を終えてから失敗を知ることになる
+  if (!accessKey) {
+    const requiresKey = await senderApi
+      .getReceiver(handle)
+      .then((res) => res.receiver.require_send_key)
+      .catch(() => true);
+    if (requiresKey) {
+      onGlobalError(
+        globalI18n._(
+          msg`受信URLが無効です。受信者から最新の受信URL (?k=... 付き) を共有してもらってください。`,
+        ),
+      );
+      onOverall("failed");
+      return;
+    }
+  }
+
   // --- 画像加工フェーズ ---
   onOverall("processing");
   const credit = form.senderName.trim();
@@ -396,20 +415,10 @@ async function runPipeline({
 
   // --- セッション作成 ---
   onOverall("session");
-  // 加工完了後に空キー (?k= 未指定) で 400/403 を引いてユーザーを待たせないよう、ここで早期に弾く
-  if (!accessKey) {
-    onGlobalError(
-      globalI18n._(
-        msg`受信URLが無効です。受信者から最新の受信URL (?k=... 付き) を共有してもらってください。`,
-      ),
-    );
-    onOverall("failed");
-    return;
-  }
   let sessionId: string;
   try {
     const res = await senderApi.createSession(handle, {
-      key: accessKey,
+      key: accessKey ?? undefined,
       sender_name: form.senderName || undefined,
       photo_count: processed.length,
     });

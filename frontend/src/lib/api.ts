@@ -56,6 +56,7 @@ export const senderApi = {
         display_name: string;
         avatar_url: string | null;
         is_accepting: boolean;
+        require_send_key: boolean;
         options: {
           exif_embed_mode: EmbedMode;
           watermark_mode: EmbedMode;
@@ -66,7 +67,7 @@ export const senderApi = {
 
   createSession: (
     handle: string,
-    body: { key: string; sender_name?: string; photo_count: number },
+    body: { key?: string; sender_name?: string; photo_count: number },
   ) =>
     request<{ session_id: string; expires_at: number }>(`/send/${handle}/sessions`, {
       method: "POST",
@@ -141,9 +142,11 @@ export const authApi = {
         storage_used: number;
         storage_quota: number;
         receive_url: string;
+        is_active: boolean;
         exif_embed_mode: EmbedMode;
         watermark_mode: EmbedMode;
         require_sender_name: boolean;
+        require_send_key: boolean;
       };
     }>("/auth/register", { method: "POST", body: JSON.stringify(body) }, true),
 
@@ -153,15 +156,14 @@ export const authApi = {
         id: string;
         handle: string;
         display_name: string;
-        email: string;
-        avatar_url: string | null;
         storage_used: number;
         storage_quota: number;
-        is_active: number;
         receive_url: string;
+        is_active: boolean;
         exif_embed_mode: EmbedMode;
         watermark_mode: EmbedMode;
         require_sender_name: boolean;
+        require_send_key: boolean;
       };
     }>("/auth/me", {}, true),
 
@@ -169,6 +171,8 @@ export const authApi = {
     exif_embed_mode?: EmbedMode;
     watermark_mode?: EmbedMode;
     require_sender_name?: boolean;
+    is_active?: boolean;
+    require_send_key?: boolean;
   }) =>
     request<{
       user: {
@@ -178,9 +182,11 @@ export const authApi = {
         storage_used: number;
         storage_quota: number;
         receive_url: string;
+        is_active: boolean;
         exif_embed_mode: EmbedMode;
         watermark_mode: EmbedMode;
         require_sender_name: boolean;
+        require_send_key: boolean;
       };
     }>("/auth/options", { method: "PATCH", body: JSON.stringify(body) }, true),
 

@@ -68,6 +68,32 @@ export async function registerReceiver(
   return { handle: data.user.handle, sendKey, receiveUrl };
 }
 
+/** /auth/options を PATCH する (受信オプション / 受付停止 / キー opt-out の切替) */
+export async function patchOptions(
+  user: TestUser,
+  options: {
+    exif_embed_mode?: EmbedMode;
+    watermark_mode?: EmbedMode;
+    require_sender_name?: boolean;
+    is_active?: boolean;
+    require_send_key?: boolean;
+  },
+): Promise<{ receiveUrl: string }> {
+  const res = await fetch(`${WORKERS_URL}/auth/options`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${user.idToken}`,
+    },
+    body: JSON.stringify(options),
+  });
+  if (!res.ok) {
+    throw new Error(`/auth/options 失敗 (${res.status}): ${await res.text()}`);
+  }
+  const data = (await res.json()) as { user: { receive_url: string } };
+  return { receiveUrl: data.user.receive_url };
+}
+
 /** Page 上で signInWithEmailAndPassword を呼んで Firebase Auth セッションを確立する */
 export async function signInOnPage(page: Page, user: TestUser): Promise<void> {
   // ブラウザコンテキストでは bare specifier "firebase/auth" を解決できないので、

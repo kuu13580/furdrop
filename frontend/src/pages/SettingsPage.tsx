@@ -3,7 +3,7 @@ import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { deleteUser, signOut } from "firebase/auth";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
-import { type SyntheticEvent, useCallback, useState } from "react";
+import { type ReactNode, type SyntheticEvent, useCallback, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import Alert from "../components/ui/Alert";
 import Button from "../components/ui/Button";
@@ -98,17 +98,20 @@ function EmbedModeRadioGroup({
   );
 }
 
-/** 送信者名必須のトグル (R14)。登録フォームと設定画面で共用する */
-function RequireSenderNameField({
+function CheckboxField({
   name,
   checked,
   onChange,
   disabled,
+  title,
+  description,
 }: {
   name: string;
   checked: boolean;
   onChange: (next: boolean) => void;
   disabled?: boolean;
+  title: ReactNode;
+  description: ReactNode;
 }) {
   return (
     <label
@@ -123,14 +126,34 @@ function RequireSenderNameField({
         className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
       />
       <span>
-        <span className="block text-[14px] font-medium text-ink">
-          <Trans>送信者名の入力を必須にする</Trans>
-        </span>
-        <span className="mt-0.5 block text-[13px] text-ink-soft">
-          <Trans>送信者は名前 (TwitterID等) を入力しないと写真を送れなくなります</Trans>
-        </span>
+        <span className="block text-[14px] font-medium text-ink">{title}</span>
+        <span className="mt-0.5 block text-[13px] text-ink-soft">{description}</span>
       </span>
     </label>
+  );
+}
+
+/** 送信者名必須のトグル (R14)。登録フォームと設定画面で共用する */
+function RequireSenderNameField({
+  name,
+  checked,
+  onChange,
+  disabled,
+}: {
+  name: string;
+  checked: boolean;
+  onChange: (next: boolean) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <CheckboxField
+      name={name}
+      checked={checked}
+      onChange={onChange}
+      disabled={disabled}
+      title={<Trans>送信者名の入力を必須にする</Trans>}
+      description={<Trans>送信者は名前 (TwitterID等) を入力しないと写真を送れなくなります</Trans>}
+    />
   );
 }
 
@@ -187,15 +210,13 @@ function RegisterForm() {
       setHandleError(null);
 
       try {
-        await authApi.register({
+        const { user: profile } = await authApi.register({
           handle,
           display_name: displayName.trim(),
           exif_embed_mode: exifEmbedMode,
           watermark_mode: watermarkMode,
           require_sender_name: requireSenderName,
         });
-        // registerのレスポンスはUserProfileの全フィールドを含まないのでgetMeで取得
-        const { user: profile } = await authApi.getMe();
         setUser(profile);
         if (authState.status === "authenticated") {
           setAuth({ ...authState, registered: true });
@@ -336,6 +357,114 @@ function RegisterForm() {
   );
 }
 
+function AcceptanceCard({
+  user,
+  setUser,
+}: {
+  user: UserProfile;
+  setUser: (u: UserProfile) => void;
+}) {
+  const { t } = useLingui();
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  // <Trans> のプレースホルダを名前付きにするため、メンバー式のまま埋め込まない
+  const handle = user.handle;
+
+  const update = useCallback(
+    async (patch: { is_active?: boolean; require_send_key?: boolean }) => {
+      setSaving(true);
+      setError(null);
+      try {
+        // レスポンスをそのまま採用する。カードごとに独立した PATCH が飛ぶので、
+        // 手元の user にマージすると後着の応答が他方の変更を巻き戻す
+        const { user: updated } = await authApi.updateOptions(patch);
+        setUser(updated);
+      } catch (err) {
+        setError(resolveApiError(err, "updateOptions"));
+      } finally {
+        setSaving(false);
+      }
+    },
+    [setUser],
+  );
+
+  const handleOptOut = useCallback(async () => {
+    setConfirmOpen(false);
+    await update({ require_send_key: false });
+  }, [update]);
+
+  return (
+    <Card title={t`写真の受付`}>
+      {error && (
+        <Alert variant="error" className="mb-4">
+          {error}
+        </Alert>
+      )}
+      <div className="space-y-5">
+        <CheckboxField
+          name="settings-accepting"
+          checked={user.is_active}
+          onChange={(v) => update({ is_active: v })}
+          disabled={saving}
+          title={<Trans>写真を受け付ける</Trans>}
+          description={
+            <Trans>
+              オフにすると受信ページに受付停止中と表示され、新しい写真は届かなくなります
+            </Trans>
+          }
+        />
+        <CheckboxField
+          name="settings-require-send-key"
+          checked={user.require_send_key}
+          onChange={(v) => (v ? update({ require_send_key: true }) : setConfirmOpen(true))}
+          disabled={saving}
+          title={<Trans>受信URLを知っている人だけから受け取る</Trans>}
+          description={
+            <Trans>
+              受信URLの末尾には推測できない文字列が付きます。オフにすると、ハンドルを知っている人なら誰でも写真を送れるようになります
+            </Trans>
+          }
+        />
+      </div>
+      <Dialog
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        title={t`誰でも送れる状態にしますか？`}
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={() => setConfirmOpen(false)}>
+              <Trans>キャンセル</Trans>
+            </Button>
+            <Button variant="danger" onClick={handleOptOut}>
+              <Trans>誰でも送れるようにする</Trans>
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-4 text-[14px] leading-[1.7] text-ink">
+          <p>
+            <Trans>
+              受信URLの末尾の文字列がなくても写真が届くようになり、ハンドル (@{handle})
+              を知っている人なら誰でも送信できる状態になります。
+            </Trans>
+          </p>
+          <ul className="list-disc space-y-1 pl-5 text-[13px] text-ink-soft">
+            <li>
+              <Trans>
+                意図しない写真が届いたときは「写真を受け付ける」をオフにすればすぐ止められます
+              </Trans>
+            </li>
+            <li>
+              <Trans>元に戻すと、いまと同じ受信URLがそのまま使えます</Trans>
+            </li>
+          </ul>
+        </div>
+      </Dialog>
+    </Card>
+  );
+}
+
 function ReceiveOptionsCard({
   user,
   setUser,
@@ -356,15 +485,15 @@ function ReceiveOptionsCard({
       setSaving(true);
       setError(null);
       try {
-        await authApi.updateOptions(patch);
-        setUser({ ...user, ...patch });
+        const { user: updated } = await authApi.updateOptions(patch);
+        setUser(updated);
       } catch (err) {
         setError(resolveApiError(err, "updateOptions"));
       } finally {
         setSaving(false);
       }
     },
-    [user, setUser],
+    [setUser],
   );
 
   return (
@@ -557,6 +686,7 @@ function ProfileSettings() {
           </div>
         </dl>
       </Card>
+      <AcceptanceCard user={user} setUser={setUser} />
       <ReceiveOptionsCard user={user} setUser={setUser} />
       <Card title={t`ストレージ`}>
         <StorageQuotaBar used={user.storage_used} quota={user.storage_quota} />

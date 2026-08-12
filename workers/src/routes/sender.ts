@@ -35,6 +35,8 @@ const getReceiverRoute = createRoute({
               display_name: z.string(),
               avatar_url: z.string().nullable(),
               is_accepting: z.boolean(),
+              // キー必須かどうか。送信者側で「?k= の無いURLが正当か」を判断するために公開する
+              require_send_key: z.boolean(),
               options: z.object({
                 exif_embed_mode: EmbedModeSchema,
                 watermark_mode: EmbedModeSchema,
@@ -50,6 +52,10 @@ const getReceiverRoute = createRoute({
       content: { "application/json": { schema: ErrorSchema } },
       description: "User not found",
     },
+    429: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "レート制限",
+    },
   },
 });
 
@@ -57,12 +63,21 @@ sender.openapi(getReceiverRoute, async (c) => {
   const { handle } = c.req.valid("param");
 
   const user = await c.env.DB.prepare(
-    "SELECT handle, display_name, avatar_url, is_active, storage_used, storage_quota, exif_embed_mode, watermark_mode, require_sender_name FROM users WHERE handle = ?",
+    "SELECT handle, display_name, avatar_url, is_active, storage_used, storage_quota, exif_embed_mode, watermark_mode, require_sender_name, require_send_key FROM users WHERE handle = ?",
   )
     .bind(handle)
     .first();
 
+  // handle 列挙の速度を落とす (R16 opt-out した受信者は handle だけで送れてしまうため)。
+  // 空振りしたときだけ数えるので、実在するハンドルしか開かない正規の送信者は
+  // イベント会場の共有 IP から一斉にアクセスしても影響を受けない
   if (!user) {
+    const senderIp = c.req.header("CF-Connecting-IP") ?? "unknown";
+    const { success } = await c.env.RATE_LIMITER_PROFILE.limit({ key: senderIp });
+    if (!success) {
+      c.header("Retry-After", "60");
+      return c.json({ error: { code: "RATE_LIMITED", message: "Too many requests" } }, 429);
+    }
     return c.json({ error: { code: "NOT_FOUND", message: "User not found" } }, 404);
   }
 
@@ -76,6 +91,7 @@ sender.openapi(getReceiverRoute, async (c) => {
         display_name: user.display_name as string,
         avatar_url: user.avatar_url as string | null,
         is_accepting: isAccepting,
+        require_send_key: asBool(user.require_send_key),
         options: {
           exif_embed_mode: asMode(user.exif_embed_mode),
           watermark_mode: asMode(user.watermark_mode),
@@ -101,7 +117,8 @@ const createSessionRoute = createRoute({
         "application/json": {
           schema: z.object({
             // 受信URLの ?k= に乗っているアクセスキー。受信者ごとに発行され、知らない人は送信できない。
-            key: z.string().min(1).max(128),
+            // 受信者が require_send_key を外している場合のみ省略できる。
+            key: z.string().min(1).max(128).optional(),
             sender_name: z.string().optional(),
             photo_count: z.number().int().min(1).max(MAX_PHOTOS_PER_SESSION),
           }),
@@ -164,18 +181,23 @@ sender.openapi(createSessionRoute, async (c) => {
     );
   }
 
-  // handle + key の JOIN で受信者を解決する。
-  // key が一致しない / handle が存在しない の双方で 403 (キーの有無を漏らさないため一律 INVALID_KEY)。
+  // key の照合は JOIN ではなく EXISTS で取る。require_send_key=0 の受信者は
+  // キーを検証せずに通すため、「キーが合わない」と「そもそも要らない」を分けて判定する必要がある。
   const user = await c.env.DB.prepare(
-    `SELECT u.id, u.is_active, u.storage_used, u.storage_quota, u.require_sender_name
+    `SELECT u.id, u.is_active, u.storage_used, u.storage_quota, u.require_sender_name, u.require_send_key,
+            EXISTS (SELECT 1 FROM send_keys k WHERE k.receiver_id = u.id AND k.key_value = ?) AS key_matched
        FROM users u
-       JOIN send_keys k ON k.receiver_id = u.id
-       WHERE u.handle = ? AND k.key_value = ?`,
+       WHERE u.handle = ?`,
   )
-    .bind(handle, body.key)
+    .bind(body.key ?? "", handle)
     .first();
 
+  // handle が存在しない場合もキー不一致と同じ 403 に寄せる (ハンドルの実在を漏らさない)。
   if (!user) {
+    return c.json({ error: { code: "INVALID_KEY", message: "Invalid access key" } }, 403);
+  }
+
+  if (asBool(user.require_send_key) && !asBool(user.key_matched)) {
     return c.json({ error: { code: "INVALID_KEY", message: "Invalid access key" } }, 403);
   }
 

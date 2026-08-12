@@ -55,6 +55,8 @@ CREATE TABLE users (
     exif_embed_mode   TEXT NOT NULL DEFAULT 'disabled',
     watermark_mode    TEXT NOT NULL DEFAULT 'disabled',  -- 透かしは不可逆のため慎重に
     require_sender_name INTEGER NOT NULL DEFAULT 0,      -- 送信者名の入力を必須にする (0=任意, 1=必須)
+    -- R16 opt-out: 0 のとき送信URLのアクセスキーを検証しない (handle だけで送信できる)
+    require_send_key  INTEGER NOT NULL DEFAULT 1,
     -- プッシュ通知 (R09): Phase 2 で導入予定。MVP の DB スキーマには含めない
     -- fcm_token         TEXT,
     -- push_enabled      INTEGER NOT NULL DEFAULT 1,
@@ -88,6 +90,7 @@ CREATE INDEX idx_send_keys_receiver ON send_keys(receiver_id);
 - **無効化**: レコードの DELETE で表現 (`is_active` カラムは現状不要)
 - **拡張性**: 将来必要になれば `expires_at` / `name` / `is_active` を ALTER で追加する。MVP では発行・削除のみ
 - **MVP の UI**: キー管理画面は提供しない。`POST /auth/register` でユーザー作成時に 1 件自動発行、`GET /auth/me` / `PATCH /auth/options` で最古のキー 1 件を `receive_url` に結合して返すのみ
+- **opt-out**: `users.require_send_key = 0` の受信者にはキー検証を行わない。send_keys のレコードは残すので、再びオンにすれば同じ受信URLが復活する。opt-out 中の `receive_url` は `?k=` を落とした素の `/send/:handle`
 - **アカウント削除**: `DELETE /auth/account` の batch で同期削除 (`DELETE FROM send_keys WHERE receiver_id = ?`)。upload_sessions のような「孤児」になるケースはないため専用 Cron 不要
 
 ### 2.3 upload_sessions テーブル
@@ -256,7 +259,14 @@ Content-Type: application/json
 |---|---|---|
 | `POST /send/:handle/sessions` | 5 / 60秒 / IP | 429 + `Retry-After: 60` |
 | `POST /send/:handle/sessions/:id/photos` | 30 / 60秒 / IP | 429 + `Retry-After: 60` |
+| `GET /send/:handle` (handle 不在時のみ) | 60 / 60秒 / IP | 429 + `Retry-After: 60` |
 | その他 GET 系 | 制限なし | — |
+
+`GET /send/:handle` の制限は handle 列挙の速度を落とすためのもの (R16 opt-out した受信者は
+handle さえ当たれば送信されうる)。**空振り (404) のときだけカウントする**ので、実在する
+ハンドルしか開かない正規の送信者は、イベント会場の同一 NAT から一斉にランディングを開いても
+影響を受けない。Rate Limiting binding のカウンタは Cloudflare のロケーションごとにローカルで、
+分散した送信元には効きが落ちる。本質的な守りは R11 の受付停止であり、これは補助的な措置。
 
 キーは `CF-Connecting-IP` を使用。Cloudflare Rate Limiting binding は 10秒/60秒窓のみ対応のため、原案の「30/h・300/h」は 60秒窓に圧縮して実装。
 
@@ -312,7 +322,26 @@ Response: 201
 Response: 200
 {
   "user": { ... }  // register同様の形式 — receive_url には最古の send_keys.key_value が ?k= 付きで含まれる
+                   // (require_send_key = false のときは ?k= 無しの素の URL)
 }
+```
+
+#### PATCH /auth/options
+
+受信オプションの部分更新。送信されたフィールドのみ更新する。
+
+```
+Request (すべて任意):
+{
+  "exif_embed_mode": "optional",   // R14
+  "watermark_mode": "disabled",    // R14
+  "require_sender_name": false,    // R14
+  "is_active": true,               // R11 受付停止/再開
+  "require_send_key": true         // R16 opt-out
+}
+
+Response: 200
+{ "user": { ... } }   // GET /auth/me と同じ形式
 ```
 
 #### DELETE /auth/account
@@ -445,6 +474,7 @@ Response: 200
     "display_name": "太郎カメラ",
     "avatar_url": "https://...",
     "is_accepting": true,
+    "require_send_key": true,
     "options": {
       "exif_embed_mode": "optional",
       "watermark_mode": "disabled",
@@ -455,6 +485,7 @@ Response: 200
 ```
 
 - `is_accepting` が false、またはクォータ超過時はアップロードUI非表示
+- `require_send_key`: false のときは `?k=` 無しの URL でも送信できる (R16 opt-out)。送信者フロントは `?k=` を持たないまま送信に進んでよいかの判断にこれを使う
 - `options`: 受信者の埋め込み制御モード（R14）。`'disabled' | 'optional' | 'required'` の3値。
   - `disabled`: 送信者UIに表示しない
   - `optional`: 送信者が任意で選択
@@ -465,6 +496,7 @@ Response: 200
 アップロードセッション開始。`photo_count` は最大100枚。
 
 `key` は受信URL `?k=` のアクセスキー (R16)。`send_keys.key_value` と一致しない場合は `403 INVALID_KEY` を返す。
+受信者が opt-out している (`require_send_key = 0`) 場合は検証せず、`key` の省略も誤った値も受け付ける。
 
 ```
 Request:
@@ -482,7 +514,7 @@ Response: 201
 
 エラー:
 - 400 INVALID_REQUEST: 受信者が送信者名必須 (require_sender_name=1) なのに sender_name 未指定
-- 403 INVALID_KEY: key が受信者のいずれのキーとも一致しない
+- 403 INVALID_KEY: key が受信者のいずれのキーとも一致しない (`require_send_key = 1` のときのみ)
 - 403 FORBIDDEN: 受信者が受付停止中 (is_active=0)
 - 507 QUOTA_EXCEEDED: 受信者のクォータ超過
 - 429 RATE_LIMITED: 送信者IP単位のレート制限超過
@@ -640,8 +672,8 @@ flowchart TD
 
 | エンドポイント | 認証 | 認可ルール |
 |---|---|---|
-| GET /send/:handle | 不要 | handleが存在 |
-| POST /send/:handle/sessions | 不要 | handle存在 + send_keys に key 一致 (R16) + is_active + クォータ未超過 |
+| GET /send/:handle | 不要 | handleが存在 (不在時のみレート制限 60/60秒/IP) |
+| POST /send/:handle/sessions | 不要 | handle存在 + (require_send_key=1 なら send_keys に key 一致, R16) + is_active + クォータ未超過 |
 | POST .../photos | 不要 | sessionがそのhandleに属する |
 | PATCH .../confirm | 不要 | photoがそのsessionに属する |
 | POST /auth/register | Firebase必須 | UID未登録 |
@@ -668,7 +700,7 @@ sequenceDiagram
     Note over C: クライアントサイド処理<br/>フォーマット変換 (PNG/HEIC→JPEG)<br/>EXIF書き換え (piexifjs)<br/>透かし適用 (Canvas API)<br/>サムネイル生成 (Canvas API)
 
     C->>W: POST /send/:handle/sessions (body: { key, sender_name, photo_count })
-    Note over W: send_keys を JOIN して key 一致を確認 (R16)
+    Note over W: require_send_key=1 なら send_keys で key 一致を確認 (R16)
     W-->>C: session_id (key 不一致なら 403 INVALID_KEY)
 
     C->>W: POST .../photos (batch, N件)

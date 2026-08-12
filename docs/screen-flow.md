@@ -48,6 +48,8 @@ OG 画像は `python3 frontend/scripts/generate-og.py` で日英ぶん生成す�
 
 `?k=KEY` (R16 アクセスキー) は S01〜S04 の全ページで URL に保持される。Link/navigate ヘルパー `withKey()` がパス間を引き回す。`POST /send/:handle/sessions` で初めてサーバが検証。
 
+受信者がキーを opt-out している場合は受信URLに `?k=` が付かない。S03 は `?k=` が無いとき `GET /send/:handle` の `require_send_key` を見て判断し、キー必須の受信者に対してのみ写真の加工前にエラーで止める。
+
 ```mermaid
 flowchart TD
     EXT[外部リンク<br/>名刺・SNS等<br/>?k=KEY 付き URL] --> S01[S01: ランディング<br/>受信者プロフィール]
@@ -274,7 +276,7 @@ UploaderPage
 **コンポーネント構成:**
 ```
 DashboardPage
-  +-- PublicUrlCard            // user.receive_url (?k=KEY 付き) を origin と結合して表示
+  +-- PublicUrlCard            // user.receive_url を origin と結合して表示 (受付停止中は注意を出す)
   |     +-- CopyButton        // Clipboard API
   |     +-- QrCodeButton      // qrcode ライブラリ
   |     +-- ShareButton       // Web Share API / Twitter Intent
@@ -283,7 +285,7 @@ DashboardPage
   +-- RecentPhotosPreview     // 直近3枚のサムネイル
 ```
 
-`user.receive_url` は Workers の `/auth/me` が `send_keys` から最古のキー 1 件を選んで `?k=KEY` 付きで返す。フロント側はキーの存在を意識しない (R16)。
+`user.receive_url` は Workers の `/auth/me` が組み立てて返す。`require_send_key` が有効なら `send_keys` の最古のキー 1 件を `?k=KEY` として付け、opt-out 中は付けずに素の `/send/:handle` を返す (R16)。フロント側はキーの有無を意識せず、コピー・QR・シェアはすべて `receive_url` に追従する。
 
 ### S07: フォトギャラリー
 
@@ -367,6 +369,12 @@ DashboardPage
 |  ハンドル: taro_camera      |
 |  表示名: 太郎カメラ         |
 |-----------------------------|
+|  [写真の受付]               |
+|  [x] 写真を受け付ける       |
+|  [x] 受信URLを知っている人  |
+|      だけから受け取る       |
+|      ↑オフ時のみ確認ダイアログ|
+|-----------------------------|
 |  [受信オプション]           |
 |  [x] 送信者名の入力を必須に |
 |  EXIF埋め込み:              |
@@ -406,6 +414,12 @@ DashboardPage
 |  [キャンセル] [削除する]    |   ← ハンドル一致で活性
 +-----------------------------+
 ```
+
+**写真の受付 (R11 / R16 opt-out):**
+
+- 「写真を受け付ける」= `users.is_active`。オフにすると S01 で受付停止中と表示され、送信は 403 になる
+- 「受信URLを知っている人だけから受け取る」= `users.require_send_key`。**オフにするときだけ**確認ダイアログを出し、「ハンドルを知っている人なら誰でも送れる状態になる」「意図しない写真が届いたら受付をオフにすれば止められる」「元に戻せば同じ受信URLが使える」の3点を提示する
+- オフの間はダッシュボードの受信URLが `?k=` 無しの短い URL に切り替わる (コピー・QR・シェアはすべて `receive_url` 由来なので自動追従)
 
 **削除フロー (R15):**
 1. ダイアログでハンドル再入力 → 一致で削除ボタン活性
