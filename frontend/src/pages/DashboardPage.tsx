@@ -1,4 +1,4 @@
-import { Trans, useLingui } from "@lingui/react/macro";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useAtomValue, useSetAtom } from "jotai";
 import QRCode from "qrcode";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -9,6 +9,7 @@ import LoadingSpinner from "../components/ui/LoadingSpinner";
 import StorageQuotaBar from "../components/ui/StorageQuotaBar";
 import { onImageError } from "../lib/analytics";
 import { receiverApi } from "../lib/api";
+import { daysUntilExpiry } from "../lib/retention";
 import { userAtom } from "../stores/user";
 import type { Photo } from "../types/photo";
 
@@ -109,6 +110,70 @@ function PublicUrlCard({ receiveUrl, isAccepting }: { receiveUrl: string; isAcce
   );
 }
 
+/**
+ * DL 期限が近い写真の予告 (R13)。
+ *
+ * 受信者に気づかせる手段がログイン時の画面しかない (プッシュ通知は Phase 2) ため、
+ * サーバー側の集計窓を 60日 と広く取り、ダッシュボードの最上部に出す。
+ * 該当0件なら描画しないので、閉じるボタンは持たせていない。
+ */
+function ExpiryWarning({ count, earliestExpiresAt }: { count: number; earliestExpiresAt: number }) {
+  const days = daysUntilExpiry(earliestExpiresAt);
+  return (
+    <Alert variant="warn">
+      <p className="font-semibold">
+        <Plural value={count} other="#枚の写真が自動削除の期限に近づいています" />
+      </p>
+      <p className="mt-1 text-[13px] leading-[1.5]">
+        {days > 0 ? (
+          <Plural value={days} other="最短であと#日で削除されます。" />
+        ) : (
+          <Trans>まもなく削除されます。</Trans>
+        )}{" "}
+        <Trans>まだ保存していない写真は早めにダウンロードしてください。</Trans>{" "}
+        {/* 色は Alert のバリアントから継承する (warn は Ink、error は Rust) */}
+        <Link to="/gallery" className="font-medium underline underline-offset-2">
+          <Trans>ギャラリーで確認する &rarr;</Trans>
+        </Link>
+      </p>
+    </Alert>
+  );
+}
+
+/**
+ * ストレージ逼迫の予告 (R07/X02)。
+ *
+ * 上限に達すると送信者側が「送れない」状態になり、しかも送信者からは受信者に連絡する
+ * 手段がない。手遅れになる前に受信者へ気づかせる必要があるので、カード内の
+ * プログレスバー任せにせず独立したバナーとして出す。
+ */
+function QuotaWarning({ used, quota }: { used: number; quota: number }) {
+  const percent = quota > 0 ? (used / quota) * 100 : 0;
+  if (percent < 80) return null;
+  const full = percent >= 100;
+  return (
+    <Alert variant={percent >= 95 ? "error" : "warn"}>
+      <p className="font-semibold">
+        {full ? (
+          <Trans>保存容量がいっぱいです</Trans>
+        ) : (
+          <Trans>保存容量の残りが少なくなっています</Trans>
+        )}
+      </p>
+      <p className="mt-1 text-[13px] leading-[1.5]">
+        {full ? (
+          <Trans>新しい写真を受け取れません。不要な写真を削除して空きを作ってください。</Trans>
+        ) : (
+          <Trans>上限に達すると新しい写真を受け取れなくなります。</Trans>
+        )}{" "}
+        <Link to="/gallery" className="font-medium underline underline-offset-2">
+          <Trans>ギャラリーで整理する &rarr;</Trans>
+        </Link>
+      </p>
+    </Alert>
+  );
+}
+
 function RecentPhotos({ photos, loading }: { photos: Photo[]; loading: boolean }) {
   const { t } = useLingui();
   if (loading) {
@@ -187,6 +252,10 @@ export default function DashboardPage() {
   const setUser = useSetAtom(userAtom);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expiringSoon, setExpiringSoon] = useState<{
+    count: number;
+    earliest_expires_at: number | null;
+  } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -212,6 +281,7 @@ export default function DashboardPage() {
               ? { ...prev, storage_used: quota.storage_used, storage_quota: quota.storage_quota }
               : prev,
           );
+          setExpiringSoon(quota.expiring_soon);
         }
       })
       .catch(() => {});
@@ -228,6 +298,13 @@ export default function DashboardPage() {
       <h1 className="text-[22px] font-bold tracking-[-0.015em] text-ink sm:text-[28px]">
         <Trans>ダッシュボード</Trans>
       </h1>
+      <QuotaWarning used={user.storage_used} quota={user.storage_quota} />
+      {expiringSoon && expiringSoon.count > 0 && expiringSoon.earliest_expires_at !== null && (
+        <ExpiryWarning
+          count={expiringSoon.count}
+          earliestExpiresAt={expiringSoon.earliest_expires_at}
+        />
+      )}
       <PublicUrlCard
         receiveUrl={`${window.location.origin}${user.receive_url}`}
         isAccepting={user.is_active}

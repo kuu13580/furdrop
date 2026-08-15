@@ -1,4 +1,4 @@
-import { Trans, useLingui } from "@lingui/react/macro";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router";
 import Button from "../components/ui/Button";
@@ -7,7 +7,8 @@ import ConfirmDialog from "../components/ui/ConfirmDialog";
 import LoadingSpinner from "../components/ui/LoadingSpinner";
 import { onImageError } from "../lib/analytics";
 import { receiverApi } from "../lib/api";
-import { formatBytes, formatDateTime } from "../lib/format";
+import { formatBytes, formatDate, formatDateTime } from "../lib/format";
+import { BANNER_DAYS, daysUntilExpiry } from "../lib/retention";
 import type { Photo } from "../types/photo";
 
 export default function PhotoDetailPage() {
@@ -280,6 +281,30 @@ export default function PhotoDetailPage() {
             </dt>
             <dd className="font-mono text-ink">{formatDateTime(photo.created_at, i18n.locale)}</dd>
           </div>
+          {/* 削除予定日は常時表示。期限が近いものだけ警告色にして目に留める */}
+          {(() => {
+            const remainingDays = daysUntilExpiry(photo.expires_at);
+            const near = remainingDays <= BANNER_DAYS;
+            return (
+              <div className="flex justify-between">
+                <dt className="text-ink-soft">
+                  <Trans>削除予定日</Trans>
+                </dt>
+                <dd className={`font-mono ${near ? "font-semibold text-status-warn" : "text-ink"}`}>
+                  {formatDate(photo.expires_at, i18n.locale)}
+                  {near && (
+                    <span className="ml-1">
+                      {remainingDays > 0 ? (
+                        <Plural value={remainingDays} other="(あと#日)" />
+                      ) : (
+                        <Trans>(まもなく)</Trans>
+                      )}
+                    </span>
+                  )}
+                </dd>
+              </div>
+            );
+          })()}
         </dl>
       </Card>
 

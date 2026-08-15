@@ -13,6 +13,10 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#: src/pages/PhotoDetailPage.tsx
+msgid "(まもなく)"
+msgstr "(soon)"
+
 #: src/pages/GalleryPage.tsx
 msgid "(匿名)"
 msgstr "(anonymous)"
@@ -30,9 +34,21 @@ msgstr "Preview {0}"
 msgid "{completedCount, plural, other {#枚の写真を送信しました！}}"
 msgstr "{completedCount, plural, one {Sent # photo!} other {Sent # photos!}}"
 
+#: src/pages/DashboardPage.tsx
+msgid "{count, plural, other {#枚の写真が自動削除の期限に近づいています}}"
+msgstr "{count, plural, one {# photo is approaching its deletion date} other {# photos are approaching their deletion date}}"
+
 #: src/pages/send/UploadingPage.tsx
 msgid "{current}/{total}枚 · {percent}%"
 msgstr "{current}/{total} · {percent}%"
+
+#: src/pages/DashboardPage.tsx
+msgid "{days, plural, other {最短であと#日で削除されます。}}"
+msgstr "{days, plural, one {The first one will be deleted in # day.} other {The first one will be deleted in # days.}}"
+
+#: src/pages/send/LandingPage.tsx
+msgid "{displayName}さんの保存容量がいっぱいです。空きを作ってもらうよう伝えてください。"
+msgstr "{displayName}'s storage is full. Let them know they need to free up space."
 
 #: src/components/BatchDownloadModal.tsx
 msgid "{failed, plural, other {#枚の取得に失敗しました (成功分のみ ZIP に含まれます)}}"
@@ -69,6 +85,14 @@ msgstr "{processed} / {total}"
 #: src/pages/send/UploadPage.tsx
 msgid "{receiverName}さんへ送信"
 msgstr "Send to {receiverName}"
+
+#: src/pages/PhotoDetailPage.tsx
+msgid "{remainingDays, plural, other {(あと#日)}}"
+msgstr "{remainingDays, plural, one {(# day left)} other {(# days left)}}"
+
+#: src/pages/GalleryPage.tsx
+msgid "{remainingDays, plural, other {残り#日}}"
+msgstr "{remainingDays, plural, one {# day left} other {# days left}}"
 
 #: src/pages/GalleryPage.tsx
 msgid "{selectedCount, plural, other {#枚選択中}}"
@@ -469,6 +493,14 @@ msgstr "Kiwi Maru"
 msgid "ギャラリー"
 msgstr "Gallery"
 
+#: src/pages/DashboardPage.tsx
+msgid "ギャラリーで整理する →"
+msgstr "Clean up in the gallery →"
+
+#: src/pages/DashboardPage.tsx
+msgid "ギャラリーで確認する →"
+msgstr "Check the gallery →"
+
 #: src/pages/PhotoDetailPage.tsx
 msgid "ギャラリーに戻る"
 msgstr "Back to gallery"
@@ -811,9 +843,21 @@ msgid "またはタップしてファイルを選択"
 msgstr "or tap to choose files"
 
 #: src/pages/DashboardPage.tsx
+msgid "まだ保存していない写真は早めにダウンロードしてください。"
+msgstr "Download anything you haven't saved yet."
+
+#: src/pages/DashboardPage.tsx
 #: src/pages/GalleryPage.tsx
 msgid "まだ写真がありません"
 msgstr "No photos yet"
+
+#: src/pages/GalleryPage.tsx
+msgid "まもなく削除"
+msgstr "Deleting soon"
+
+#: src/pages/DashboardPage.tsx
+msgid "まもなく削除されます。"
+msgstr "They will be deleted soon."
 
 #: src/pages/LandingPage.tsx
 msgid "メール"
@@ -923,6 +967,10 @@ msgstr "RocknRoll One"
 msgid "一度に送れるのは{MAX_PHOTOS_PER_SESSION}枚までです"
 msgstr "You can send up to {MAX_PHOTOS_PER_SESSION} photos at a time"
 
+#: src/pages/DashboardPage.tsx
+msgid "上限に達すると新しい写真を受け取れなくなります。"
+msgstr "Once you reach the limit you can no longer receive photos."
+
 #: src/components/ui/StorageQuotaBar.tsx
 msgid "上限を超えると新しい写真を受け取れなくなります。"
 msgstr "Once you hit the limit, you can't receive new photos."
@@ -969,8 +1017,13 @@ msgid "使い方"
 msgstr "How it works"
 
 #: src/lib/api-error.ts
+#: src/pages/DashboardPage.tsx
 msgid "保存容量がいっぱいです"
 msgstr "Storage is full"
+
+#: src/pages/DashboardPage.tsx
+msgid "保存容量の残りが少なくなっています"
+msgstr "You are running low on storage"
 
 #: src/pages/LandingPage.tsx
 msgid "個人情報の交換なしで<0/><1>撮影者情報は残せる</1><2/>写真の受け取り"
@@ -1163,6 +1216,10 @@ msgid "削除する"
 msgstr "Delete"
 
 #: src/pages/PhotoDetailPage.tsx
+msgid "削除予定日"
+msgstr "Deletion date"
+
+#: src/pages/PhotoDetailPage.tsx
 msgid "前の写真"
 msgstr "Previous photo"
 
@@ -1263,8 +1320,12 @@ msgid "受信した全ての写真とサムネイル"
 msgstr "Every photo you've received, and its thumbnail"
 
 #: src/pages/GuidePage.tsx
-msgid "受信した写真には自動的にダウンロード期限（既定30日）が設定され、期限を過ぎたものは自動で削除されます。早めにギャラリーから保存しておきましょう。"
-msgstr "Photos you receive get a download deadline automatically (30 days by default), and anything past it is deleted. Save what you want from the gallery early."
+msgid "受信した写真には自動的にダウンロード期限（既定180日）が設定され、期限を過ぎたものは自動で削除されます。早めにギャラリーから保存しておきましょう。"
+msgstr "Photos you receive get a download deadline automatically (180 days by default), and anything past it is deleted. Save what you want from the gallery early."
+
+#: src/pages/SettingsPage.tsx
+msgid "受信した写真は、受信から180日が経過すると自動的に削除されます。削除が近づいた写真にはギャラリーで残り日数が表示されます。"
+msgstr "Photos you receive are deleted automatically 180 days after they arrive. The gallery shows the days remaining on photos nearing deletion."
 
 #: src/pages/GuidePage.tsx
 msgid "受信写真のギャラリー一覧"
@@ -1483,6 +1544,10 @@ msgstr "The credit stays on the photo"
 #: src/components/send/WatermarkDialog.tsx
 msgid "文字を入力"
 msgstr "Enter text"
+
+#: src/pages/DashboardPage.tsx
+msgid "新しい写真を受け取れません。不要な写真を削除して空きを作ってください。"
+msgstr "You cannot receive new photos. Delete what you no longer need to free up space."
 
 #: src/pages/GalleryPage.tsx
 msgid "新着順"

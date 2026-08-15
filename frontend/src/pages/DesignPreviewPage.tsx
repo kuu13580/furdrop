@@ -100,6 +100,12 @@ const statusColors: ColorChip[] = [
     swatchClass: "bg-status-warn",
   },
   {
+    name: "Amber Tint",
+    hex: "#FBF0DE",
+    role: "警告バナー背景",
+    swatchClass: "bg-status-warn-tint",
+  },
+  {
     name: "Rust",
     hex: "#A8381F",
     role: "エラー / 95–100%",
@@ -660,7 +666,7 @@ function BadgesSection() {
     <SectionShell
       id="07"
       title="バッジ"
-      caption="Coral Tint 系はブランド文脈、Sand 系は中立的なメタ情報。いずれも pill 形状・12px 600。"
+      caption="Coral Tint 系はブランド文脈、Sand 系は中立的なメタ情報。いずれも pill 形状・12px 600。末尾 2 つは R13 の期限バッジ (サムネイル重ね・11px 600)。"
     >
       <div className="rounded-[20px] border border-surface-sand-deep bg-surface p-8 shadow-card">
         <div className="flex flex-wrap items-center gap-3">
@@ -687,6 +693,12 @@ function BadgesSection() {
           </span>
           <span className="rounded-full bg-status-danger-tint px-2.5 py-1 text-[12px] font-semibold text-status-danger">
             失敗
+          </span>
+          <span className="rounded-full bg-status-warn px-2 py-0.5 text-[11px] font-semibold text-white">
+            残り12日
+          </span>
+          <span className="rounded-full bg-status-danger px-2 py-0.5 text-[11px] font-semibold text-white">
+            残り2日
           </span>
         </div>
       </div>

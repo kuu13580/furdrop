@@ -67,6 +67,7 @@ FurDropは「不特定多数から匿名で写真を受け取る」ためのサ�
 | **Rust** | `#A8381F` | エラー本文 (`text-red-600` 相当の置換) |
 | **Rust Tint** | `#FBE8E2` | エラーバナー背景 |
 | **Amber** | `#D98F2E` | 警告 (ストレージ 80% 超過、期限切れ間近) |
+| **Amber Tint** | `#FBF0DE` | 警告バナー背景 (Alert `warn`)。Amber は明度が高く白背景で本文が読みにくいため、文字色は Ink に落とす |
 | **Cobalt** | `#4262D4` | リンク、フォーカスリング (アクセシビリティ用途のみ) |
 
 ### Quota Bar 色分け
@@ -254,6 +255,15 @@ Twitterハンドル (`@taro_camera`) やスラッグ (`/send/taro_camera`) は�
 - Track: `#F1E8DB`, height `8px`, radius `50%` (full rounded)
 - Fill: 用途に応じて Sage / Amber / Rust、または Coral (アップロード進捗)
 - Transition: `width 300ms ease-out`
+
+### Expiry Badge (R13 削除予告)
+
+ギャラリーのサムネイル右下に重ねる残り日数ピル。左上は選択チェックボックスが占める:
+
+- 残り 14 日以内: 背景 Amber `#D98F2E` / 文字 白
+- 残り 3 日以内: 背景 Rust `#A8381F` / 文字 白
+- Padding: `2px 8px` / Radius: `999px` / Font: 11px 600
+- 期限が遠い写真には**出さない** (全件に出すと視覚ノイズになる)
 
 ### Badges (R14 オプション表示等)
 

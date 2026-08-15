@@ -10,6 +10,7 @@ import LoadingSpinner from "../components/ui/LoadingSpinner";
 import ScrollToTopButton from "../components/ui/ScrollToTopButton";
 import { onImageError } from "../lib/analytics";
 import { receiverApi } from "../lib/api";
+import { daysUntilExpiry, expiryBadgeLevel } from "../lib/retention";
 import { buildDateKeyAndLabel, getTzOffsetMin } from "../lib/timezone";
 import { buildZipName, downloadAsZip } from "../lib/zip-download";
 import { userAtom } from "../stores/user";
@@ -680,6 +681,9 @@ export default function GalleryPage() {
                 <div className="grid select-none grid-cols-3 gap-2 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5">
                   {group.items.map(({ photo, index }) => {
                     const isSelected = selected.has(photo.id);
+                    // 期限が近い写真だけにバッジを出す (全件に出すと視覚ノイズになる)
+                    const badgeLevel = expiryBadgeLevel(photo.expires_at);
+                    const remainingDays = daysUntilExpiry(photo.expires_at);
                     const thumb = photo.thumb_url ? (
                       <img
                         src={photo.thumb_url}
@@ -744,6 +748,20 @@ export default function GalleryPage() {
                           >
                             {thumb}
                           </Link>
+                        )}
+                        {badgeLevel && (
+                          // 左上は選択チェックボックスが占めるので右下に置く
+                          <span
+                            className={`pointer-events-none absolute right-1.5 bottom-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold text-white ${
+                              badgeLevel === "danger" ? "bg-status-danger" : "bg-status-warn"
+                            }`}
+                          >
+                            {remainingDays > 0 ? (
+                              <Plural value={remainingDays} other="残り#日" />
+                            ) : (
+                              <Trans>まもなく削除</Trans>
+                            )}
+                          </span>
                         )}
                       </div>
                     );

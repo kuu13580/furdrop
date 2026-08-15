@@ -1,9 +1,9 @@
 import { logError } from "../lib/logger";
 import { subtractStorageUsageStmt } from "../lib/quota";
+import { EFFECTIVE_EXPIRES_AT, PHOTO_RETENTION_SECONDS } from "../lib/retention";
 import type { Env } from "../types";
 
 const ONE_HOUR = 3600;
-const THIRTY_DAYS = 30 * 24 * 3600;
 // 利用規約 第13条 / プライバシーポリシー 第11項で「最低3か月」と定めるため、
 // 暦上最短の3か月 (Feb-Apr=89日) を確実に上回る100日を採用
 const SESSION_LOG_RETENTION = 100 * 24 * 3600;
@@ -84,15 +84,17 @@ async function cleanupFailedPhotos(env: Env): Promise<void> {
 
 /** 4. DL期限切れ completed 写真の自動削除 (R13/X11) */
 async function cleanupExpiredPhotos(env: Env, now: number): Promise<void> {
-  // expires_at が設定されている場合はその値、NULLの場合は created_at + 30日
+  // 通常は INSERT 時に焼き込まれた expires_at を見る。NULL になるのは 0009 の
+  // バックフィルより前に入った行と、「migration 適用 → 新コードのデプロイ」の
+  // 隙間に届いた行だけで、それらは created_at + 180日 にフォールバックさせる。
   const rows = await env.DB.prepare(
     `SELECT id, receiver_id, r2_key_original, r2_key_thumb, file_size, thumb_size
      FROM photos
      WHERE upload_status = 'completed'
-       AND COALESCE(expires_at, created_at + ?) < ?
+       AND ${EFFECTIVE_EXPIRES_AT} < ?
      LIMIT ?`,
   )
-    .bind(THIRTY_DAYS, now, BATCH_SIZE)
+    .bind(PHOTO_RETENTION_SECONDS, now, BATCH_SIZE)
     .all();
 
   for (const row of rows.results) {

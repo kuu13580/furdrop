@@ -13,6 +13,10 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#: src/pages/PhotoDetailPage.tsx
+msgid "(まもなく)"
+msgstr "(まもなく)"
+
 #: src/pages/GalleryPage.tsx
 msgid "(匿名)"
 msgstr "(匿名)"
@@ -30,9 +34,21 @@ msgstr "{0} をプレビュー"
 msgid "{completedCount, plural, other {#枚の写真を送信しました！}}"
 msgstr "{completedCount, plural, other {#枚の写真を送信しました！}}"
 
+#: src/pages/DashboardPage.tsx
+msgid "{count, plural, other {#枚の写真が自動削除の期限に近づいています}}"
+msgstr "{count, plural, other {#枚の写真が自動削除の期限に近づいています}}"
+
 #: src/pages/send/UploadingPage.tsx
 msgid "{current}/{total}枚 · {percent}%"
 msgstr "{current}/{total}枚 · {percent}%"
+
+#: src/pages/DashboardPage.tsx
+msgid "{days, plural, other {最短であと#日で削除されます。}}"
+msgstr "{days, plural, other {最短であと#日で削除されます。}}"
+
+#: src/pages/send/LandingPage.tsx
+msgid "{displayName}さんの保存容量がいっぱいです。空きを作ってもらうよう伝えてください。"
+msgstr "{displayName}さんの保存容量がいっぱいです。空きを作ってもらうよう伝えてください。"
 
 #: src/components/BatchDownloadModal.tsx
 msgid "{failed, plural, other {#枚の取得に失敗しました (成功分のみ ZIP に含まれます)}}"
@@ -69,6 +85,14 @@ msgstr "{processed} / {total} 枚"
 #: src/pages/send/UploadPage.tsx
 msgid "{receiverName}さんへ送信"
 msgstr "{receiverName}さんへ送信"
+
+#: src/pages/PhotoDetailPage.tsx
+msgid "{remainingDays, plural, other {(あと#日)}}"
+msgstr "{remainingDays, plural, other {(あと#日)}}"
+
+#: src/pages/GalleryPage.tsx
+msgid "{remainingDays, plural, other {残り#日}}"
+msgstr "{remainingDays, plural, other {残り#日}}"
 
 #: src/pages/GalleryPage.tsx
 msgid "{selectedCount, plural, other {#枚選択中}}"
@@ -469,6 +493,14 @@ msgstr "キウイ丸"
 msgid "ギャラリー"
 msgstr "ギャラリー"
 
+#: src/pages/DashboardPage.tsx
+msgid "ギャラリーで整理する →"
+msgstr "ギャラリーで整理する →"
+
+#: src/pages/DashboardPage.tsx
+msgid "ギャラリーで確認する →"
+msgstr "ギャラリーで確認する →"
+
 #: src/pages/PhotoDetailPage.tsx
 msgid "ギャラリーに戻る"
 msgstr "ギャラリーに戻る"
@@ -811,9 +843,21 @@ msgid "またはタップしてファイルを選択"
 msgstr "またはタップしてファイルを選択"
 
 #: src/pages/DashboardPage.tsx
+msgid "まだ保存していない写真は早めにダウンロードしてください。"
+msgstr "まだ保存していない写真は早めにダウンロードしてください。"
+
+#: src/pages/DashboardPage.tsx
 #: src/pages/GalleryPage.tsx
 msgid "まだ写真がありません"
 msgstr "まだ写真がありません"
+
+#: src/pages/GalleryPage.tsx
+msgid "まもなく削除"
+msgstr "まもなく削除"
+
+#: src/pages/DashboardPage.tsx
+msgid "まもなく削除されます。"
+msgstr "まもなく削除されます。"
 
 #: src/pages/LandingPage.tsx
 msgid "メール"
@@ -923,6 +967,10 @@ msgstr "ロックンロール"
 msgid "一度に送れるのは{MAX_PHOTOS_PER_SESSION}枚までです"
 msgstr "一度に送れるのは{MAX_PHOTOS_PER_SESSION}枚までです"
 
+#: src/pages/DashboardPage.tsx
+msgid "上限に達すると新しい写真を受け取れなくなります。"
+msgstr "上限に達すると新しい写真を受け取れなくなります。"
+
 #: src/components/ui/StorageQuotaBar.tsx
 msgid "上限を超えると新しい写真を受け取れなくなります。"
 msgstr "上限を超えると新しい写真を受け取れなくなります。"
@@ -969,8 +1017,13 @@ msgid "使い方"
 msgstr "使い方"
 
 #: src/lib/api-error.ts
+#: src/pages/DashboardPage.tsx
 msgid "保存容量がいっぱいです"
 msgstr "保存容量がいっぱいです"
+
+#: src/pages/DashboardPage.tsx
+msgid "保存容量の残りが少なくなっています"
+msgstr "保存容量の残りが少なくなっています"
 
 #: src/pages/LandingPage.tsx
 msgid "個人情報の交換なしで<0/><1>撮影者情報は残せる</1><2/>写真の受け取り"
@@ -1163,6 +1216,10 @@ msgid "削除する"
 msgstr "削除する"
 
 #: src/pages/PhotoDetailPage.tsx
+msgid "削除予定日"
+msgstr "削除予定日"
+
+#: src/pages/PhotoDetailPage.tsx
 msgid "前の写真"
 msgstr "前の写真"
 
@@ -1263,8 +1320,12 @@ msgid "受信した全ての写真とサムネイル"
 msgstr "受信した全ての写真とサムネイル"
 
 #: src/pages/GuidePage.tsx
-msgid "受信した写真には自動的にダウンロード期限（既定30日）が設定され、期限を過ぎたものは自動で削除されます。早めにギャラリーから保存しておきましょう。"
-msgstr "受信した写真には自動的にダウンロード期限（既定30日）が設定され、期限を過ぎたものは自動で削除されます。早めにギャラリーから保存しておきましょう。"
+msgid "受信した写真には自動的にダウンロード期限（既定180日）が設定され、期限を過ぎたものは自動で削除されます。早めにギャラリーから保存しておきましょう。"
+msgstr "受信した写真には自動的にダウンロード期限（既定180日）が設定され、期限を過ぎたものは自動で削除されます。早めにギャラリーから保存しておきましょう。"
+
+#: src/pages/SettingsPage.tsx
+msgid "受信した写真は、受信から180日が経過すると自動的に削除されます。削除が近づいた写真にはギャラリーで残り日数が表示されます。"
+msgstr "受信した写真は、受信から180日が経過すると自動的に削除されます。削除が近づいた写真にはギャラリーで残り日数が表示されます。"
 
 #: src/pages/GuidePage.tsx
 msgid "受信写真のギャラリー一覧"
@@ -1483,6 +1544,10 @@ msgstr "撮影者情報を写真に残せる"
 #: src/components/send/WatermarkDialog.tsx
 msgid "文字を入力"
 msgstr "文字を入力"
+
+#: src/pages/DashboardPage.tsx
+msgid "新しい写真を受け取れません。不要な写真を削除して空きを作ってください。"
+msgstr "新しい写真を受け取れません。不要な写真を削除して空きを作ってください。"
 
 #: src/pages/GalleryPage.tsx
 msgid "新着順"

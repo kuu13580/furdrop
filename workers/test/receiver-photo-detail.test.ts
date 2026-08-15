@@ -40,6 +40,28 @@ describe("GET /receiver/photos/:photoId", () => {
     expect(body.next_id).toBe(oldPhoto.photoId);
   });
 
+  // 削除予定日の表示に使う値。旧データ (NULL) も created_at + 180日 に解決して返るので、
+  // クライアントは保存期間の定数を持たなくてよい
+  it("expires_at が実効値で返る。旧データ (NULL) は created_at + 180日 に解決される (R13)", async () => {
+    const { idToken, uid } = await createEmulatorUser();
+    await seedUser({ uid, handle: "rcv_exp" });
+    const createdAt = Math.floor(Date.now() / 1000) - 10 * 24 * 3600;
+    const legacy = await seedPhoto({
+      receiverId: uid,
+      handle: "rcv_exp",
+      createdAt,
+      expiresAt: null,
+    });
+
+    const { status, body } = await apiJson<{ photo: { expires_at: number } }>(
+      `/receiver/photos/${legacy.photoId}`,
+      { headers: authHeader(idToken) },
+    );
+
+    expect(status).toBe(200);
+    expect(body.photo.expires_at).toBe(createdAt + 180 * 24 * 3600);
+  });
+
   it("他人の写真ID では 404 NOT_FOUND (権限境界)", async () => {
     const me = await createEmulatorUser();
     await seedUser({ uid: me.uid, handle: "rcv_dt_me" });

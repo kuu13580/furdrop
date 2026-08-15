@@ -56,6 +56,7 @@ export const senderApi = {
         display_name: string;
         avatar_url: string | null;
         is_accepting: boolean;
+        unavailable_reason: "paused" | "full" | null;
         require_send_key: boolean;
         options: {
           exif_embed_mode: EmbedMode;
@@ -216,6 +217,7 @@ export const receiverApi = {
         height: number | null;
         thumb_url: string | null;
         created_at: number;
+        expires_at: number;
       }[];
       next_cursor: string | null;
       total: number;
@@ -244,6 +246,7 @@ export const receiverApi = {
         thumb_url: string | null;
         view_url: string | null;
         created_at: number;
+        expires_at: number;
       };
       prev_id: string | null;
       next_id: string | null;
@@ -281,6 +284,8 @@ export const receiverApi = {
       storage_quota: number;
       usage_percent: number;
       photo_count: number;
+      /** まもなく DL 期限を迎える写真 (R13)。ダッシュボードの予告バナー用 */
+      expiring_soon: { count: number; earliest_expires_at: number | null };
     }>("/receiver/quota", {}, true),
 };
 

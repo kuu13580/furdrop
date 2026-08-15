@@ -150,7 +150,7 @@ CREATE TABLE photos (
         -- 'failed'    : タイムアウト
 
     -- DL期限 (R13)
-    expires_at        INTEGER,                -- UNIX秒。NULLの場合はデフォルト(created_at + 30日)
+    expires_at        INTEGER,                -- UNIX秒。受信時に created_at + 180日 を焼き込む (NULL は 0009 以前の旧データのみ)
 
     -- 同一 created_at (秒精度) 内の送信順を保持するための tiebreak
     batch_index       INTEGER NOT NULL DEFAULT 0,
@@ -391,7 +391,8 @@ Response: 200
       "width": 6000,
       "height": 4000,
       "thumb_url": "https://...presigned...",
-      "created_at": 1744243200
+      "created_at": 1744243200,
+      "expires_at": 1759795200
     }
   ],
   "next_cursor": "eyJpZCI6..."
@@ -399,6 +400,9 @@ Response: 200
 ```
 
 `thumb_url` はWorkers内でPresigned GETを生成して返す。
+
+`expires_at` は DL 期限 (R13) の**実効値**。`photos.expires_at` が NULL の旧データは
+`created_at + 180日` に解決してから返すので、クライアントは保存期間の定数を持たなくてよい。
 
 `tz_offset_min` は日付グルーピング (`date_counts`) の日境界を決めるクライアントの
 タイムゾーンオフセット (UTC からの分数、東が正、−720〜840)。省略時は `540` (JST) で、
@@ -450,13 +454,21 @@ Response: 200
 
 #### GET /receiver/quota
 
+`expiring_soon` は「60日以内に DL 期限を迎える completed 写真」の件数と、その中で最も早い期限
+(件数 0 のときは null)。受信者への予告チャネルがログイン時の画面しかない (R09 プッシュ通知は Phase 2) ため、
+窓を広めに取ってダッシュボードのバナーに使う。
+
 ```
 Response: 200
 {
   "storage_used": 2147483648,
   "storage_quota": 10737418240,
   "usage_percent": 20.0,
-  "photo_count": 215
+  "photo_count": 215,
+  "expiring_soon": {
+    "count": 12,
+    "earliest_expires_at": 1759795200
+  }
 }
 ```
 
@@ -474,6 +486,7 @@ Response: 200
     "display_name": "太郎カメラ",
     "avatar_url": "https://...",
     "is_accepting": true,
+    "unavailable_reason": null,
     "require_send_key": true,
     "options": {
       "exif_embed_mode": "optional",
@@ -484,7 +497,10 @@ Response: 200
 }
 ```
 
-- `is_accepting` が false、またはクォータ超過時はアップロードUI非表示
+- `is_accepting` が false (受付停止 または クォータ超過) のときはアップロードUI非表示
+- `unavailable_reason`: 受け付けない理由。`paused` (R11 受付停止) / `full` (クォータ超過) / `null` (受付中)。
+  送信者から見るとどちらも「送れない」だが、取るべき行動が違う (前者は待つしかない、後者は受信者に空きを作ってもらう)
+  ため文言を出し分ける。両方に該当する場合は受信者の意思である `paused` を優先する
 - `require_send_key`: false のときは `?k=` 無しの URL でも送信できる (R16 opt-out)。送信者フロントは `?k=` を持たないまま送信に進んでよいかの判断にこれを使う
 - `options`: 受信者の埋め込み制御モード（R14）。`'disabled' | 'optional' | 'required'` の3値。
   - `disabled`: 送信者UIに表示しない
@@ -744,7 +760,7 @@ crons = ["0 * * * *"]
 1. `upload_status = 'pending'` かつ `created_at < now - 1hour` → `'failed'` に更新
 2. `expires_at < now` の `upload_sessions` → `'expired'` に更新
 3. `'failed'` 写真のR2オブジェクトが存在すれば削除（ゴミ回収）
-4. **DL期限切れ写真の自動削除 (X11/R13)**: `expires_at < now`（またはデフォルト `created_at + 30日 < now`）の `completed` 写真 → R2オブジェクト削除 + D1レコード削除 + `storage_used` 減算
+4. **DL期限切れ写真の自動削除 (X11/R13)**: `COALESCE(expires_at, created_at + 180日) < now` の `completed` 写真 → R2オブジェクト削除 + D1レコード削除 + `storage_used` 減算。`expires_at` は受信時に焼き込まれるので、COALESCE は 0009 以前の旧データ用のフォールバック
 5. **送信者通信記録の保存期間制限**: `created_at < now - 100日` の `upload_sessions` について `sender_ip` / `sender_ua` を NULL に更新（利用規約・プライバシーポリシーで「最低3か月」を保証するため、暦上最短の3か月=89日を確実に上回る100日を採用。プライバシーポリシー第11項参照）
 6. **孤児セッションの物理削除**: `created_at < now - 100日` かつ `receiver_id` が `users` に存在しない `upload_sessions` を削除（R15 アカウント削除時に保存期間中の sender_ip/ua を保護するために残された孤児セッションを、保存期間経過後に回収する）
 

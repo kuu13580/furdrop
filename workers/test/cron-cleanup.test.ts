@@ -6,8 +6,9 @@ import { runCleanup } from "../src/cron/cleanup";
 import { seedPhoto, seedUser } from "./helpers/seed";
 
 const ONE_HOUR = 3600;
-const THIRTY_DAYS = 30 * 24 * 3600;
-const HUNDRED_DAYS = 100 * 24 * 3600;
+const ONE_DAY = 24 * 3600;
+const RETENTION = 180 * ONE_DAY;
+const HUNDRED_DAYS = 100 * ONE_DAY;
 
 describe("runCleanup (Cron)", () => {
   it("1 時間以上 pending の写真は failed にされる (X03 アップロード未完了の救出)", async () => {
@@ -29,7 +30,9 @@ describe("runCleanup (Cron)", () => {
     expect(row).toBeNull(); // failed → 物理削除されるはず
   });
 
-  it("DL 期限 (30日) を過ぎた completed 写真は削除され、storage_used も減算される (R13/X11)", async () => {
+  // expires_at を NULL のまま seed する = 0009 のバックフィル前に入った旧データの再現。
+  // Cron の COALESCE フォールバックが 180日 で判定することを確かめる。
+  it("DL 期限 (180日) を過ぎた completed 写真は削除され、storage_used も減算される (R13/X11)", async () => {
     const fileSize = 1000;
     const thumbSize = 100;
     await seedUser({
@@ -37,7 +40,7 @@ describe("runCleanup (Cron)", () => {
       handle: "cron_expired",
       storage_used: fileSize + thumbSize,
     });
-    const expiredAt = Math.floor(Date.now() / 1000) - THIRTY_DAYS - 60;
+    const expiredAt = Math.floor(Date.now() / 1000) - RETENTION - 60;
     const photo = await seedPhoto({
       receiverId: "cron-uid-2",
       handle: "cron_expired",
@@ -45,6 +48,7 @@ describe("runCleanup (Cron)", () => {
       fileSize,
       thumbSize,
       createdAt: expiredAt,
+      expiresAt: null, // 旧データ = COALESCE フォールバック経路
     });
     // R2 にも入れて、Cron で消えることを確認
     await env.R2_ORIGINALS.put(photo.r2KeyOriginal, new Uint8Array(fileSize));
@@ -62,6 +66,47 @@ describe("runCleanup (Cron)", () => {
     expect(user?.storage_used).toBe(0);
     const r2 = await env.R2_ORIGINALS.head(photo.r2KeyOriginal);
     expect(r2).toBeNull();
+  });
+
+  // 旧データ (expires_at IS NULL) が 180日 まで生き延びること。
+  // 30日 判定のままだと即削除されるので、定数の取り違えをここで落とす。
+  it("expires_at 未設定の旧データは、30日超でも 180日 までは削除されない (0009 バックフィルの救済)", async () => {
+    await seedUser({ uid: "cron-uid-4", handle: "cron_legacy" });
+    const photo = await seedPhoto({
+      receiverId: "cron-uid-4",
+      handle: "cron_legacy",
+      status: "completed",
+      createdAt: Math.floor(Date.now() / 1000) - 90 * ONE_DAY,
+      expiresAt: null,
+    });
+
+    await runCleanup(env);
+
+    const row = await env.DB.prepare("SELECT id FROM photos WHERE id = ?")
+      .bind(photo.photoId)
+      .first();
+    expect(row).not.toBeNull();
+  });
+
+  // 焼き込み方式の肝。将来 PHOTO_RETENTION_SECONDS を短くしても、既に expires_at を
+  // 持つ写真は延命されたまま = 定数変更で過去分が一斉削除される事故が起きない。
+  it("expires_at が未来なら、created_at が保存期間より古くても削除されない (焼き込んだ期限が優先される)", async () => {
+    await seedUser({ uid: "cron-uid-5", handle: "cron_extended" });
+    const now = Math.floor(Date.now() / 1000);
+    const photo = await seedPhoto({
+      receiverId: "cron-uid-5",
+      handle: "cron_extended",
+      status: "completed",
+      createdAt: now - RETENTION - ONE_DAY,
+      expiresAt: now + ONE_DAY,
+    });
+
+    await runCleanup(env);
+
+    const row = await env.DB.prepare("SELECT id FROM photos WHERE id = ?")
+      .bind(photo.photoId)
+      .first();
+    expect(row).not.toBeNull();
   });
 
   it("100日経過したセッションの sender_ip / sender_ua が NULL に設定される (個情法/規約13条 保存期間制限)", async () => {
