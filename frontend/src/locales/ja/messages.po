@@ -1434,8 +1434,8 @@ msgid "定番"
 msgstr "定番"
 
 #: src/components/ui/StorageQuotaBar.tsx
-msgid "容量がほぼ上限です。新しい写真を受け取れません。不要な写真を削除してください。"
-msgstr "容量がほぼ上限です。新しい写真を受け取れません。不要な写真を削除してください。"
+msgid "容量が上限に達しました。新しい写真を受け取れません。不要な写真を削除してください。"
+msgstr "容量が上限に達しました。新しい写真を受け取れません。不要な写真を削除してください。"
 
 #: src/pages/GuidePage.tsx
 msgid "対応形式: <0>JPEG / PNG / HEIC</0>"

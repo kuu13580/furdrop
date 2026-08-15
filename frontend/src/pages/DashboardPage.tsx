@@ -9,6 +9,7 @@ import LoadingSpinner from "../components/ui/LoadingSpinner";
 import StorageQuotaBar from "../components/ui/StorageQuotaBar";
 import { onImageError } from "../lib/analytics";
 import { receiverApi } from "../lib/api";
+import { isQuotaFull, QUOTA_DANGER_PERCENT, QUOTA_WARN_PERCENT, usagePercent } from "../lib/quota";
 import { daysUntilExpiry } from "../lib/retention";
 import { userAtom } from "../stores/user";
 import type { Photo } from "../types/photo";
@@ -148,11 +149,11 @@ function ExpiryWarning({ count, earliestExpiresAt }: { count: number; earliestEx
  * プログレスバー任せにせず独立したバナーとして出す。
  */
 function QuotaWarning({ used, quota }: { used: number; quota: number }) {
-  const percent = quota > 0 ? (used / quota) * 100 : 0;
-  if (percent < 80) return null;
-  const full = percent >= 100;
+  const percent = usagePercent(used, quota);
+  if (percent < QUOTA_WARN_PERCENT) return null;
+  const full = isQuotaFull(used, quota);
   return (
-    <Alert variant={percent >= 95 ? "error" : "warn"}>
+    <Alert variant={percent >= QUOTA_DANGER_PERCENT ? "error" : "warn"}>
       <p className="font-semibold">
         {full ? (
           <Trans>保存容量がいっぱいです</Trans>
@@ -310,7 +311,8 @@ export default function DashboardPage() {
         isAccepting={user.is_active}
       />
       <Card title={t`ストレージ`}>
-        <StorageQuotaBar used={user.storage_used} quota={user.storage_quota} />
+        {/* 説明文は QuotaWarning が担うので、ここでは二度言わない */}
+        <StorageQuotaBar used={user.storage_used} quota={user.storage_quota} hint={false} />
       </Card>
       <RecentPhotos photos={photos} loading={loading} />
     </div>
