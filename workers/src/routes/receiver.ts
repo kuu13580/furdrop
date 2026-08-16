@@ -43,7 +43,7 @@ const listPhotosRoute = createRoute({
                 height: z.number().nullable(),
                 thumb_url: z.string().nullable(),
                 created_at: z.number(),
-                /** DL 期限 (R13)。expires_at 未設定の旧データは created_at + 180日 に解決済み */
+                /** DL 期限 (R13)。expires_at 未設定の旧データは created_at + 365日 に解決済み */
                 expires_at: z.number(),
               }),
             ),
@@ -250,7 +250,7 @@ const getPhotoRoute = createRoute({
               thumb_url: z.string().nullable(),
               view_url: z.string().nullable(),
               created_at: z.number(),
-              /** DL 期限 (R13)。expires_at 未設定の旧データは created_at + 180日 に解決済み */
+              /** DL 期限 (R13)。expires_at 未設定の旧データは created_at + 365日 に解決済み */
               expires_at: z.number(),
             }),
             /** ギャラリー表示順 (created_at DESC, id DESC) で一つ前 (=より新しい) の写真ID */

@@ -7,7 +7,7 @@ import { seedPhoto, seedUser } from "./helpers/seed";
 
 const ONE_HOUR = 3600;
 const ONE_DAY = 24 * 3600;
-const RETENTION = 180 * ONE_DAY;
+const RETENTION = 365 * ONE_DAY;
 const HUNDRED_DAYS = 100 * ONE_DAY;
 
 describe("runCleanup (Cron)", () => {
@@ -31,8 +31,8 @@ describe("runCleanup (Cron)", () => {
   });
 
   // expires_at を NULL のまま seed する = 0009 のバックフィル前に入った旧データの再現。
-  // Cron の COALESCE フォールバックが 180日 で判定することを確かめる。
-  it("DL 期限 (180日) を過ぎた completed 写真は削除され、storage_used も減算される (R13/X11)", async () => {
+  // Cron の COALESCE フォールバックが 365日 で判定することを確かめる。
+  it("DL 期限 (365日) を過ぎた completed 写真は削除され、storage_used も減算される (R13/X11)", async () => {
     const fileSize = 1000;
     const thumbSize = 100;
     await seedUser({
@@ -68,9 +68,9 @@ describe("runCleanup (Cron)", () => {
     expect(r2).toBeNull();
   });
 
-  // 旧データ (expires_at IS NULL) が 180日 まで生き延びること。
+  // 旧データ (expires_at IS NULL) が 365日 まで生き延びること。
   // 30日 判定のままだと即削除されるので、定数の取り違えをここで落とす。
-  it("expires_at 未設定の旧データは、30日超でも 180日 までは削除されない (0009 バックフィルの救済)", async () => {
+  it("expires_at 未設定の旧データは、30日超でも 365日 までは削除されない (0009 バックフィルの救済)", async () => {
     await seedUser({ uid: "cron-uid-4", handle: "cron_legacy" });
     const photo = await seedPhoto({
       receiverId: "cron-uid-4",

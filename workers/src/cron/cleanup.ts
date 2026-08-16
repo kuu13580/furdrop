@@ -86,7 +86,7 @@ async function cleanupFailedPhotos(env: Env): Promise<void> {
 async function cleanupExpiredPhotos(env: Env, now: number): Promise<void> {
   // 通常は INSERT 時に焼き込まれた expires_at を見る。NULL になるのは 0009 の
   // バックフィルより前に入った行と、「migration 適用 → 新コードのデプロイ」の
-  // 隙間に届いた行だけで、それらは created_at + 180日 にフォールバックさせる。
+  // 隙間に届いた行だけで、それらは created_at + 365日 にフォールバックさせる。
   const rows = await env.DB.prepare(
     `SELECT id, receiver_id, r2_key_original, r2_key_thumb, file_size, thumb_size
      FROM photos

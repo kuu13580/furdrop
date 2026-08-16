@@ -49,7 +49,7 @@ describe("POST /send/:handle/sessions/:sessionId/photos", () => {
     )
       .bind(sessionId)
       .first<{ created_at: number; expires_at: number }>();
-    expect(baked?.expires_at).toBe((baked?.created_at ?? 0) + 180 * 24 * 3600);
+    expect(baked?.expires_at).toBe((baked?.created_at ?? 0) + 365 * 24 * 3600);
   });
 
   it("受信者が exif_embed_mode=required で camera_model が欠落していたら 400 (R14 サーバ側強制)", async () => {

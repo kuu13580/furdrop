@@ -1320,12 +1320,12 @@ msgid "受信した全ての写真とサムネイル"
 msgstr "Every photo you've received, and its thumbnail"
 
 #: src/pages/GuidePage.tsx
-msgid "受信した写真には自動的にダウンロード期限（既定180日）が設定され、期限を過ぎたものは自動で削除されます。早めにギャラリーから保存しておきましょう。"
-msgstr "Photos you receive get a download deadline automatically (180 days by default), and anything past it is deleted. Save what you want from the gallery early."
+msgid "受信した写真には自動的にダウンロード期限（既定365日）が設定され、期限を過ぎたものは自動で削除されます。早めにギャラリーから保存しておきましょう。"
+msgstr "Photos you receive get a download deadline automatically (365 days by default), and anything past it is deleted. Save what you want from the gallery early."
 
 #: src/pages/SettingsPage.tsx
-msgid "受信した写真は、受信から180日が経過すると自動的に削除されます。削除が近づいた写真にはギャラリーで残り日数が表示されます。"
-msgstr "Photos you receive are deleted automatically 180 days after they arrive. The gallery shows the days remaining on photos nearing deletion."
+msgid "受信した写真は、受信から365日が経過すると自動的に削除されます。削除が近づいた写真にはギャラリーで残り日数が表示されます。"
+msgstr "Photos you receive are deleted automatically 365 days after they arrive. The gallery shows the days remaining on photos nearing deletion."
 
 #: src/pages/GuidePage.tsx
 msgid "受信写真のギャラリー一覧"

@@ -150,7 +150,7 @@ CREATE TABLE photos (
         -- 'failed'    : タイムアウト
 
     -- DL期限 (R13)
-    expires_at        INTEGER,                -- UNIX秒。受信時に created_at + 180日 を焼き込む (NULL は 0009 以前の旧データのみ)
+    expires_at        INTEGER,                -- UNIX秒。受信時に created_at + 365日 を焼き込む (NULL は 0009 以前の旧データのみ)
 
     -- 同一 created_at (秒精度) 内の送信順を保持するための tiebreak
     batch_index       INTEGER NOT NULL DEFAULT 0,
@@ -402,7 +402,7 @@ Response: 200
 `thumb_url` はWorkers内でPresigned GETを生成して返す。
 
 `expires_at` は DL 期限 (R13) の**実効値**。`photos.expires_at` が NULL の旧データは
-`created_at + 180日` に解決してから返すので、クライアントは保存期間の定数を持たなくてよい。
+`created_at + 365日` に解決してから返すので、クライアントは保存期間の定数を持たなくてよい。
 
 `tz_offset_min` は日付グルーピング (`date_counts`) の日境界を決めるクライアントの
 タイムゾーンオフセット (UTC からの分数、東が正、−720〜840)。省略時は `540` (JST) で、
@@ -760,7 +760,7 @@ crons = ["0 * * * *"]
 1. `upload_status = 'pending'` かつ `created_at < now - 1hour` → `'failed'` に更新
 2. `expires_at < now` の `upload_sessions` → `'expired'` に更新
 3. `'failed'` 写真のR2オブジェクトが存在すれば削除（ゴミ回収）
-4. **DL期限切れ写真の自動削除 (X11/R13)**: `COALESCE(expires_at, created_at + 180日) < now` の `completed` 写真 → R2オブジェクト削除 + D1レコード削除 + `storage_used` 減算。`expires_at` は受信時に焼き込まれるので、COALESCE は 0009 以前の旧データ用のフォールバック
+4. **DL期限切れ写真の自動削除 (X11/R13)**: `COALESCE(expires_at, created_at + 365日) < now` の `completed` 写真 → R2オブジェクト削除 + D1レコード削除 + `storage_used` 減算。`expires_at` は受信時に焼き込まれるので、COALESCE は 0009 以前の旧データ用のフォールバック
 5. **送信者通信記録の保存期間制限**: `created_at < now - 100日` の `upload_sessions` について `sender_ip` / `sender_ua` を NULL に更新（利用規約・プライバシーポリシーで「最低3か月」を保証するため、暦上最短の3か月=89日を確実に上回る100日を採用。プライバシーポリシー第11項参照）
 6. **孤児セッションの物理削除**: `created_at < now - 100日` かつ `receiver_id` が `users` に存在しない `upload_sessions` を削除（R15 アカウント削除時に保存期間中の sender_ip/ua を保護するために残された孤児セッションを、保存期間経過後に回収する）
 

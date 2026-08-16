@@ -44,7 +44,7 @@ describe("GET /receiver/photos", () => {
   });
 
   // ギャラリーの「残りN日」バッジが使う値。旧データ (NULL) も実効値に解決して返す
-  it("expires_at が実効値で返る。旧データ (NULL) は created_at + 180日 に解決される (R13)", async () => {
+  it("expires_at が実効値で返る。旧データ (NULL) は created_at + 365日 に解決される (R13)", async () => {
     const { idToken, uid } = await createEmulatorUser();
     await seedUser({ uid, handle: "rcv_exp_list" });
     const createdAt = Math.floor(Date.now() / 1000) - 10 * 24 * 3600;
@@ -56,7 +56,7 @@ describe("GET /receiver/photos", () => {
     );
 
     expect(status).toBe(200);
-    expect(body.photos[0].expires_at).toBe(createdAt + 180 * 24 * 3600);
+    expect(body.photos[0].expires_at).toBe(createdAt + 365 * 24 * 3600);
   });
 
   it("他人の写真は返らない (権限境界: receiver_id が UID 一致のみ)", async () => {

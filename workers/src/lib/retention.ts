@@ -8,7 +8,7 @@
  * この分離により、将来この値を短くしても**既存の写真は延命されたまま**になり、
  * 定数を変えた瞬間に過去分が一斉に物理削除される事故が起きない。
  */
-export const PHOTO_RETENTION_DAYS = 180;
+export const PHOTO_RETENTION_DAYS = 365;
 export const PHOTO_RETENTION_SECONDS = PHOTO_RETENTION_DAYS * 24 * 3600;
 
 /**

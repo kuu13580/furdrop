@@ -46,7 +46,7 @@ describe("GET /receiver/quota", () => {
   it("期限が遠い写真しかなければ expiring_soon は 0 / null になる", async () => {
     const { idToken, uid } = await createEmulatorUser();
     await seedUser({ uid, handle: "rcv_quota_far" });
-    // 焼き込み済み (created_at + 180日) と旧データ (NULL → 同じ値に解決) の両方が窓の外
+    // 焼き込み済み (created_at + 365日) と旧データ (NULL → 同じ値に解決) の両方が窓の外
     await seedPhoto({ receiverId: uid, handle: "rcv_quota_far" });
     await seedPhoto({ receiverId: uid, handle: "rcv_quota_far", expiresAt: null });
 

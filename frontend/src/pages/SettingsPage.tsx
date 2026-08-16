@@ -692,7 +692,7 @@ function ProfileSettings() {
         <StorageQuotaBar used={user.storage_used} quota={user.storage_quota} />
         <p className="mt-3 text-[12px] leading-[1.5] text-ink-muted">
           <Trans>
-            受信した写真は、受信から180日が経過すると自動的に削除されます。削除が近づいた写真にはギャラリーで残り日数が表示されます。
+            受信した写真は、受信から365日が経過すると自動的に削除されます。削除が近づいた写真にはギャラリーで残り日数が表示されます。
           </Trans>
         </p>
       </Card>

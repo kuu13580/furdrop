@@ -61,7 +61,7 @@ type SeedPhotoOptions = {
   senderName?: string | null;
   createdAt?: number;
   /**
-   * 省略時は本番と同じく `createdAt + 180日` を焼き込む。
+   * 省略時は本番と同じく `createdAt + 365日` を焼き込む。
    * `null` を明示すると 0009 のバックフィル前に入った旧データ (NULL) を再現する。
    */
   expiresAt?: number | null;
