@@ -290,7 +290,15 @@ export default function PhotoDetailPage() {
                 <dt className="text-ink-soft">
                   <Trans>削除予定日</Trans>
                 </dt>
-                <dd className={`font-mono ${near ? "font-semibold text-status-warn" : "text-ink"}`}>
+                {/* Amber を文字色に使うと白背景で 2.65:1 にしかならない (AA は 4.5:1)。
+                    警告は tint 背景 + 太字 + 残日数で示し、文字は Ink のままにする */}
+                <dd
+                  className={
+                    near
+                      ? "rounded bg-status-warn-tint px-1.5 py-0.5 font-mono font-semibold text-ink"
+                      : "font-mono text-ink"
+                  }
+                >
                   {formatDate(photo.expires_at, i18n.locale)}
                   {near && (
                     <span className="ml-1">

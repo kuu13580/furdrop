@@ -44,7 +44,7 @@ msgstr "{current}/{total} · {percent}%"
 
 #: src/pages/DashboardPage.tsx
 msgid "{days, plural, other {最短であと#日で削除されます。}}"
-msgstr "{days, plural, one {The first one will be deleted in # day.} other {The first one will be deleted in # days.}}"
+msgstr "{days, plural, one {The earliest photo will be deleted in # day.} other {The earliest photo will be deleted in # days.}}"
 
 #: src/pages/send/LandingPage.tsx
 msgid "{displayName}さんの保存容量がいっぱいです。空きを作ってもらうよう伝えてください。"

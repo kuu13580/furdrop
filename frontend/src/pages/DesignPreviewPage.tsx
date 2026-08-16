@@ -694,7 +694,7 @@ function BadgesSection() {
           <span className="rounded-full bg-status-danger-tint px-2.5 py-1 text-[12px] font-semibold text-status-danger">
             失敗
           </span>
-          <span className="rounded-full bg-status-warn px-2 py-0.5 text-[11px] font-semibold text-white">
+          <span className="rounded-full bg-status-warn px-2 py-0.5 text-[11px] font-semibold text-ink">
             残り12日
           </span>
           <span className="rounded-full bg-status-danger px-2 py-0.5 text-[11px] font-semibold text-white">
@@ -771,7 +771,7 @@ function GallerySection() {
     <SectionShell
       id="09"
       title="ギャラリー (均一グリッド · 正方形)"
-      caption="全カード aspect-ratio 1/1 の均一グリッド。写真は object-contain で全体を表示し、余白は Cream 台座で吸収。masonry は採用しない — 格子状の整列で DL 選択の UX を最優先。"
+      caption="全カード aspect-ratio 1/1 の均一グリッド。写真は object-contain で全体を表示し、余白は Cream 台座で吸収。masonry は採用しない — 格子状の整列で DL 選択の UX を最優先。先頭 2 枚に R13 の期限バッジを重ねてあり、左上の選択チェックボックス (hover で表示) と衝突しないことを確認できる。"
     >
       <div className="rounded-[20px] border border-surface-sand-deep bg-surface p-4 shadow-card sm:p-6">
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4">
@@ -789,6 +789,18 @@ function GallerySection() {
               />
               {/* 選択モードのチェックボックス (全カード同一位置) */}
               <div className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full border border-surface-sand-deep bg-white/90 shadow-sm opacity-0 transition group-hover:opacity-100" />
+              {/* R13 期限バッジ。左上のチェックボックスと衝突しないことを見るため右下に重ねる。
+                  期限が遠い写真には出さないので、先頭 2 枚だけに付ける */}
+              {i === 0 && (
+                <span className="absolute right-1.5 bottom-1.5 rounded-full bg-status-warn px-2 py-0.5 text-[11px] font-semibold text-ink">
+                  残り12日
+                </span>
+              )}
+              {i === 1 && (
+                <span className="absolute right-1.5 bottom-1.5 rounded-full bg-status-danger px-2 py-0.5 text-[11px] font-semibold text-white">
+                  残り2日
+                </span>
+              )}
             </div>
           ))}
         </div>

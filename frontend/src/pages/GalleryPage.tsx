@@ -751,9 +751,13 @@ export default function GalleryPage() {
                         )}
                         {badgeLevel && (
                           // 左上は選択チェックボックスが占めるので右下に置く
+                          // Amber は明度が高く、白文字だと 11px でコントラスト比が
+                          // 2.65:1 にしかならない (AA は 4.5:1)。Amber のときだけ文字を Ink に落とす
                           <span
-                            className={`pointer-events-none absolute right-1.5 bottom-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold text-white ${
-                              badgeLevel === "danger" ? "bg-status-danger" : "bg-status-warn"
+                            className={`pointer-events-none absolute right-1.5 bottom-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                              badgeLevel === "danger"
+                                ? "bg-status-danger text-white"
+                                : "bg-status-warn text-ink"
                             }`}
                           >
                             {remainingDays > 0 ? (
