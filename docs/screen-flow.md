@@ -54,7 +54,7 @@ OG 画像は `python3 frontend/scripts/generate-og.py` で日英ぶん生成す�
 flowchart TD
     EXT[外部リンク<br/>名刺・SNS等<br/>?k=KEY 付き URL] --> S01[S01: ランディング<br/>受信者プロフィール]
     S01 -->|写真を送る ?k=KEY| S02[S02: アップロード画面<br/>写真選択 + 送信者情報]
-    S02 -->|送信する ?k=KEY| S03[S03: アップロード進行中<br/>変換→EXIF→透かし→サムネ→UP<br/>POST sessions に key を含める]
+    S02 -->|送信する ?k=KEY| S03[S03: アップロード進行中<br/>変換→透かし→GPS除去→サムネ→UP<br/>POST sessions に key を含める]
     S03 --> S04[S04: 送信完了<br/>サムネイル一覧]
     S04 -->|別の写真を送る ?k=KEY| S02
 ```
@@ -126,11 +126,6 @@ flowchart TD
 |  | ※以下は受信者が許可した ||
 |  |  オプションのみ表示(R14)||
 |  |                         ||
-|  | EXIF埋め込み:            ||
-|  | [___________]           ||
-|  | *カメラモデル欄に書込    ||
-|  | *元のカメラ情報は上書き  ||
-|  |                         ||
 |  | 透かし: [x] 入れる       ||
 |  | [ 透かしを編集 ]         ||
 |  | → 編集ダイアログで       ||
@@ -148,7 +143,6 @@ UploaderPage
   +-- PhotoPreviewGrid      // サムネイルプレビュー (個別削除可)
   +-- SenderInfoForm        // 折りたたみ式
   |     +-- SenderNameField
-  |     +-- ExifEmbedField        // EXIF送信者情報埋め込み
   |     +-- WatermarkToggle          // 「透かしを入れる」+「透かしを編集」ボタン
   +-- WatermarkDialog                // 透かし編集ダイアログ (§5.4 参照)
   |     +-- PreviewCanvas            // 実写真プレビュー + 要素ドラッグ + ズーム
@@ -166,7 +160,7 @@ UploaderPage
 - HEIC→JPEG: `heic2any` を dynamic import（iOS向け）。変換中は「HEIC画像を変換中...少し時間がかかります」とスピナー表示
 - ファイルサイズ20MB超はクライアント側でバリデーション拒否
 - ファイル未選択時は送信ボタンdisabled
-- 送信者名が必須になる条件 (R14): 受信者が `require_sender_name` を有効化、または EXIF埋め込みが `required`。該当時は名前ラベルに「必須」バッジが付き、未入力では送信不可 (名前なし同意チェックは非表示)
+- 送信者名が必須になる条件 (R14): 受信者が `require_sender_name` を有効化したとき。該当時は名前ラベルに「必須」バッジが付き、未入力では送信不可 (名前なし同意チェックは非表示)
 - 「透かしを入れる」を手動でONにすると編集ダイアログが自動で開く (何がどこに焼き込まれるかをその場で確認させる)。required による自動ONでは開かない
 
 ### S03: アップロード進行中
@@ -178,8 +172,8 @@ UploaderPage
 |                             |
 |  [============----] 65%     |
 |                             |
-|  1. EXIF書き換え中...   [v] |
-|  2. 透かし適用中...     [v] |
+|  1. 透かし適用中...     [v] |
+|  2. GPS情報を除去中...  [v] |
 |  3. サムネイル生成中... [v] |
 |  4. アップロード中  3/6 [.] |
 |                             |
@@ -194,8 +188,8 @@ UploaderPage
 ```
 
 **処理パイプライン:**
-1. EXIF書き換え（piexifjs）
-2. 透かし適用（Canvas 2D API）
+1. 透かし適用（Canvas 2D API）
+2. EXIF GPS 除去（piexifjs）
 3. サムネイル生成（Canvas API, 長辺400px, 品質0.7）
 4. アップロード（Presigned URLへPUT、並列実行）
 5. 確認（PATCH confirm）
@@ -311,12 +305,10 @@ DashboardPage
 
 --- 選択モード時 ---
 +-----------------------------+
-|  全選択 | 解除      [完了]  |
+|  全選択      [DL][削除][完了]|
+|  3枚選択中  ダウンロードオプション v |
 |-----------------------------|
 |  [v][thumb] [ ][thumb] ...  |
-|-----------------------------|
-|  3枚選択中                  |
-|  [DL] [削除]               |
 +-----------------------------+
 ```
 
@@ -336,13 +328,16 @@ DashboardPage
 - 右上「選択」トグルで切替
 - チェックボックス表示
 - 下部にアクションバー（DL / 削除）
-- 一括DL: 各写真のPresigned URLを取得し、順次`<a download>` でDL
+- 一括DL: 各写真の Presigned URL を取得して fetch → zip.js で ZIP 化 → `<a download>`。R17 が有効なら ZIP に入れる直前に EXIF へ撮影者名を書き込む
+- 「ダウンロードオプション ▾」は R17 の DL 設定 (§5.5)。押すと設定ダイアログが開く
+- バーは 2 行構成。枚数と DL 設定を 2 行目に逃がしているのは、訳文の長い言語 (en: `Deselect all` / `Download` / `2 selected`) をモバイル幅で 1 行に詰めると折り返して潰れるため
 
 ### S08: フォト詳細
 
 ```
 +-----------------------------+
-|  < 戻る           [DL] [x] |
+|  < 戻る          [DL] [削除]|
+|      ダウンロードオプション v |
 |-----------------------------|
 |                             |
 |  +-------------------------+|
@@ -388,8 +383,6 @@ DashboardPage
 |-----------------------------|
 |  [受信オプション]           |
 |  [x] 送信者名の入力を必須に |
-|  EXIF埋め込み:              |
-|   [無効][任意][必須]        |
 |  透かし:                    |
 |   [無効][任意][必須]        |
 |-----------------------------|
@@ -450,7 +443,7 @@ DashboardPage
 ```mermaid
 flowchart TD
     A[ファイル選択<br/>JPEG / PNG / HEIC] --> B{フォーマット判定}
-    B -->|JPEG| D[EXIF読み込み + 送信者情報埋め込み<br/>piexifjs]
+    B -->|JPEG| D[EXIF GPS 除去<br/>piexifjs]
     B -->|PNG| C1[Canvas → JPEG変換]
     B -->|HEIC| C2[heic2any → JPEG変換]
     C1 --> D
@@ -485,32 +478,12 @@ async function generateThumbnail(file) {
 - OffscreenCanvas対応ブラウザはWeb Worker内で処理（UIブロック回避）
 - Safari非対応時はメインスレッドのCanvas要素でフォールバック
 
-### 5.3 EXIF 送信者情報埋め込み
+### 5.3 EXIF GPS 除去 (送信時)
 
-送信者が入力したテキストをEXIFのカメラモデルフィールド（`IFD0.Model`）に書き込む。
-元のカメラモデル情報は上書きされる。送信者がこの方式で情報を残すかは任意選択。
+プライバシー保護のため、送信時にクライアントで `GPS` IFD を空にする (利用規約第14条3項)。
+送信者側で EXIF に書き込む処理はこれだけで、送信者名の記録は受信者の DL 時 (§5.5) に移した。
 
-ライブラリ: `piexifjs`
-
-```javascript
-import piexif from 'piexifjs';
-
-async function embedSenderInfoInExif(file, senderText) {
-  const dataUrl = await fileToDataUrl(file);
-  let exifObj;
-  try {
-    exifObj = piexif.load(dataUrl);
-  } catch {
-    exifObj = { '0th': {}, 'Exif': {}, 'GPS': {} };
-  }
-  if (senderText) {
-    exifObj['0th'][piexif.ImageIFD.Model] = senderText;
-  }
-  const exifBytes = piexif.dump(exifObj);
-  const newDataUrl = piexif.insert(exifBytes, dataUrl);
-  return dataUrlToBlob(newDataUrl);
-}
-```
+実装は `frontend/src/lib/image-processing.ts` の `stripExifGps`。ライブラリは `piexifjs`。
 
 ### 5.4 透かし (ウォーターマーク)
 
@@ -553,8 +526,31 @@ Canvas 2D APIで直接描画。外部ライブラリ不要。実装は `frontend
 
 **永続化:**
 
-- 要素配列は送信者名・EXIF設定とともに localStorage (`furdrop.uploadForm`) に永続化。リピート送信者は前回のデザインをそのまま使える
+- 要素配列は送信者名とともに localStorage (`furdrop.uploadForm`) に永続化。リピート送信者は前回のデザインをそのまま使える
 - 適用した透かしは `photos.watermark_text` に要素配列の JSON として記録される (記録用)
+
+### 5.5 DL 時の EXIF 埋め込み (R17)
+
+受信者がダウンロードする写真の EXIF に送信者名を書き込む。実装は `frontend/src/lib/exif-credit.ts`。
+
+**選択肢** (`記録しない` / `撮影者 (Artist) 欄のみ` / `カメラ機種 (Model) 欄にも記録`):
+Artist は Lightroom や Adobe Bridge で表示され元のカメラ情報を壊さない。Model は Google フォトや
+iOS の写真アプリでも表示されるが、元のカメラ機種名を上書きする。
+
+**書き込む文字列**: `Photo by ` + 送信者名 (先頭の `@` は除去)。EXIF の Artist / Model は仕様上
+ASCII 専用の欄なので、接頭辞はロケールに関わらず英語で固定する。匿名送信 (`sender_name` が null)
+の写真はスキップする。
+
+**いつ選ばせるか**: 未設定の状態で初めて DL を押したときにダイアログを出し、選択を localStorage
+(`furdrop.downloadOptions`) に保存する。2 回目以降は即 DL。設定画面 (S10) には置かず、ギャラリーの
+選択バーと写真詳細に「ダウンロードオプション ▾」を常時出してそこから変更させる (受信オプションでは
+なく「自分の手元のコピーをどう保存するか」の設定なので、DL 導線に置く)。ボタンにはダイアログと同じ
+名前だけを出し、現在値は載せない (「撮影者名: 撮影者+機種欄」のような読み解きの要る表示を避ける)。
+
+**実装**: presigned GET を fetch → `piexifjs` で APP1 セグメントを差し替え → Blob を `a[download]`。
+一括 DL は `zip-download.ts` の fetch と ZIP 追加の間に挟む。「記録しない」の単体 DL は presigned URL
+への直リンクのままで、無加工の最速パスを保つ。画像全体を dataURL 化せず APP1 だけを piexif に渡す
+(20MB × ZIP 並列 4 のメモリ対策)。書き込みに失敗しても無加工で保存し、DL 自体は成立させる。
 
 ---
 

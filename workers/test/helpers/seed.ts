@@ -12,7 +12,6 @@ type SeedUserOptions = {
   storage_used?: number;
   storage_quota?: number;
   is_active?: 0 | 1;
-  exif_embed_mode?: "disabled" | "optional" | "required";
   watermark_mode?: "disabled" | "optional" | "required";
   require_sender_name?: 0 | 1;
   require_send_key?: 0 | 1;
@@ -26,8 +25,8 @@ export async function seedUser(
   const sendKey = generateSendKey();
   await env.DB.batch([
     env.DB.prepare(
-      `INSERT INTO users (id, handle, display_name, email, avatar_url, storage_used, storage_quota, is_active, exif_embed_mode, watermark_mode, require_sender_name, require_send_key, created_at, updated_at)
-       VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO users (id, handle, display_name, email, avatar_url, storage_used, storage_quota, is_active, watermark_mode, require_sender_name, require_send_key, created_at, updated_at)
+       VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).bind(
       opts.uid,
       opts.handle,
@@ -36,7 +35,6 @@ export async function seedUser(
       opts.storage_used ?? 0,
       opts.storage_quota ?? 10737418240,
       opts.is_active ?? 1,
-      opts.exif_embed_mode ?? "optional",
       opts.watermark_mode ?? "disabled",
       opts.require_sender_name ?? 0,
       opts.require_send_key ?? 1,
@@ -83,9 +81,9 @@ export async function seedPhoto(
 
   await env.DB.prepare(
     `INSERT INTO photos (id, receiver_id, session_id, r2_key_original, r2_key_thumb,
-      sender_name, camera_model, watermark_text, original_filename, file_size, thumb_size,
+      sender_name, watermark_text, original_filename, file_size, thumb_size,
       width, height, upload_status, batch_index, expires_at, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, NULL, NULL, 'test.jpg', ?, ?, NULL, NULL, ?, 0, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, NULL, 'test.jpg', ?, ?, NULL, NULL, ?, 0, ?, ?, ?)`,
   )
     .bind(
       photoId,

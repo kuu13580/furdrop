@@ -42,7 +42,6 @@ const getReceiverRoute = createRoute({
               // キー必須かどうか。送信者側で「?k= の無いURLが正当か」を判断するために公開する
               require_send_key: z.boolean(),
               options: z.object({
-                exif_embed_mode: EmbedModeSchema,
                 watermark_mode: EmbedModeSchema,
                 require_sender_name: z.boolean(),
               }),
@@ -67,7 +66,7 @@ sender.openapi(getReceiverRoute, async (c) => {
   const { handle } = c.req.valid("param");
 
   const user = await c.env.DB.prepare(
-    "SELECT handle, display_name, avatar_url, is_active, storage_used, storage_quota, exif_embed_mode, watermark_mode, require_sender_name, require_send_key FROM users WHERE handle = ?",
+    "SELECT handle, display_name, avatar_url, is_active, storage_used, storage_quota, watermark_mode, require_sender_name, require_send_key FROM users WHERE handle = ?",
   )
     .bind(handle)
     .first();
@@ -103,7 +102,6 @@ sender.openapi(getReceiverRoute, async (c) => {
         unavailable_reason: unavailableReason,
         require_send_key: asBool(user.require_send_key),
         options: {
-          exif_embed_mode: asMode(user.exif_embed_mode),
           watermark_mode: asMode(user.watermark_mode),
           require_sender_name: asBool(user.require_sender_name),
         },
@@ -218,8 +216,7 @@ sender.openapi(createSessionRoute, async (c) => {
     );
   }
 
-  // R14: 受信者が送信者名を必須にしている場合、未指定のセッション開始を拒否 (UIバイパス防止)。
-  // EXIF required 由来の名前必須は createPhotos 側の camera_model 検証で担保される
+  // R14: 受信者が送信者名を必須にしている場合、未指定のセッション開始を拒否 (UIバイパス防止)
   if (asBool(user.require_sender_name) && !body.sender_name?.trim()) {
     return c.json(
       {
@@ -277,7 +274,6 @@ const PhotoInput = z.object({
   thumb_size: z.number().int().min(1).max(MAX_THUMB_SIZE),
   width: z.number().int().optional(),
   height: z.number().int().optional(),
-  camera_model: z.string().optional(),
   watermark_text: z.string().max(4000).optional(),
 });
 
@@ -359,7 +355,7 @@ sender.openapi(createPhotosRoute, async (c) => {
 
   const session = await c.env.DB.prepare(
     `SELECT s.id, s.receiver_id, s.sender_name, s.status, s.expires_at, s.photo_count,
-            u.handle, u.storage_used, u.storage_quota, u.exif_embed_mode, u.watermark_mode
+            u.handle, u.storage_used, u.storage_quota, u.watermark_mode
      FROM upload_sessions s
      JOIN users u ON u.id = s.receiver_id
      WHERE s.id = ? AND u.handle = ?`,
@@ -400,24 +396,12 @@ sender.openapi(createPhotosRoute, async (c) => {
     );
   }
 
-  // R14: 受信者の埋め込みモードに応じてサーバ側で必須/拒否を強制
-  // - 'required'  : 該当フィールドが空ならエラー (UIバイパス防止)
+  // R14: 受信者の透かしモードに応じてサーバ側で必須/拒否を強制
+  // - 'required'  : 透かしテキストが空ならエラー (UIバイパス防止)
   // - 'disabled'  : 受信者の意向を尊重してサーバ側でフィールドを無視
   // - 'optional'  : 送信者の入力をそのまま採用
-  const exifMode = asMode(session.exif_embed_mode);
   const watermarkMode = asMode(session.watermark_mode);
   for (const p of photos) {
-    if (exifMode === "required" && !p.camera_model?.trim()) {
-      return c.json(
-        {
-          error: {
-            code: "INVALID_REQUEST",
-            message: "EXIF sender info is required by this receiver",
-          },
-        },
-        400,
-      );
-    }
     if (watermarkMode === "required" && !p.watermark_text?.trim()) {
       return c.json(
         {
@@ -442,16 +426,15 @@ sender.openapi(createPhotosRoute, async (c) => {
       const r2KeyThumb = buildR2Key(handle, photoId, "thumb");
       const batchIndex = baseBatchIndex + i;
 
-      const cameraModel = exifMode === "disabled" ? null : (photo.camera_model ?? null);
       const watermarkText = watermarkMode === "disabled" ? null : (photo.watermark_text ?? null);
 
       // DL 期限は受信時点で実値を焼き込む (R13)。定数を後で変えても既存写真の
       // 期限が動かないようにするため、COALESCE のフォールバックには頼らない。
       await c.env.DB.prepare(
         `INSERT INTO photos (id, receiver_id, session_id, r2_key_original, r2_key_thumb,
-          sender_name, camera_model, watermark_text, original_filename,
+          sender_name, watermark_text, original_filename,
           file_size, width, height, upload_status, batch_index, expires_at, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)`,
       )
         .bind(
           photoId,
@@ -460,7 +443,6 @@ sender.openapi(createPhotosRoute, async (c) => {
           r2KeyOriginal,
           r2KeyThumb,
           (session.sender_name as string | null) ?? null,
-          cameraModel,
           watermarkText,
           photo.filename,
           photo.file_size,

@@ -191,11 +191,6 @@ function SenderStep2() {
 
 function SenderStep3() {
   const { c } = useShot();
-  const credit = (
-    <code className="mx-0.5 rounded bg-surface-sand px-1.5 py-0.5 font-mono text-[0.95em] text-ink">
-      {SAMPLE_SENDER}
-    </code>
-  );
   return (
     <Frame slug="sender-step3" pad="p-10" width={720}>
       <Card>
@@ -211,36 +206,11 @@ function SenderStep3() {
               className="block w-full rounded-xl border border-surface-sand-deep bg-surface px-4 py-3 text-[14px] text-ink"
             />
             <p className="text-[13px] text-ink-soft">
-              {c(
-                "受信者に表示されます。EXIF埋め込みにもこの名前が使われます",
-                "Shown to the recipient. This name is also used for the EXIF embed",
-              )}
+              {c("受信者に表示されます", "Shown to the recipient")}
             </p>
           </div>
 
-          <div className="space-y-3 border-t border-surface-sand-deep pt-4">
-            <label className="flex items-start gap-2.5 text-[14px]">
-              <input
-                type="checkbox"
-                checked
-                readOnly
-                className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
-              />
-              <span>
-                <span className="font-medium text-ink">
-                  {c("EXIFカメラモデル欄に埋め込む", "Embed in the EXIF camera model field")}
-                </span>
-                <span className="mt-0.5 block text-[13px] text-ink-soft">
-                  {c(
-                    <>メタデータに送信者名{credit}を書き込みます（元のカメラ情報は上書き）</>,
-                    <>
-                      Writes your name {credit} into the metadata (the original camera info is
-                      overwritten)
-                    </>,
-                  )}
-                </span>
-              </span>
-            </label>
+          <div className="border-t border-surface-sand-deep pt-4">
             <div>
               <label className="flex items-start gap-2.5 text-[14px]">
                 <input
@@ -368,8 +338,7 @@ function ReceiverStep1() {
                 )}
               </p>
               <RequireSenderNameFake />
-              <EmbedModeFake kind="exif" active="optional" />
-              <EmbedModeFake kind="watermark" active="disabled" />
+              <EmbedModeFake active="disabled" />
             </div>
             <label className="flex items-start gap-2.5 border-t border-surface-sand-deep pt-4 text-[13px]">
               <input
@@ -460,25 +429,13 @@ function AcceptanceFake() {
   );
 }
 
-function EmbedModeFake({
-  kind,
-  active,
-}: {
-  kind: "exif" | "watermark";
-  active: "disabled" | "optional" | "required";
-}) {
+function EmbedModeFake({ active }: { active: "disabled" | "optional" | "required" }) {
   const { c } = useShot();
-  const title = kind === "exif" ? c("EXIF埋め込み", "EXIF embed") : c("透かし", "Watermark");
-  const desc =
-    kind === "exif"
-      ? c(
-          "送信者がカメラモデル欄に名前を書き込みます（メタデータのみ、除去可能）",
-          "Senders write their name into the camera model field (metadata only, removable)",
-        )
-      : c(
-          "送信者が画像にクレジットテキストを描き込みます（不可逆）",
-          "Senders draw credit text onto the image itself (cannot be undone)",
-        );
+  const title = c("透かし", "Watermark");
+  const desc = c(
+    "送信者が画像にクレジットテキストを描き込みます（不可逆）",
+    "Senders draw credit text onto the image itself (cannot be undone)",
+  );
   const opts: {
     v: "disabled" | "optional" | "required";
     label: string;
@@ -600,8 +557,7 @@ function ReceiverStep4() {
           </p>
           <div className="space-y-5">
             <RequireSenderNameFake />
-            <EmbedModeFake kind="exif" active="optional" />
-            <EmbedModeFake kind="watermark" active="optional" />
+            <EmbedModeFake active="optional" />
           </div>
         </Card>
       </div>

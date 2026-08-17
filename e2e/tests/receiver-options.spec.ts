@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 import { tinyJpeg } from "../fixtures/images";
 import { createEmulatorUser, registerReceiver, signInOnPage } from "../helpers/auth";
 
-test("設定で EXIF 埋め込みを必須に変更すると、送信者 UI に '必須' バッジが表示される", async ({
+test("設定で透かしを必須に変更すると、送信者 UI に '必須' バッジが表示される", async ({
   page,
   context,
 }) => {
@@ -11,28 +11,26 @@ test("設定で EXIF 埋め込みを必須に変更すると、送信者 UI に 
   const handle = `e2e_opts_${Date.now()}`;
   const { sendKey } = await registerReceiver(user, handle);
 
-  // 受信者として login → 設定 → EXIF を「必須」に
+  // 受信者として login → 設定 → 透かしを「必須」に
   await page.goto("/login");
   await signInOnPage(page, user);
   await page.goto("/settings");
 
-  const exifRadioGroup = page.getByRole("radiogroup", { name: "EXIF埋め込み" });
-  await exifRadioGroup.getByText("必須").click();
+  const watermarkRadioGroup = page.getByRole("radiogroup", { name: "透かし" });
+  await watermarkRadioGroup.getByText("必須").click();
 
   // 別タブで送信者ビューを開く
   const senderPage = await context.newPage();
   await senderPage.goto(`/send/${handle}/upload?k=${sendKey}`);
 
   // ファイル選択しないと詳細パネルが出ないので、最小 JPEG を投入
-  const { tinyJpeg } = await import("../fixtures/images");
   await senderPage.locator("input[type=file]").setInputFiles(tinyJpeg());
 
-  // 「必須」バッジ (= EXIF カメラモデル欄に埋め込む の右側) が出ること。
+  // 「必須」バッジ (= 透かしを入れる の右側) が出ること。
   // xpath=.. の親辿りは DOM 階層変更で剥がれやすいので、ラベル要素に絞ってバッジを取得。
-  // UploadPage.tsx の構造: <label>...EXIFカメラモデル欄に埋め込む <span>必須</span>...</label>
-  const exifLabel = senderPage.locator('label:has-text("EXIFカメラモデル欄に埋め込む")');
-  await expect(exifLabel).toBeVisible();
-  await expect(exifLabel.getByText("必須")).toBeVisible();
+  const watermarkLabel = senderPage.locator('label:has-text("透かしを入れる")');
+  await expect(watermarkLabel).toBeVisible();
+  await expect(watermarkLabel.getByText("必須")).toBeVisible();
 });
 
 test("設定で送信者名を必須にすると、送信者 UI で名前必須になり未入力では送信できない (R14 送信者名必須)", async ({

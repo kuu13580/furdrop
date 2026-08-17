@@ -106,7 +106,6 @@ export default function UploadPage() {
   const [watermarkDialogOpen, setWatermarkDialogOpen] = useState(false);
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [receiverOptions, setReceiverOptions] = useState<{
-    exif_embed_mode: EmbedMode;
     watermark_mode: EmbedMode;
     require_sender_name: boolean;
   } | null>(null);
@@ -260,13 +259,10 @@ export default function UploadPage() {
 
   const credit = form.senderName.trim();
   const hasSenderName = credit.length > 0;
-  const exifMode: EmbedMode = receiverOptions?.exif_embed_mode ?? "disabled";
   const watermarkMode: EmbedMode = receiverOptions?.watermark_mode ?? "disabled";
-  // 送信者名が必須になる条件:
-  // - 受信者が「送信者名の入力を必須」に設定 (R14 require_sender_name、サーバ側でも400)
-  // - EXIF埋め込みが required (埋め込む内容が送信者名そのものなので名前なしでは成立しない)
+  // 送信者名が必須になるのは受信者が「送信者名の入力を必須」にしたときだけ (R14、サーバ側でも400)。
   // 透かし required は自由テキストで成立するため名前は要求しない (非空要素のみ要求)
-  const nameRequired = (receiverOptions?.require_sender_name ?? false) || exifMode === "required";
+  const nameRequired = receiverOptions?.require_sender_name ?? false;
   // required が強制するのは「非空テキストの要素が1つ以上」(R14)。四角形だけでは満たさない
   const watermarkRequiredEmpty =
     watermarkMode === "required" &&
@@ -281,23 +277,17 @@ export default function UploadPage() {
     navigate(withKey(`/send/${handle}/uploading`, accessKey), { replace: true });
   };
 
-  // フォームと受信者モードの整合を取る
-  // - EXIF はクレジット (送信者名) しか埋め込めないため senderName 空でフラグを落とす
-  // - 透かしは自由テキストで成立するため senderName には依存しない
+  // フォームと受信者の透かしモードの整合を取る (透かしは自由テキストで成立するため
+  // senderName には依存しない)
   useEffect(() => {
     setForm((prev) => {
-      let exifEnabled = prev.exifEnabled;
       let watermarkEnabled = prev.watermarkEnabled;
-      if (!hasSenderName || exifMode === "disabled") exifEnabled = false;
-      else if (exifMode === "required") exifEnabled = true;
       if (watermarkMode === "disabled") watermarkEnabled = false;
       else if (watermarkMode === "required") watermarkEnabled = true;
-      if (exifEnabled === prev.exifEnabled && watermarkEnabled === prev.watermarkEnabled) {
-        return prev;
-      }
-      return { ...prev, exifEnabled, watermarkEnabled };
+      if (watermarkEnabled === prev.watermarkEnabled) return prev;
+      return { ...prev, watermarkEnabled };
     });
-  }, [hasSenderName, exifMode, watermarkMode, setForm]);
+  }, [watermarkMode, setForm]);
 
   // 透かしダイアログのライブプレビュー用候補。サムネ ObjectURL を渡すだけで実体は持たない。
   // id とサムネ生成状態(空→URL)の両方をシグネチャに含め、サムネ完了が候補に反映される
@@ -474,11 +464,7 @@ export default function UploadPage() {
                     className="block w-full rounded-xl border border-surface-sand-deep bg-surface px-4 py-3 text-[14px] text-ink placeholder:text-ink-muted transition-all focus:border-brand focus:outline-none focus:ring-3 focus:ring-brand/15"
                   />
                   <p className="text-[13px] text-ink-soft">
-                    {exifMode !== "disabled" ? (
-                      <Trans>受信者に表示されます。EXIF埋め込みにもこの名前が使われます</Trans>
-                    ) : (
-                      <Trans>受信者に表示されます</Trans>
-                    )}
+                    <Trans>受信者に表示されます</Trans>
                   </p>
                   {nameRequired && !hasSenderName && (
                     <p className="text-[13px] text-status-warn">
@@ -487,90 +473,51 @@ export default function UploadPage() {
                   )}
                 </div>
 
-                {(exifMode !== "disabled" || watermarkMode !== "disabled") && (
-                  <div className="space-y-3 border-t border-surface-sand-deep pt-4">
-                    {exifMode !== "disabled" && (
-                      <label
-                        className={`flex items-start gap-2.5 text-[14px] ${hasSenderName ? "" : "opacity-50"}`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={form.exifEnabled}
-                          disabled={!hasSenderName || exifMode === "required"}
-                          onChange={(e) => setForm({ ...form, exifEnabled: e.target.checked })}
-                          className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
-                        />
-                        <span>
-                          <span className="flex items-center gap-1.5 font-medium text-ink">
-                            <Trans>EXIFカメラモデル欄に埋め込む</Trans>
-                            {exifMode === "required" && <RequiredBadge />}
-                          </span>
-                          <span className="mt-0.5 block text-[13px] text-ink-soft">
-                            {credit ? (
-                              <Trans>
-                                メタデータに送信者名
-                                <code className="mx-0.5 rounded bg-surface-sand px-1.5 py-0.5 font-mono text-[0.95em] text-ink">
-                                  {credit}
-                                </code>
-                                を書き込みます（元のカメラ情報は上書き）
-                              </Trans>
-                            ) : (
-                              <Trans>
-                                メタデータに送信者名を書き込みます（元のカメラ情報は上書き）
-                              </Trans>
-                            )}
-                          </span>
+                {watermarkMode !== "disabled" && (
+                  <div className="border-t border-surface-sand-deep pt-4">
+                    <label className="flex items-start gap-2.5 text-[14px]">
+                      <input
+                        type="checkbox"
+                        checked={form.watermarkEnabled}
+                        disabled={watermarkMode === "required"}
+                        onChange={(e) => {
+                          const enabled = e.target.checked;
+                          setForm({ ...form, watermarkEnabled: enabled });
+                          // ON にしたら必ず編集ダイアログを開き、
+                          // 何がどこに焼き込まれるかをその場で確認・調整させる
+                          if (enabled) setWatermarkDialogOpen(true);
+                        }}
+                        className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
+                      />
+                      <span>
+                        <span className="flex items-center gap-1.5 font-medium text-ink">
+                          <Trans>透かしを入れる</Trans>
+                          {watermarkMode === "required" && <RequiredBadge />}
                         </span>
-                      </label>
-                    )}
-
-                    {watermarkMode !== "disabled" && (
-                      <div>
-                        <label className="flex items-start gap-2.5 text-[14px]">
-                          <input
-                            type="checkbox"
-                            checked={form.watermarkEnabled}
-                            disabled={watermarkMode === "required"}
-                            onChange={(e) => {
-                              const enabled = e.target.checked;
-                              setForm({ ...form, watermarkEnabled: enabled });
-                              // ON にしたら必ず編集ダイアログを開き、
-                              // 何がどこに焼き込まれるかをその場で確認・調整させる
-                              if (enabled) setWatermarkDialogOpen(true);
-                            }}
-                            className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
-                          />
-                          <span>
-                            <span className="flex items-center gap-1.5 font-medium text-ink">
-                              <Trans>透かしを入れる</Trans>
-                              {watermarkMode === "required" && <RequiredBadge />}
-                            </span>
-                            <span className="mt-0.5 block text-[13px] text-ink-soft">
-                              <Trans>
-                                画像に文字や四角形を描き込みます（不可逆）。初期設定では送信者名が右下に入り、内容・位置・フォントは自由に編集できます
-                              </Trans>
-                            </span>
-                          </span>
-                        </label>
-                        {form.watermarkEnabled && (
-                          <div className="mt-2 pl-6">
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              onClick={() => setWatermarkDialogOpen(true)}
-                            >
-                              <Trans>透かしを編集</Trans>
-                            </Button>
-                          </div>
-                        )}
-                        {watermarkRequiredEmpty && (
-                          <p className="mt-2 pl-6 text-[13px] text-status-warn">
-                            <Trans>
-                              透かしに表示できる文字がありません。「透かしを編集」から文字を入力してください。
-                            </Trans>
-                          </p>
-                        )}
+                        <span className="mt-0.5 block text-[13px] text-ink-soft">
+                          <Trans>
+                            画像に文字や四角形を描き込みます（不可逆）。初期設定では送信者名が右下に入り、内容・位置・フォントは自由に編集できます
+                          </Trans>
+                        </span>
+                      </span>
+                    </label>
+                    {form.watermarkEnabled && (
+                      <div className="mt-2 pl-6">
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => setWatermarkDialogOpen(true)}
+                        >
+                          <Trans>透かしを編集</Trans>
+                        </Button>
                       </div>
+                    )}
+                    {watermarkRequiredEmpty && (
+                      <p className="mt-2 pl-6 text-[13px] text-status-warn">
+                        <Trans>
+                          透かしに表示できる文字がありません。「透かしを編集」から文字を入力してください。
+                        </Trans>
+                      </p>
                     )}
                   </div>
                 )}

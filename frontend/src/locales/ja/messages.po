@@ -38,6 +38,10 @@ msgstr "{completedCount, plural, other {#枚の写真を送信しました！}}"
 msgid "{count, plural, other {#枚の写真が自動削除の期限に近づいています}}"
 msgstr "{count, plural, other {#枚の写真が自動削除の期限に近づいています}}"
 
+#: src/components/BatchDownloadModal.tsx
+msgid "{creditFailed, plural, other {#枚は撮影者名を記録できませんでした (写真はそのまま ZIP に含まれます)}}"
+msgstr "{creditFailed, plural, other {#枚は撮影者名を記録できませんでした (写真はそのまま ZIP に含まれます)}}"
+
 #: src/pages/send/UploadingPage.tsx
 msgid "{current}/{total}枚 · {percent}%"
 msgstr "{current}/{total}枚 · {percent}%"
@@ -155,14 +159,6 @@ msgid "<0>「受信オプション」</0>では、送信者がどこまで自分
 msgstr "<0>「受信オプション」</0>では、送信者がどこまで自分の名前を写真に残せるかを決められます。"
 
 #: src/pages/GuidePage.tsx
-msgid "<0>EXIFカメラモデル欄に埋め込む</0>：写真のメタデータに名前を残します（あとから消すことも可能）"
-msgstr "<0>EXIFカメラモデル欄に埋め込む</0>：写真のメタデータに名前を残します（あとから消すことも可能）"
-
-#: src/pages/GuidePage.tsx
-msgid "<0>EXIF埋め込み</0>：メタデータのみなので画像は変わりません。あとから除去も可能。"
-msgstr "<0>EXIF埋め込み</0>：メタデータのみなので画像は変わりません。あとから除去も可能。"
-
-#: src/pages/GuidePage.tsx
 msgid "<0>QR</0>：QRコードを表示・ダウンロード。名刺やイベントポスターへの掲載に"
 msgstr "<0>QR</0>：QRコードを表示・ダウンロード。名刺やイベントポスターへの掲載に"
 
@@ -234,22 +230,6 @@ msgstr "DMは知り合いにしか許可したくない"
 msgid "Driveの招待でメアドを知られたくない"
 msgstr "Driveの招待でメアドを知られたくない"
 
-#: src/pages/send/UploadPage.tsx
-msgid "EXIFカメラモデル欄に埋め込む"
-msgstr "EXIFカメラモデル欄に埋め込む"
-
-#: src/pages/LandingPage.tsx
-msgid "EXIFのカメラモデル欄や目立たない透かしで、撮影者情報を写真ファイル自体に埋め込み可能。 匿名性と「誰が撮ったか」の追跡可能性を両立できます。"
-msgstr "EXIFのカメラモデル欄や目立たない透かしで、撮影者情報を写真ファイル自体に埋め込み可能。 匿名性と「誰が撮ったか」の追跡可能性を両立できます。"
-
-#: src/pages/SettingsPage.tsx
-msgid "EXIF埋め込み"
-msgstr "EXIF埋め込み"
-
-#: src/pages/LandingPage.tsx
-msgid "EXIF埋め込み (Camera Model欄)"
-msgstr "EXIF埋め込み (Camera Model欄)"
-
 #: src/components/I18nProvider.tsx
 msgid "FurDrop — 撮ってもらった写真を、ちゃんと受け取る。"
 msgstr "FurDrop — 撮ってもらった写真を、ちゃんと受け取る。"
@@ -282,6 +262,10 @@ msgstr "FurDropは、<0>メアドもアカウントも交換せずに、撮影�
 msgid "Google Drive"
 msgstr "Google Drive"
 
+#: src/components/DownloadOptionsDialog.tsx
+msgid "Google フォトや iPhone の写真アプリでも表示されます。元のカメラ機種名は上書きされます"
+msgstr "Google フォトや iPhone の写真アプリでも表示されます。元のカメラ機種名は上書きされます"
+
 #: src/pages/send/UploadingPage.tsx
 msgid "HEIC変換中..."
 msgstr "HEIC変換中..."
@@ -297,6 +281,10 @@ msgstr "JPEG · PNG · HEIC · 最大20MB/枚"
 #: src/pages/send/UploadPage.tsx
 msgid "JPEG / PNG / HEIC ・ 最大 20MB / 枚 ・ 100 枚まで"
 msgstr "JPEG / PNG / HEIC ・ 最大 20MB / 枚 ・ 100 枚まで"
+
+#: src/components/DownloadOptionsDialog.tsx
+msgid "Lightroom や Adobe Bridge などで表示されます。元のカメラ情報はそのまま残ります"
+msgstr "Lightroom や Adobe Bridge などで表示されます。元のカメラ情報はそのまま残ります"
 
 #: src/lib/watermark.ts
 msgid "Mプラス丸"
@@ -484,6 +472,10 @@ msgstr "カスタム色"
 msgid "カスタム色（明暗の自動調整なし・固定色）"
 msgstr "カスタム色（明暗の自動調整なし・固定色）"
 
+#: src/components/DownloadOptionsDialog.tsx
+msgid "カメラ機種 (Model) 欄にも記録"
+msgstr "カメラ機種 (Model) 欄にも記録"
+
 #: src/lib/watermark.ts
 msgid "キウイ丸"
 msgstr "キウイ丸"
@@ -505,6 +497,7 @@ msgstr "ギャラリーで確認する →"
 msgid "ギャラリーに戻る"
 msgstr "ギャラリーに戻る"
 
+#: src/components/DownloadOptionsDialog.tsx
 #: src/components/ui/ConfirmDialog.tsx
 #: src/pages/SettingsPage.tsx
 msgid "キャンセル"
@@ -661,9 +654,26 @@ msgstr "すべてクリア"
 msgid "セッションが期限切れです"
 msgstr "セッションが期限切れです"
 
+#: src/components/DownloadOptionsDialog.tsx
 #: src/pages/PhotoDetailPage.tsx
 msgid "ダウンロード"
 msgstr "ダウンロード"
+
+#: src/components/DownloadOptionsDialog.tsx
+msgid "ダウンロードオプション"
+msgstr "ダウンロードオプション"
+
+#: src/pages/GuidePage.tsx
+msgid "ダウンロードするときに撮影者名を残せます"
+msgstr "ダウンロードするときに撮影者名を残せます"
+
+#: src/components/DownloadOptionsDialog.tsx
+msgid "ダウンロードする写真に、撮影者名を記録しますか？"
+msgstr "ダウンロードする写真に、撮影者名を記録しますか？"
+
+#: src/components/DownloadOptionsDialog.tsx
+msgid "ダウンロード時に撮影者名を記録するかを設定する"
+msgstr "ダウンロード時に撮影者名を記録するかを設定する"
 
 #: src/components/layout/AppLayout.tsx
 #: src/pages/DashboardPage.tsx
@@ -783,6 +793,10 @@ msgstr "フィードバック"
 msgid "フォント"
 msgstr "フォント"
 
+#: src/pages/LandingPage.tsx
+msgid "フォント・色・縁取りまで指定できる"
+msgstr "フォント・色・縁取りまで指定できる"
+
 #: src/components/layout/AppFooter.tsx
 msgid "プライバシー"
 msgstr "プライバシー"
@@ -870,14 +884,6 @@ msgstr "メールアドレスは公開されません。送る人にもあなた
 #: src/pages/LandingPage.tsx
 msgid "メアド・氏名が共有相手に見える"
 msgstr "メアド・氏名が共有相手に見える"
-
-#: src/pages/send/UploadPage.tsx
-msgid "メタデータに送信者名<0>{credit}</0>を書き込みます（元のカメラ情報は上書き）"
-msgstr "メタデータに送信者名<0>{credit}</0>を書き込みます（元のカメラ情報は上書き）"
-
-#: src/pages/send/UploadPage.tsx
-msgid "メタデータに送信者名を書き込みます（元のカメラ情報は上書き）"
-msgstr "メタデータに送信者名を書き込みます（元のカメラ情報は上書き）"
 
 #: src/pages/LandingPage.tsx
 msgid "メニュー"
@@ -1016,6 +1022,10 @@ msgstr "佑字 肅"
 msgid "使い方"
 msgstr "使い方"
 
+#: src/components/DownloadOptionsDialog.tsx
+msgid "保存"
+msgstr "保存"
+
 #: src/lib/api-error.ts
 #: src/pages/DashboardPage.tsx
 msgid "保存容量がいっぱいです"
@@ -1128,8 +1138,8 @@ msgid "写真の受付"
 msgstr "写真の受付"
 
 #: src/pages/GuidePage.tsx
-msgid "写真の受付チェックボックスと受信オプションの3段階ラジオボタン"
-msgstr "写真の受付チェックボックスと受信オプションの3段階ラジオボタン"
+msgid "写真の受付チェックボックスと透かしの3段階ラジオボタン"
+msgstr "写真の受付チェックボックスと透かしの3段階ラジオボタン"
 
 #: src/pages/DashboardPage.tsx
 msgid "写真の受付を停止中です。このURLを開いても写真は送れません。設定から再開できます。"
@@ -1180,6 +1190,10 @@ msgstr "写真を選ぶ"
 #: src/pages/PhotoDetailPage.tsx
 msgid "写真情報"
 msgstr "写真情報"
+
+#: src/pages/GuidePage.tsx
+msgid "初めてダウンロードするときに、写真のメタデータ (EXIF) へ撮影者名を記録するか選べます。 書き込まれるのは手元に保存するファイルだけで、FurDrop 上の写真は変わりません。 カメラ機種欄にも記録すると、Google フォトや iPhone の写真アプリでも撮影者名が見られます。"
+msgstr "初めてダウンロードするときに、写真のメタデータ (EXIF) へ撮影者名を記録するか選べます。 書き込まれるのは手元に保存するファイルだけで、FurDrop 上の写真は変わりません。 カメラ機種欄にも記録すると、Google フォトや iPhone の写真アプリでも撮影者名が見られます。"
 
 #: src/pages/send/UploadPage.tsx
 msgid "初めての方は<0>使い方を見る →</0>"
@@ -1276,8 +1290,8 @@ msgid "受け取る人が許可している場合のみ、次の埋め込みオ�
 msgstr "受け取る人が許可している場合のみ、次の埋め込みオプションが表示されます。"
 
 #: src/pages/GuidePage.tsx
-msgid "受け取る人の一覧に表示されるほか、EXIF埋め込みの内容と、透かしの初期テキストにも そのまま使われます。透かしの文字は編集ダイアログで自由に変更できます。"
-msgstr "受け取る人の一覧に表示されるほか、EXIF埋め込みの内容と、透かしの初期テキストにも そのまま使われます。透かしの文字は編集ダイアログで自由に変更できます。"
+msgid "受け取る人の一覧に表示されるほか、透かしの初期テキストにもそのまま使われます。 透かしの文字は編集ダイアログで自由に変更できます。"
+msgstr "受け取る人の一覧に表示されるほか、透かしの初期テキストにもそのまま使われます。 透かしの文字は編集ダイアログで自由に変更できます。"
 
 #: src/pages/GuidePage.tsx
 msgid "受け取る人の手順を見る →"
@@ -1347,10 +1361,6 @@ msgstr "受信者が許可した方式だけが有効"
 msgid "受信者に表示されます"
 msgstr "受信者に表示されます"
 
-#: src/pages/send/UploadPage.tsx
-msgid "受信者に表示されます。EXIF埋め込みにもこの名前が使われます"
-msgstr "受信者に表示されます。EXIF埋め込みにもこの名前が使われます"
-
 #: src/pages/GuidePage.tsx
 msgid "受信者のプロフィールと「写真を送る」ボタンが表示されます。"
 msgstr "受信者のプロフィールと「写真を送る」ボタンが表示されます。"
@@ -1383,17 +1393,9 @@ msgstr "受信者はアカウント不要"
 msgid "受信者向け手順"
 msgstr "受信者向け手順"
 
-#: src/pages/GuidePage.tsx
-msgid "各項目に <0>無効 / 任意 / 必須</0> の3段階があります。"
-msgstr "各項目に <0>無効 / 任意 / 必須</0> の3段階があります。"
-
 #: src/components/send/WatermarkDialog.tsx
 msgid "四角形"
 msgstr "四角形"
-
-#: src/pages/GuidePage.tsx
-msgid "埋め込みは迷ったら「任意」がおすすめ。送る人の判断にゆだねつつ、選択肢は提示できます。"
-msgstr "埋め込みは迷ったら「任意」がおすすめ。送る人の判断にゆだねつつ、選択肢は提示できます。"
 
 #: src/pages/send/UploadingPage.tsx
 msgid "変換失敗"
@@ -1448,6 +1450,10 @@ msgstr "対象が見つかりません"
 #: src/pages/SettingsPage.tsx
 msgid "小文字英数字とアンダースコアのみ、3〜32文字"
 msgstr "小文字英数字とアンダースコアのみ、3〜32文字"
+
+#: src/components/DownloadOptionsDialog.tsx
+msgid "届いたままのファイルを保存します"
+msgstr "届いたままのファイルを保存します"
 
 #: src/pages/GuidePage.tsx
 msgid "届いた写真を眺める・保存する"
@@ -1509,6 +1515,10 @@ msgstr "撮ってもらった写真を、ちゃんと受け取る。<0/>個人�
 msgid "撮影者"
 msgstr "撮影者"
 
+#: src/components/DownloadOptionsDialog.tsx
+msgid "撮影者 (Artist) 欄に記録"
+msgstr "撮影者 (Artist) 欄に記録"
+
 #: src/pages/LandingPage.tsx
 msgid "撮影者ごとに整理して見られる"
 msgstr "撮影者ごとに整理して見られる"
@@ -1520,6 +1530,14 @@ msgstr "撮影者ごとの整理機能なし"
 #: src/pages/GalleryPage.tsx
 msgid "撮影者別"
 msgstr "撮影者別"
+
+#: src/components/DownloadOptionsDialog.tsx
+msgid "撮影者名の記録"
+msgstr "撮影者名の記録"
+
+#: src/pages/PhotoDetailPage.tsx
+msgid "撮影者名を記録できませんでした。写真はそのまま保存されています。"
+msgstr "撮影者名を記録できませんでした。写真はそのまま保存されています。"
 
 #: src/pages/LandingPage.tsx
 msgid "撮影者情報の埋込なし"
@@ -1658,6 +1676,10 @@ msgstr "登録する"
 msgid "白 / 黒"
 msgstr "白 / 黒"
 
+#: src/pages/LandingPage.tsx
+msgid "目立たない透かしで、撮影者情報を写真ファイル自体に焼き込み可能。 匿名性と「誰が撮ったか」の追跡可能性を両立できます。"
+msgstr "目立たない透かしで、撮影者情報を写真ファイル自体に焼き込み可能。 匿名性と「誰が撮ったか」の追跡可能性を両立できます。"
+
 #: src/pages/GuidePage.tsx
 msgid "相手のプロフィールが表示されたら、<0>「写真を送る」</0>ボタンをタップします。"
 msgstr "相手のプロフィールが表示されたら、<0>「写真を送る」</0>ボタンをタップします。"
@@ -1750,6 +1772,14 @@ msgstr "解星デコール"
 #: src/components/ui/LocaleToggle.tsx
 msgid "言語"
 msgstr "言語"
+
+#: src/components/DownloadOptionsDialog.tsx
+msgid "記録されるのは「Photo by 撮影者名」の形式です。ダウンロードするファイルにだけ書き込まれ、 FurDrop に保存されている写真は変わりません。"
+msgstr "記録されるのは「Photo by 撮影者名」の形式です。ダウンロードするファイルにだけ書き込まれ、 FurDrop に保存されている写真は変わりません。"
+
+#: src/components/DownloadOptionsDialog.tsx
+msgid "記録しない"
+msgstr "記録しない"
 
 #: src/components/layout/AppLayout.tsx
 #: src/pages/SettingsPage.tsx
@@ -1874,8 +1904,8 @@ msgid "送信完了"
 msgstr "送信完了"
 
 #: src/pages/LandingPage.tsx
-msgid "送信時に入力した撮影者情報を、EXIFや透かしで写真自体に埋込可能 (受信者の許可方式に従う)。"
-msgstr "送信時に入力した撮影者情報を、EXIFや透かしで写真自体に埋込可能 (受信者の許可方式に従う)。"
+msgid "送信時に入力した撮影者情報を、透かしで写真自体に焼き込み可能 (受信者の許可方式に従う)。"
+msgstr "送信時に入力した撮影者情報を、透かしで写真自体に焼き込み可能 (受信者の許可方式に従う)。"
 
 #: src/pages/GuidePage.tsx
 msgid "送信画面に項目を表示しない"
@@ -1893,13 +1923,13 @@ msgstr "送信者 (匿名)"
 msgid "送信者が"
 msgstr "送信者が"
 
-#: src/pages/SettingsPage.tsx
-msgid "送信者がカメラモデル欄に名前を書き込みます（メタデータのみ、除去可能）"
-msgstr "送信者がカメラモデル欄に名前を書き込みます（メタデータのみ、除去可能）"
-
 #: src/pages/LandingPage.tsx
 msgid "送信者がメアドを開示する必要あり"
 msgstr "送信者がメアドを開示する必要あり"
+
+#: src/pages/LandingPage.tsx
+msgid "送信者が位置を選べる透かしテキスト"
+msgstr "送信者が位置を選べる透かしテキスト"
 
 #: src/pages/GuidePage.tsx
 msgid "送信者が必要に応じて選択できる"
@@ -1908,10 +1938,6 @@ msgstr "送信者が必要に応じて選択できる"
 #: src/pages/SettingsPage.tsx
 msgid "送信者が画像にクレジットテキストを描き込みます（不可逆）"
 msgstr "送信者が画像にクレジットテキストを描き込みます（不可逆）"
-
-#: src/pages/LandingPage.tsx
-msgid "送信者が選べる位置の透かしテキスト"
-msgstr "送信者が選べる位置の透かしテキスト"
 
 #: src/pages/LandingPage.tsx
 msgid "送信者にアカウント不要"
@@ -1962,8 +1988,8 @@ msgid "送信者名が未入力です。このテキストには送信者名が�
 msgstr "送信者名が未入力です。このテキストには送信者名が使われます"
 
 #: src/pages/GuidePage.tsx
-msgid "送信者名と埋め込みオプションのフォーム"
-msgstr "送信者名と埋め込みオプションのフォーム"
+msgid "送信者名と透かしオプションのフォーム"
+msgstr "送信者名と透かしオプションのフォーム"
 
 #: src/components/send/WatermarkDialog.tsx
 msgid "送信者名に連動中（編集すると解除）"
@@ -1993,6 +2019,10 @@ msgstr "透かし"
 msgid "透かしにする文字"
 msgstr "透かしにする文字"
 
+#: src/pages/GuidePage.tsx
+msgid "透かしには <0>無効 / 任意 / 必須</0> の3段階があります。"
+msgstr "透かしには <0>無効 / 任意 / 必須</0> の3段階があります。"
+
 #: src/pages/send/UploadPage.tsx
 msgid "透かしに表示できる文字がありません。「透かしを編集」から文字を入力してください。"
 msgstr "透かしに表示できる文字がありません。「透かしを編集」から文字を入力してください。"
@@ -2004,6 +2034,10 @@ msgstr "透かしのプレビュー。要素をドラッグして配置できま
 #: src/components/send/WatermarkDialog.tsx
 msgid "透かしの設定"
 msgstr "透かしの設定"
+
+#: src/pages/GuidePage.tsx
+msgid "透かしは迷ったら「任意」がおすすめ。送る人の判断にゆだねつつ、選択肢は提示できます。"
+msgstr "透かしは迷ったら「任意」がおすすめ。送る人の判断にゆだねつつ、選択肢は提示できます。"
 
 #: src/pages/send/UploadPage.tsx
 msgid "透かしを入れる"

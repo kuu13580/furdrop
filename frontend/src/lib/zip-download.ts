@@ -2,15 +2,24 @@ import { msg } from "@lingui/core/macro";
 import { BlobReader, BlobWriter, ZipWriter } from "@zip.js/zip.js";
 import { receiverApi } from "./api";
 import { runConcurrent } from "./concurrency";
+import { type ExifCreditMode, embedExifCredit } from "./exif-credit";
 import { i18n } from "./i18n";
 
 const FETCH_CONCURRENCY = 4;
 
-export type ZipProgress = { processed: number; total: number; failed: number };
+export type ZipProgress = {
+  processed: number;
+  total: number;
+  failed: number;
+  /** EXIF への撮影者名の書き込みだけ失敗した枚数 (写真自体は無加工で ZIP に入る) */
+  creditFailed: number;
+};
 
 export type DownloadAsZipArgs = {
   photoIds: string[];
   zipName: string;
+  /** R17: 各写真の EXIF に撮影者名を書き込むか */
+  exifCredit: ExifCreditMode;
   onProgress: (progress: ZipProgress) => void;
   signal: AbortSignal;
 };
@@ -24,10 +33,11 @@ export type DownloadAsZipArgs = {
  * - signal.aborted で中断
  */
 export async function downloadAsZip(args: DownloadAsZipArgs): Promise<void> {
-  const { photoIds, zipName, onProgress, signal } = args;
+  const { photoIds, zipName, exifCredit, onProgress, signal } = args;
   const total = photoIds.length;
   let processed = 0;
   let failed = 0;
+  let creditFailed = 0;
 
   if (signal.aborted) throw new DOMException("Aborted", "AbortError");
 
@@ -39,7 +49,7 @@ export async function downloadAsZip(args: DownloadAsZipArgs): Promise<void> {
   const tick = (didFail: boolean) => {
     processed++;
     if (didFail) failed++;
-    onProgress({ processed, total, failed });
+    onProgress({ processed, total, failed, creditFailed });
   };
 
   try {
@@ -48,10 +58,12 @@ export async function downloadAsZip(args: DownloadAsZipArgs): Promise<void> {
 
       let url: string;
       let filename: string | null;
+      let senderName: string | null;
       try {
         const res = await receiverApi.downloadPhoto(id);
         url = res.download_url;
         filename = res.filename;
+        senderName = res.sender_name;
       } catch (err) {
         tick(true);
         throw err;
@@ -66,6 +78,13 @@ export async function downloadAsZip(args: DownloadAsZipArgs): Promise<void> {
         if (signal.aborted) throw err;
         tick(true);
         throw err;
+      }
+
+      // EXIF 書き込みに失敗しても写真は無加工で ZIP に含める (DL 自体は止めない)
+      try {
+        blob = await embedExifCredit(blob, senderName, exifCredit);
+      } catch {
+        creditFailed++;
       }
 
       const entryName = uniqueName(filename ?? `${id}.jpg`, usedNames);

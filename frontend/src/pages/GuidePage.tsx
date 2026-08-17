@@ -371,8 +371,8 @@ const SENDER_STEPS: Step[] = [
           </p>
           <p className="mt-1 text-ink-soft">
             <Trans>
-              受け取る人の一覧に表示されるほか、EXIF埋め込みの内容と、透かしの初期テキストにも
-              そのまま使われます。透かしの文字は編集ダイアログで自由に変更できます。
+              受け取る人の一覧に表示されるほか、透かしの初期テキストにもそのまま使われます。
+              透かしの文字は編集ダイアログで自由に変更できます。
             </Trans>
           </p>
         </div>
@@ -380,12 +380,6 @@ const SENDER_STEPS: Step[] = [
           <Trans>受け取る人が許可している場合のみ、次の埋め込みオプションが表示されます。</Trans>
         </p>
         <ul className="list-disc space-y-1.5 pl-5 text-[13.5px] marker:text-ink-muted">
-          <li>
-            <Trans>
-              <strong className="text-ink">EXIFカメラモデル欄に埋め込む</strong>
-              ：写真のメタデータに名前を残します（あとから消すことも可能）
-            </Trans>
-          </li>
           <li>
             <Trans>
               <strong className="text-ink">透かしを入れる</strong>
@@ -405,7 +399,7 @@ const SENDER_STEPS: Step[] = [
     ),
     image: {
       src: "/guide/sender-step3.png",
-      alt: msg`送信者名と埋め込みオプションのフォーム`,
+      alt: msg`送信者名と透かしオプションのフォーム`,
       caption: msg`受け取る側の設定で「必須」になっている項目は最初からONで動かせません。`,
     },
   },
@@ -616,7 +610,8 @@ const RECEIVER_STEPS: Step[] = [
           </Trans>
           <br />
           <Trans>
-            各項目に <em className="not-italic text-ink">無効 / 任意 / 必須</em> の3段階があります。
+            透かしには <em className="not-italic text-ink">無効 / 任意 / 必須</em>{" "}
+            の3段階があります。
           </Trans>
         </p>
         <div className="overflow-hidden rounded-xl border border-surface-sand-deep">
@@ -667,12 +662,6 @@ const RECEIVER_STEPS: Step[] = [
         <ul className="list-disc space-y-1.5 pl-5 text-[13.5px] marker:text-ink-muted">
           <li>
             <Trans>
-              <strong className="text-ink">EXIF埋め込み</strong>
-              ：メタデータのみなので画像は変わりません。あとから除去も可能。
-            </Trans>
-          </li>
-          <li>
-            <Trans>
               <strong className="text-ink">透かし</strong>
               ：画像本体に焼き込まれるため
               <strong className="text-ink">取り消せません</strong>
@@ -684,8 +673,8 @@ const RECEIVER_STEPS: Step[] = [
     ),
     image: {
       src: "/guide/receiver-step4.png",
-      alt: msg`写真の受付チェックボックスと受信オプションの3段階ラジオボタン`,
-      caption: msg`埋め込みは迷ったら「任意」がおすすめ。送る人の判断にゆだねつつ、選択肢は提示できます。`,
+      alt: msg`写真の受付チェックボックスと透かしの3段階ラジオボタン`,
+      caption: msg`透かしは迷ったら「任意」がおすすめ。送る人の判断にゆだねつつ、選択肢は提示できます。`,
     },
   },
   {
@@ -711,6 +700,19 @@ const RECEIVER_STEPS: Step[] = [
             <Trans>「ダウンロード期限」を過ぎる前に必要な写真をローカル保存</Trans>
           </li>
         </ul>
+        <div className="rounded-xl bg-surface-canvas px-4 py-3 text-[13px]">
+          <p className="font-semibold text-ink">
+            <Trans>ダウンロードするときに撮影者名を残せます</Trans>
+          </p>
+          <p className="mt-1 text-ink-soft">
+            <Trans>
+              初めてダウンロードするときに、写真のメタデータ (EXIF) へ撮影者名を記録するか選べます。
+              書き込まれるのは手元に保存するファイルだけで、FurDrop 上の写真は変わりません。
+              カメラ機種欄にも記録すると、Google フォトや iPhone
+              の写真アプリでも撮影者名が見られます。
+            </Trans>
+          </p>
+        </div>
       </>
     ),
     image: {

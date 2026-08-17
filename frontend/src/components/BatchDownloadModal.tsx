@@ -7,10 +7,18 @@ type Props = {
   processed: number;
   total: number;
   failed: number;
+  creditFailed: number;
   onCancel: () => void;
 };
 
-export default function BatchDownloadModal({ open, processed, total, failed, onCancel }: Props) {
+export default function BatchDownloadModal({
+  open,
+  processed,
+  total,
+  failed,
+  creditFailed,
+  onCancel,
+}: Props) {
   const { t } = useLingui();
   const percent = total === 0 ? 0 : Math.min(100, Math.round((processed / total) * 100));
   const done = processed >= total;
@@ -55,6 +63,14 @@ export default function BatchDownloadModal({ open, processed, total, failed, onC
         {failed > 0 && (
           <p className="text-[12px] text-status-danger">
             <Plural value={failed} other="#枚の取得に失敗しました (成功分のみ ZIP に含まれます)" />
+          </p>
+        )}
+        {creditFailed > 0 && (
+          <p className="text-[12px] text-ink-soft">
+            <Plural
+              value={creditFailed}
+              other="#枚は撮影者名を記録できませんでした (写真はそのまま ZIP に含まれます)"
+            />
           </p>
         )}
       </div>

@@ -4,12 +4,15 @@ import { useAtomValue } from "jotai";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
 import BatchDownloadModal from "../components/BatchDownloadModal";
+import DownloadOptionsDialog, { DownloadOptionsTrigger } from "../components/DownloadOptionsDialog";
 import Button from "../components/ui/Button";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
 import LoadingSpinner from "../components/ui/LoadingSpinner";
 import ScrollToTopButton from "../components/ui/ScrollToTopButton";
+import { useDownloadOptions } from "../hooks/useDownloadOptions";
 import { onImageError } from "../lib/analytics";
 import { receiverApi } from "../lib/api";
+import type { ExifCreditMode } from "../lib/exif-credit";
 import { daysUntilExpiry, expiryBadgeLevel } from "../lib/retention";
 import { buildDateKeyAndLabel, getTzOffsetMin } from "../lib/timezone";
 import { buildZipName, downloadAsZip } from "../lib/zip-download";
@@ -88,12 +91,14 @@ export default function GalleryPage() {
   const sentinelRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false);
   const user = useAtomValue(userAtom);
+  const downloadOptions = useDownloadOptions();
 
   // 一括 ZIP DL 用ステート
   const [zipState, setZipState] = useState<{
     processed: number;
     total: number;
     failed: number;
+    creditFailed: number;
   } | null>(null);
   const zipControllerRef = useRef<AbortController | null>(null);
 
@@ -495,29 +500,40 @@ export default function GalleryPage() {
     [groupMode, cursor, hasMore, selected, fetchPhotos, tzOffsetMin],
   );
 
-  const handleBatchDownload = useCallback(async () => {
-    const ids = [...selected];
-    if (ids.length === 0) return;
-    if (zipControllerRef.current) return;
+  const runBatchDownload = useCallback(
+    async (exifCredit: ExifCreditMode) => {
+      const ids = [...selected];
+      if (ids.length === 0) return;
+      if (zipControllerRef.current) return;
 
-    const controller = new AbortController();
-    zipControllerRef.current = controller;
-    setZipState({ processed: 0, total: ids.length, failed: 0 });
+      const controller = new AbortController();
+      zipControllerRef.current = controller;
+      setZipState({ processed: 0, total: ids.length, failed: 0, creditFailed: 0 });
 
-    try {
-      await downloadAsZip({
-        photoIds: ids,
-        zipName: buildZipName(user?.handle ?? "photos"),
-        signal: controller.signal,
-        onProgress: (p) => setZipState(p),
-      });
-    } catch {
-      // 中断・致命エラーはモーダルを閉じるだけ
-    } finally {
-      zipControllerRef.current = null;
-      setZipState(null);
-    }
-  }, [selected, user?.handle]);
+      try {
+        await downloadAsZip({
+          photoIds: ids,
+          zipName: buildZipName(user?.handle ?? "photos"),
+          exifCredit,
+          signal: controller.signal,
+          onProgress: (p) => setZipState(p),
+        });
+      } catch {
+        // 中断・致命エラーはモーダルを閉じるだけ
+      } finally {
+        zipControllerRef.current = null;
+        setZipState(null);
+      }
+    },
+    [selected, user?.handle],
+  );
+
+  // 初回 DL のときだけ EXIF 記録の確認ダイアログを挟む (R17)
+  const handleBatchDownload = useCallback(() => {
+    downloadOptions.startDownload((mode) => {
+      void runBatchDownload(mode);
+    });
+  }, [downloadOptions, runBatchDownload]);
 
   const cancelBatchDownload = useCallback(() => {
     zipControllerRef.current?.abort();
@@ -564,45 +580,51 @@ export default function GalleryPage() {
       </div>
 
       {selectMode && (
-        <div className="sticky top-[calc(theme(spacing.14)+0.5rem)] z-20 flex items-center justify-between rounded-2xl border border-surface-sand-deep bg-surface-sand/95 px-4 py-2.5 backdrop-blur-sm sm:top-[calc(theme(spacing.16)+0.5rem)]">
-          <div className="flex items-center gap-3">
+        <div className="sticky top-[calc(theme(spacing.14)+0.5rem)] z-20 space-y-1 rounded-2xl border border-surface-sand-deep bg-surface-sand/95 px-4 py-2.5 backdrop-blur-sm sm:top-[calc(theme(spacing.16)+0.5rem)]">
+          <div className="flex items-center justify-between gap-2">
             <button
               type="button"
               onClick={toggleSelectAll}
-              className="text-[14px] font-medium text-brand transition-colors hover:text-brand-deep"
+              className="whitespace-nowrap text-[14px] font-medium text-brand transition-colors hover:text-brand-deep"
             >
               {selected.size === photos.length ? t`全解除` : t`全選択`}
             </button>
-            <span className="text-[14px] text-ink-soft">
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="secondary"
+                className="whitespace-nowrap"
+                onClick={handleBatchDownload}
+                disabled={selected.size === 0 || zipState !== null}
+                loading={zipState !== null}
+              >
+                <Trans>DL</Trans>
+              </Button>
+              <Button
+                size="sm"
+                variant="danger"
+                className="whitespace-nowrap"
+                onClick={() => setDeleteConfirmOpen(true)}
+                disabled={selected.size === 0}
+                loading={deleting}
+              >
+                <Trans>削除</Trans>
+              </Button>
+              <button
+                type="button"
+                onClick={exitSelectMode}
+                className="whitespace-nowrap rounded-lg px-2.5 py-1.5 text-[14px] font-medium text-brand transition-colors hover:bg-brand-tint"
+              >
+                <Trans>完了</Trans>
+              </button>
+            </div>
+          </div>
+          {/* 枚数と DL 設定は 2 行目へ。訳文の長い言語 (en) で 1 行に詰めると折り返して潰れる */}
+          <div className="-mr-2 flex items-center justify-between gap-2">
+            <span className="whitespace-nowrap text-[13px] text-ink-soft">
               <Plural value={selectedCount} other="#枚選択中" />
             </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={handleBatchDownload}
-              disabled={selected.size === 0 || zipState !== null}
-              loading={zipState !== null}
-            >
-              <Trans>DL</Trans>
-            </Button>
-            <Button
-              size="sm"
-              variant="danger"
-              onClick={() => setDeleteConfirmOpen(true)}
-              disabled={selected.size === 0}
-              loading={deleting}
-            >
-              <Trans>削除</Trans>
-            </Button>
-            <button
-              type="button"
-              onClick={exitSelectMode}
-              className="rounded-lg px-2.5 py-1.5 text-[14px] font-medium text-brand transition-colors hover:bg-brand-tint"
-            >
-              <Trans>完了</Trans>
-            </button>
+            <DownloadOptionsTrigger onClick={downloadOptions.openEditor} />
           </div>
         </div>
       )}
@@ -799,8 +821,11 @@ export default function GalleryPage() {
         processed={zipState?.processed ?? 0}
         total={zipState?.total ?? 0}
         failed={zipState?.failed ?? 0}
+        creditFailed={zipState?.creditFailed ?? 0}
         onCancel={cancelBatchDownload}
       />
+
+      <DownloadOptionsDialog {...downloadOptions.dialogProps} />
 
       <ScrollToTopButton />
     </div>

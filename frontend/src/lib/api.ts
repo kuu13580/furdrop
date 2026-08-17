@@ -59,7 +59,6 @@ export const senderApi = {
         unavailable_reason: "paused" | "full" | null;
         require_send_key: boolean;
         options: {
-          exif_embed_mode: EmbedMode;
           watermark_mode: EmbedMode;
           require_sender_name: boolean;
         };
@@ -85,7 +84,6 @@ export const senderApi = {
         thumb_size: number;
         width: number;
         height: number;
-        camera_model?: string;
         watermark_text?: string;
       }[];
     },
@@ -131,7 +129,6 @@ export const authApi = {
   register: (body: {
     handle: string;
     display_name: string;
-    exif_embed_mode?: EmbedMode;
     watermark_mode?: EmbedMode;
     require_sender_name?: boolean;
   }) =>
@@ -144,7 +141,6 @@ export const authApi = {
         storage_quota: number;
         receive_url: string;
         is_active: boolean;
-        exif_embed_mode: EmbedMode;
         watermark_mode: EmbedMode;
         require_sender_name: boolean;
         require_send_key: boolean;
@@ -161,7 +157,6 @@ export const authApi = {
         storage_quota: number;
         receive_url: string;
         is_active: boolean;
-        exif_embed_mode: EmbedMode;
         watermark_mode: EmbedMode;
         require_sender_name: boolean;
         require_send_key: boolean;
@@ -169,7 +164,6 @@ export const authApi = {
     }>("/auth/me", {}, true),
 
   updateOptions: (body: {
-    exif_embed_mode?: EmbedMode;
     watermark_mode?: EmbedMode;
     require_sender_name?: boolean;
     is_active?: boolean;
@@ -184,7 +178,6 @@ export const authApi = {
         storage_quota: number;
         receive_url: string;
         is_active: boolean;
-        exif_embed_mode: EmbedMode;
         watermark_mode: EmbedMode;
         require_sender_name: boolean;
         require_send_key: boolean;
@@ -211,7 +204,6 @@ export const receiverApi = {
       photos: {
         id: string;
         sender_name: string | null;
-        camera_model: string | null;
         file_size: number;
         width: number | null;
         height: number | null;
@@ -239,7 +231,6 @@ export const receiverApi = {
       photo: {
         id: string;
         sender_name: string | null;
-        camera_model: string | null;
         file_size: number;
         width: number | null;
         height: number | null;
@@ -262,6 +253,8 @@ export const receiverApi = {
       download_url: string;
       filename: string | null;
       file_size: number;
+      /** R17: DL 時に EXIF へ書き込むクレジット。匿名送信は null */
+      sender_name: string | null;
     }>(`/receiver/photos/${photoId}/download?${query.toString()}`, {}, true);
   },
 

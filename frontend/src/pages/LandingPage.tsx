@@ -771,7 +771,7 @@ export default function LandingPage() {
               </h3>
               <p className="mb-5 max-w-[380px] text-[14px] leading-[1.8] text-ink-soft md:mb-7 md:text-[14.5px] md:leading-[1.85]">
                 <Trans>
-                  EXIFのカメラモデル欄や目立たない透かしで、撮影者情報を写真ファイル自体に埋め込み可能。
+                  目立たない透かしで、撮影者情報を写真ファイル自体に焼き込み可能。
                   匿名性と「誰が撮ったか」の追跡可能性を両立できます。
                 </Trans>
               </p>
@@ -780,12 +780,12 @@ export default function LandingPage() {
                 style={{ fontFamily: MONO }}
               >
                 <div className="border-b border-[#e0d6c5] bg-surface-sand px-[14px] py-2 tracking-[0.1em] text-ink-soft">
-                  EXIF · IMG_0421.jpg
+                  WATERMARK · IMG_0421.jpg
                 </div>
                 {[
-                  ["Camera Model", "@photographer_furdrop"],
-                  ["Date Taken", "2026:04:14 19:32:08"],
-                  ["Software", "furdrop.app"],
+                  ["Text", "@photographer_furdrop"],
+                  ["Position", "bottom-right"],
+                  ["Font", "Noto Sans JP"],
                 ].map(([k, v]) => (
                   <div
                     key={k}
@@ -798,8 +798,8 @@ export default function LandingPage() {
               </div>
               <ul className="mt-6 list-none p-0 text-[13px] leading-[1.7] text-ink-soft">
                 {[
-                  t`EXIF埋め込み (Camera Model欄)`,
-                  t`送信者が選べる位置の透かしテキスト`,
+                  t`送信者が位置を選べる透かしテキスト`,
+                  t`フォント・色・縁取りまで指定できる`,
                   t`受信者が許可した方式だけが有効`,
                 ].map((line) => (
                   <li key={line} className="relative mb-[6px] pl-[18px]">
@@ -979,7 +979,7 @@ export default function LandingPage() {
                 {
                   k: "B",
                   title: t`撮影者情報を写真に残せる`,
-                  body: t`送信時に入力した撮影者情報を、EXIFや透かしで写真自体に埋込可能 (受信者の許可方式に従う)。`,
+                  body: t`送信時に入力した撮影者情報を、透かしで写真自体に焼き込み可能 (受信者の許可方式に従う)。`,
                 },
                 {
                   k: "C",

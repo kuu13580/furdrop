@@ -1,12 +1,16 @@
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router";
+import DownloadOptionsDialog, { DownloadOptionsTrigger } from "../components/DownloadOptionsDialog";
+import Alert from "../components/ui/Alert";
 import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
 import LoadingSpinner from "../components/ui/LoadingSpinner";
+import { useDownloadOptions } from "../hooks/useDownloadOptions";
 import { onImageError } from "../lib/analytics";
 import { receiverApi } from "../lib/api";
+import { type ExifCreditMode, embedExifCredit } from "../lib/exif-credit";
 import { formatBytes, formatDate, formatDateTime } from "../lib/format";
 import { BANNER_DAYS, daysUntilExpiry } from "../lib/retention";
 import type { Photo } from "../types/photo";
@@ -30,6 +34,8 @@ export default function PhotoDetailPage() {
   const [downloading, setDownloading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [creditFailed, setCreditFailed] = useState(false);
+  const downloadOptions = useDownloadOptions();
 
   // photoId 変更時: view_url・prev/next を取得
   useEffect(() => {
@@ -75,21 +81,51 @@ export default function PhotoDetailPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [goPrev, goNext]);
 
-  const handleDownload = useCallback(async () => {
-    if (!photoId) return;
-    setDownloading(true);
-    try {
-      const { download_url, filename } = await receiverApi.downloadPhoto(photoId);
-      const a = document.createElement("a");
-      a.href = download_url;
-      a.download = filename ?? `${photoId}.jpg`;
-      a.click();
-    } catch {
-      // エラー時は何もしない
-    } finally {
-      setDownloading(false);
-    }
-  }, [photoId]);
+  const runDownload = useCallback(
+    async (mode: ExifCreditMode) => {
+      if (!photoId) return;
+      setDownloading(true);
+      setCreditFailed(false);
+      try {
+        const { download_url, filename, sender_name } = await receiverApi.downloadPhoto(photoId);
+        const name = filename ?? `${photoId}.jpg`;
+
+        // 記録しないときは R2 への直リンクのまま。fetch もメモリも使わない最速パスを保つ
+        if (mode === "none") {
+          triggerDownload(download_url, name);
+          return;
+        }
+
+        let blob: Blob;
+        try {
+          const res = await fetch(download_url);
+          if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
+          blob = await embedExifCredit(await res.blob(), sender_name, mode);
+        } catch {
+          // 記録に失敗しても DL は成立させる (直リンクで無加工のまま保存)
+          setCreditFailed(true);
+          triggerDownload(download_url, name);
+          return;
+        }
+
+        const objectUrl = URL.createObjectURL(blob);
+        triggerDownload(objectUrl, name);
+        setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+      } catch {
+        // エラー時は何もしない
+      } finally {
+        setDownloading(false);
+      }
+    },
+    [photoId],
+  );
+
+  // 初回 DL のときだけ EXIF 記録の確認ダイアログを挟む (R17)
+  const handleDownload = useCallback(() => {
+    downloadOptions.startDownload((mode) => {
+      void runDownload(mode);
+    });
+  }, [downloadOptions, runDownload]);
 
   const handleDelete = useCallback(async () => {
     if (!photoId) return;
@@ -127,28 +163,47 @@ export default function PhotoDetailPage() {
   return (
     <div className="space-y-6">
       {/* ヘッダー */}
-      <div className="flex items-center justify-between">
-        <button
-          type="button"
-          onClick={() => navigate("/gallery")}
-          className="rounded-lg px-2 py-1 text-[14px] text-ink-soft transition-colors hover:bg-surface-sand hover:text-ink"
-        >
-          <Trans>&larr; ギャラリー</Trans>
-        </button>
-        <div className="flex gap-2">
-          <Button size="sm" variant="secondary" onClick={handleDownload} loading={downloading}>
-            <Trans>ダウンロード</Trans>
-          </Button>
-          <Button
-            size="sm"
-            variant="danger"
-            onClick={() => setDeleteConfirmOpen(true)}
-            loading={deleting}
+      <div className="space-y-1">
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => navigate("/gallery")}
+            className="rounded-lg px-2 py-1 text-[14px] text-ink-soft transition-colors hover:bg-surface-sand hover:text-ink"
           >
-            <Trans>削除</Trans>
-          </Button>
+            <Trans>&larr; ギャラリー</Trans>
+          </button>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="secondary"
+              className="whitespace-nowrap"
+              onClick={handleDownload}
+              loading={downloading}
+            >
+              <Trans>ダウンロード</Trans>
+            </Button>
+            <Button
+              size="sm"
+              variant="danger"
+              className="whitespace-nowrap"
+              onClick={() => setDeleteConfirmOpen(true)}
+              loading={deleting}
+            >
+              <Trans>削除</Trans>
+            </Button>
+          </div>
+        </div>
+        {/* DL 設定は行を分ける (モバイルで操作ボタンと同居させると折り返して潰れる) */}
+        <div className="-mr-2 flex justify-end">
+          <DownloadOptionsTrigger onClick={downloadOptions.openEditor} />
         </div>
       </div>
+
+      {creditFailed && (
+        <Alert variant="info">
+          <Trans>撮影者名を記録できませんでした。写真はそのまま保存されています。</Trans>
+        </Alert>
+      )}
 
       {/* オリジナル表示（縦横比固定でガタつき防止。ロード中はサムネイル）
           width = min(100%, 縦辺上限 × ratio) により
@@ -326,6 +381,18 @@ export default function PhotoDetailPage() {
         variant="danger"
         loading={deleting}
       />
+
+      <DownloadOptionsDialog {...downloadOptions.dialogProps} />
     </div>
   );
+}
+
+/** a[download] で DL を発火する。href は presigned URL でも objectURL でもよい */
+function triggerDownload(href: string, name: string): void {
+  const a = document.createElement("a");
+  a.href = href;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
 }

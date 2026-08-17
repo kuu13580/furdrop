@@ -16,7 +16,6 @@ import { debugLog } from "../../lib/debug-log";
 import { i18n as globalI18n } from "../../lib/i18n";
 import {
   applyWatermark,
-  embedSenderInfoInExif,
   generateThumbnail,
   getImageDimensions,
   isHeic,
@@ -323,13 +322,12 @@ async function runPipeline({
   // --- 画像加工フェーズ ---
   onOverall("processing");
   const credit = form.senderName.trim();
-  const exifText = form.exifEnabled && credit ? credit : "";
   const watermarkElements = form.watermarkEnabled
     ? resolveWatermarkElements(form.watermarkElements, credit)
     : [];
   const hasWatermark = watermarkElements.length > 0;
   const watermarkText = hasWatermark ? serializeWatermark(watermarkElements) : "";
-  plog.log(`加工フェーズ開始 (exif=${!!exifText}, watermark=${hasWatermark})`);
+  plog.log(`加工フェーズ開始 (watermark=${hasWatermark})`);
   const processedResults = await runConcurrent(
     files,
     PROCESS_CONCURRENCY,
@@ -362,13 +360,8 @@ async function runPipeline({
           height = dim.height;
         }
 
-        // EXIF埋め込みは最後（Canvas再エンコードで剥がれるため）
-        const withSender = exifText
-          ? await embedSenderInfoInExif(afterWatermark, exifText)
-          : afterWatermark;
-
         // プライバシー保護のため EXIF GPS を既定で除去（プラポリ第2.2.3項）
-        const finalBlob = await stripExifGps(withSender);
+        const finalBlob = await stripExifGps(afterWatermark);
 
         const thumb = await generateThumbnail(finalBlob);
 
@@ -385,7 +378,7 @@ async function runPipeline({
           height,
         };
       } catch (err) {
-        // HEIC変換, PNG→JPEG変換, 透かし合成, EXIF埋込, GPS除去, サムネイル生成 — 一括して "convert"
+        // HEIC変換, PNG→JPEG変換, 透かし合成, GPS除去, サムネイル生成 — 一括して "convert"
         flog.dumpError(
           `加工失敗 (name=${f.file.name}, type=${f.file.type}, size=${f.file.size}B, heic=${isHeic(f.file)})`,
           err,
@@ -443,7 +436,6 @@ async function runPipeline({
         thumb_size: p.thumbBlob.size,
         width: p.width,
         height: p.height,
-        camera_model: exifText || undefined,
         watermark_text: watermarkText || undefined,
       })),
     });

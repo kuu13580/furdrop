@@ -10,7 +10,7 @@ const log = debugLog.scope("image");
 
 /**
  * 画像処理パイプライン:
- *   PNG/HEIC → JPEG変換 → EXIF書換 → 透かし → サムネイル生成
+ *   PNG/HEIC → JPEG変換 → 透かし → GPS除去 → サムネイル生成
  *
  * 全てクライアントサイドで完結。サーバーにオリジナル画像を送らない。
  */
@@ -88,33 +88,6 @@ export async function normalizeToJpeg(
 
   // PNG等をCanvasでJPEGに変換
   return blobToJpegViaCanvas(blob);
-}
-
-/** 送信者が入力したテキストをEXIFのカメラモデル欄 (IFD0.Model) に書き込む */
-export async function embedSenderInfoInExif(jpegBlob: Blob, senderText: string): Promise<Blob> {
-  if (!senderText) return jpegBlob;
-
-  const dataUrl = await blobToDataUrl(jpegBlob);
-  let exifObj: piexif.ExifDict;
-  try {
-    exifObj = piexif.load(dataUrl);
-  } catch {
-    exifObj = { "0th": {}, Exif: {}, GPS: {} };
-  }
-  exifObj["0th"] ??= {};
-  exifObj["0th"][piexif.ImageIFD.Model] = utf8ToBinaryString(senderText);
-  const exifBytes = piexif.dump(exifObj);
-  const newDataUrl = piexif.insert(exifBytes, dataUrl);
-  return dataUrlToBlob(newDataUrl);
-}
-
-/**
- * 文字列を UTF-8 バイト列を Latin1 文字列として表現したものに変換する。
- * piexifjs は最終的に btoa で base64 化するため、コードポイントが 0-255 に収まる必要がある。
- * 日本語など非 Latin1 文字をそのまま渡すと btoa が例外を投げるので、UTF-8 バイト列に展開する。
- */
-function utf8ToBinaryString(text: string): string {
-  return Array.from(new TextEncoder().encode(text), (b) => String.fromCharCode(b)).join("");
 }
 
 /**

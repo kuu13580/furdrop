@@ -52,7 +52,8 @@ CREATE TABLE users (
     -- 受信オプション設定 (R14: 送信者に提示するオプションを制御)
     -- 'disabled' | 'optional' | 'required' の3値。
     -- 'required' は送信者に必ず埋め込みを行わせる(サーバ側でも必須検証)
-    exif_embed_mode   TEXT NOT NULL DEFAULT 'disabled',
+    -- EXIF への送信者名の記録は R17 で受信者の DL 時処理に移したので exif_embed_mode は廃止
+    -- (DROP COLUMN は旧コードとの共存期間があるので 0010 では行わず追いマイグレーションで落とす)
     watermark_mode    TEXT NOT NULL DEFAULT 'disabled',  -- 透かしは不可逆のため慎重に
     require_sender_name INTEGER NOT NULL DEFAULT 0,      -- 送信者名の入力を必須にする (0=任意, 1=必須)
     -- R16 opt-out: 0 のとき送信URLのアクセスキーを検証しない (handle だけで送信できる)
@@ -133,7 +134,6 @@ CREATE TABLE photos (
 
     -- 送信者メタデータ
     sender_name       TEXT,                   -- 送信者名 / TwitterID
-    camera_model      TEXT,                   -- EXIFカメラモデル欄に埋め込んだ送信者情報
     watermark_text    TEXT,                   -- 適用したウォーターマーク (記録用)。要素配列を serialize した JSON 文字列 ({"v":1,"elements":[...]})
     original_filename TEXT,                   -- 元ファイル名
 
@@ -333,7 +333,6 @@ Response: 200
 ```
 Request (すべて任意):
 {
-  "exif_embed_mode": "optional",   // R14
   "watermark_mode": "disabled",    // R14
   "require_sender_name": false,    // R14
   "is_active": true,               // R11 受付停止/再開
@@ -385,7 +384,6 @@ Response: 200
     {
       "id": "uuid",
       "sender_name": "@hanako_photo",
-      "camera_model": "@hanako_photo",
       "original_filename": "IMG_0042.JPG",
       "file_size": 9437184,
       "width": 6000,
@@ -425,12 +423,21 @@ Response: 200
 {
   "download_url": "https://...presigned...",
   "filename": "20260410-153000_01.jpg",
-  "file_size": 9437184
+  "file_size": 9437184,
+  "sender_name": "@hanako_photo"
 }
 ```
 
 `filename` は `受信日時_連番.jpg` = `YYYYMMDD-HHMMSS_NN.jpg` 形式 (元のファイル名ではない)。
 日時は `tz_offset_min` のタイムゾーン基準 (省略時 JST)。
+
+`sender_name` は R17 (DL 時の EXIF 埋め込み) でクライアントが書き込むクレジット。一括 DL は
+`GET /receiver/photo-ids` 経由で写真 ID しか持たないため、このレスポンスに含めて渡す。匿名送信は null。
+
+**R17 の埋め込みはクライアントで行う。** presigned GET で取得したバイト列に `piexifjs` で
+APP1 セグメントを差し替え、`a[download]` で保存する。Workers を通してストリームしないという
+制約 (§3.3) を守りつつ、R2 の保存物を送信者が送ったまま保てる。`piexif.load` / `piexif.dump` は
+APP1 ペイロードだけを渡して使い、画像全体を dataURL 化しない (20MB × ZIP 並列4 のメモリ対策)。
 
 #### DELETE /receiver/photos/:photoId
 
@@ -489,7 +496,6 @@ Response: 200
     "unavailable_reason": null,
     "require_send_key": true,
     "options": {
-      "exif_embed_mode": "optional",
       "watermark_mode": "disabled",
       "require_sender_name": false
     }
@@ -506,6 +512,7 @@ Response: 200
   - `disabled`: 送信者UIに表示しない
   - `optional`: 送信者が任意で選択
   - `required`: 送信者は必ず埋め込み (UIで強制ON、サーバ側でも未指定時は400)
+  - EXIF への送信者名の記録は送信者オプションではなく、受信者の DL 時の選択 (R17) になった
 
 #### POST /send/:handle/sessions
 
@@ -549,7 +556,6 @@ Request:
       "file_size": 9437184,
       "width": 6000,
       "height": 4000,
-      "camera_model": "@hanako_photo",
       "watermark_text": "{\"v\":1,\"elements\":[{\"text\":\"撮影：@hanako_photo\",\"font\":\"noto-sans\",\"size\":0.02,\"opacity\":0.8,\"color\":\"mono\",\"stroke\":false,\"anchor\":[1,1],\"offset\":[-0.02,-0.02]}]}"
     }
   ]
@@ -713,7 +719,7 @@ sequenceDiagram
     C->>W: GET /send/:handle
     W-->>C: 受信者プロフィール
 
-    Note over C: クライアントサイド処理<br/>フォーマット変換 (PNG/HEIC→JPEG)<br/>EXIF書き換え (piexifjs)<br/>透かし適用 (Canvas API)<br/>サムネイル生成 (Canvas API)
+    Note over C: クライアントサイド処理<br/>フォーマット変換 (PNG/HEIC→JPEG)<br/>透かし適用 (Canvas API)<br/>EXIF GPS 除去 (piexifjs)<br/>サムネイル生成 (Canvas API)
 
     C->>W: POST /send/:handle/sessions (body: { key, sender_name, photo_count })
     Note over W: require_send_key=1 なら send_keys で key 一致を確認 (R16)
@@ -776,7 +782,8 @@ furdrop/
       pages/                  # ページコンポーネント
       hooks/                  # カスタムフック
       lib/
-        image-processing.ts   # EXIF書換・透かし・サムネイル・フォーマット変換
+        image-processing.ts   # 透かし・GPS除去・サムネイル・フォーマット変換
+        exif-credit.ts        # R17: DL 時に EXIF へ撮影者名を書き込む (APP1 splice)
         firebase.ts           # Firebase Auth初期化
         api.ts                # Workers APIクライアント
       stores/                 # Jotaiアトム
