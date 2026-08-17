@@ -55,6 +55,7 @@ html::-webkit-scrollbar-thumb:hover {
   --color-status-success: #4b7a5a;
   --color-status-success-tint: #e8f0ea;
   --color-status-warn: #d98f2e;
+  --color-status-warn-tint: #fbf0de;
   --color-status-danger: #a8381f;
   --color-status-danger-tint: #fbe8e2;
 

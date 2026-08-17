@@ -1,17 +1,29 @@
 import { Trans } from "@lingui/react/macro";
 import { formatBytes } from "../../lib/format";
+import {
+  isQuotaFull,
+  QUOTA_DANGER_PERCENT,
+  QUOTA_WARN_PERCENT,
+  usagePercent,
+} from "../../lib/quota";
 
 type Props = {
   used: number;
   quota: number;
+  /** false にすると下の説明文を出さない。呼び出し側が同じ内容をバナーで出す場合に使う */
+  hint?: boolean;
   className?: string;
 };
 
-export default function StorageQuotaBar({ used, quota, className = "" }: Props) {
-  const percent = quota > 0 ? (used / quota) * 100 : 0;
+export default function StorageQuotaBar({ used, quota, hint = true, className = "" }: Props) {
+  const percent = usagePercent(used, quota);
   // DESIGN.md §2 Quota Bar: 0–79% Sage / 80–94% Amber / 95–100% Rust
   const barColor =
-    percent >= 95 ? "bg-status-danger" : percent >= 80 ? "bg-status-warn" : "bg-status-success";
+    percent >= QUOTA_DANGER_PERCENT
+      ? "bg-status-danger"
+      : percent >= QUOTA_WARN_PERCENT
+        ? "bg-status-warn"
+        : "bg-status-success";
 
   return (
     <div className={`space-y-2 ${className}`}>
@@ -30,15 +42,18 @@ export default function StorageQuotaBar({ used, quota, className = "" }: Props) 
           style={{ width: `${Math.min(percent, 100)}%` }}
         />
       </div>
-      <p className="text-[12px] leading-[1.4] text-ink-muted">
-        {percent >= 95 ? (
-          <Trans>
-            容量がほぼ上限です。新しい写真を受け取れません。不要な写真を削除してください。
-          </Trans>
-        ) : (
-          <Trans>上限を超えると新しい写真を受け取れなくなります。</Trans>
-        )}
-      </p>
+      {hint && (
+        <p className="text-[12px] leading-[1.4] text-ink-muted">
+          {/* 実際に受付が止まるのは上限に達してから。95% は危険域だがまだ受け取れる */}
+          {isQuotaFull(used, quota) ? (
+            <Trans>
+              容量が上限に達しました。新しい写真を受け取れません。不要な写真を削除してください。
+            </Trans>
+          ) : (
+            <Trans>上限を超えると新しい写真を受け取れなくなります。</Trans>
+          )}
+        </p>
+      )}
     </div>
   );
 }

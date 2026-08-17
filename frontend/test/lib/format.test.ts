@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatBytes } from "../../src/lib/format";
+import { formatBytes, formatDate } from "../../src/lib/format";
 
 describe("formatBytes", () => {
   // 目的: ストレージ使用量表示で 0/KB/MB/GB/TB の各単位境界が想定通り切り替わる
@@ -22,5 +22,22 @@ describe("formatBytes", () => {
   it("バイト未満 (1 以上 1024 未満) は単位 B のまま整数表示", () => {
     expect(formatBytes(1)).toBe("1 B");
     expect(formatBytes(512)).toBe("512 B");
+  });
+});
+
+describe("formatDate", () => {
+  // 目的: 削除予定日 (R13) の表示。時刻は出さない — 実際の削除は毎時の Cron 任せで
+  // 分単位の保証がなく、時刻まで見せると誤解を招くため
+  const unix = Date.UTC(2026, 9, 7, 3, 0, 0) / 1000;
+
+  it("年月日だけを返し、時刻を含まない", () => {
+    const formatted = formatDate(unix, "ja-JP");
+    expect(formatted).toContain("2026");
+    expect(formatted).not.toMatch(/\d{1,2}:\d{2}/);
+  });
+
+  it("ロケールごとの並びに従う", () => {
+    expect(formatDate(unix, "ja-JP")).toMatch(/^2026/);
+    expect(formatDate(unix, "en-US")).toMatch(/2026$/);
   });
 });

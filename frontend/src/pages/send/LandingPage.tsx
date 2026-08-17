@@ -13,6 +13,7 @@ type Receiver = {
   display_name: string;
   avatar_url: string | null;
   is_accepting: boolean;
+  unavailable_reason: "paused" | "full" | null;
   options: {
     exif_embed_mode: EmbedMode;
     watermark_mode: EmbedMode;
@@ -105,6 +106,15 @@ export default function LandingPage() {
                 >
                   <Trans>写真を送る</Trans>
                 </Link>
+              ) : receiver.unavailable_reason === "full" ? (
+                // 「受付停止」と同じ文言にすると送信者も受信者も気づけないので理由を分ける。
+                // 送信者にできることは受信者に伝えることだけなので、それを明示する
+                <Alert variant="warn">
+                  <Trans>
+                    {displayName}
+                    さんの保存容量がいっぱいです。空きを作ってもらうよう伝えてください。
+                  </Trans>
+                </Alert>
               ) : (
                 <Alert variant="info">
                   <Trans>現在、この受信者は写真を受け付けていません。</Trans>

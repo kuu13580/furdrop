@@ -16,6 +16,18 @@ export function formatDateTime(unix: number, locale = "ja-JP"): string {
   });
 }
 
+/**
+ * UNIX 秒を「年月日」の表示文字列にする。削除予定日のように、時刻まで見せると
+ * かえって不安を煽る (実際の削除は毎時の Cron 任せで分単位の保証がない) 場面で使う。
+ */
+export function formatDate(unix: number, locale = "ja-JP"): string {
+  return new Date(unix * 1000).toLocaleDateString(locale, {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+}
+
 export function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";
   const units = ["B", "KB", "MB", "GB", "TB"];

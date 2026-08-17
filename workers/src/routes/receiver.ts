@@ -1,6 +1,11 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { subtractStorageUsage } from "../lib/quota";
 import { createDownloadUrl, createThumbViewUrl, createViewUrl } from "../lib/r2";
+import {
+  EFFECTIVE_EXPIRES_AT,
+  EXPIRY_WARNING_SECONDS,
+  PHOTO_RETENTION_SECONDS,
+} from "../lib/retention";
 import { defaultHook, ErrorSchema, TzOffsetMinQuery } from "../lib/schema";
 import { requireAuth } from "../middleware/auth";
 import type { AuthEnv } from "../types";
@@ -38,6 +43,8 @@ const listPhotosRoute = createRoute({
                 height: z.number().nullable(),
                 thumb_url: z.string().nullable(),
                 created_at: z.number(),
+                /** DL 期限 (R13)。expires_at 未設定の旧データは created_at + 365日 に解決済み */
+                expires_at: z.number(),
               }),
             ),
             next_cursor: z.string().nullable(),
@@ -59,9 +66,10 @@ receiver.openapi(listPhotosRoute, async (c) => {
   const uid = c.get("uid");
   const { limit, cursor, tz_offset_min: tzOffsetMin } = c.req.valid("query");
 
-  let query =
-    "SELECT id, sender_name, camera_model, file_size, width, height, r2_key_thumb, batch_index, created_at FROM photos WHERE receiver_id = ? AND upload_status = 'completed'";
-  const params: (string | number)[] = [uid];
+  // expires_at は「実効値」に解決して返す。旧データ (NULL) をフロントに漏らさないことで、
+  // クライアント側が保存期間の定数を持たなくて済む。
+  let query = `SELECT id, sender_name, camera_model, file_size, width, height, r2_key_thumb, batch_index, created_at, ${EFFECTIVE_EXPIRES_AT} AS expires_at FROM photos WHERE receiver_id = ? AND upload_status = 'completed'`;
+  const params: (string | number)[] = [PHOTO_RETENTION_SECONDS, uid];
 
   if (cursor) {
     // カーソル = Base64エンコードされた created_at:batch_index:id
@@ -132,6 +140,7 @@ receiver.openapi(listPhotosRoute, async (c) => {
       height: p.height as number | null,
       thumb_url: await createThumbViewUrl(c.env, p.r2_key_thumb as string),
       created_at: p.created_at as number,
+      expires_at: p.expires_at as number,
     })),
   );
 
@@ -241,6 +250,8 @@ const getPhotoRoute = createRoute({
               thumb_url: z.string().nullable(),
               view_url: z.string().nullable(),
               created_at: z.number(),
+              /** DL 期限 (R13)。expires_at 未設定の旧データは created_at + 365日 に解決済み */
+              expires_at: z.number(),
             }),
             /** ギャラリー表示順 (created_at DESC, id DESC) で一つ前 (=より新しい) の写真ID */
             prev_id: z.string().nullable(),
@@ -264,9 +275,9 @@ receiver.openapi(getPhotoRoute, async (c) => {
   const { group } = c.req.valid("query");
 
   const photo = await c.env.DB.prepare(
-    "SELECT id, sender_name, camera_model, file_size, width, height, r2_key_original, r2_key_thumb, batch_index, created_at FROM photos WHERE id = ? AND receiver_id = ? AND upload_status = 'completed'",
+    `SELECT id, sender_name, camera_model, file_size, width, height, r2_key_original, r2_key_thumb, batch_index, created_at, ${EFFECTIVE_EXPIRES_AT} AS expires_at FROM photos WHERE id = ? AND receiver_id = ? AND upload_status = 'completed'`,
   )
-    .bind(photoId, uid)
+    .bind(PHOTO_RETENTION_SECONDS, photoId, uid)
     .first();
 
   if (!photo) {
@@ -352,6 +363,7 @@ receiver.openapi(getPhotoRoute, async (c) => {
         thumb_url: thumbUrl,
         view_url: viewUrl,
         created_at: createdAt,
+        expires_at: photo.expires_at as number,
       },
       prev_id: (prevRow?.id as string | undefined) ?? null,
       next_id: (nextRow?.id as string | undefined) ?? null,
@@ -596,6 +608,12 @@ const quotaRoute = createRoute({
             storage_quota: z.number(),
             usage_percent: z.number(),
             photo_count: z.number(),
+            /** まもなく DL 期限を迎える写真 (R13)。ダッシュボードの予告バナー用 */
+            expiring_soon: z.object({
+              count: z.number(),
+              /** 最も早い削除予定日時 (UNIX秒)。count = 0 のときは null */
+              earliest_expires_at: z.number().nullable(),
+            }),
           }),
         },
       },
@@ -611,7 +629,9 @@ const quotaRoute = createRoute({
 receiver.openapi(quotaRoute, async (c) => {
   const uid = c.get("uid");
 
-  const [user, countResult] = await Promise.all([
+  const warningCutoff = Math.floor(Date.now() / 1000) + EXPIRY_WARNING_SECONDS;
+
+  const [user, countResult, expiringResult] = await Promise.all([
     c.env.DB.prepare("SELECT storage_used, storage_quota FROM users WHERE id = ?")
       .bind(uid)
       .first(),
@@ -620,6 +640,14 @@ receiver.openapi(quotaRoute, async (c) => {
     )
       .bind(uid)
       .first(),
+    c.env.DB.prepare(
+      `SELECT COUNT(*) AS count, MIN(${EFFECTIVE_EXPIRES_AT}) AS earliest
+         FROM photos
+        WHERE receiver_id = ? AND upload_status = 'completed'
+          AND ${EFFECTIVE_EXPIRES_AT} < ?`,
+    )
+      .bind(PHOTO_RETENTION_SECONDS, uid, PHOTO_RETENTION_SECONDS, warningCutoff)
+      .first<{ count: number; earliest: number | null }>(),
   ]);
 
   if (!user) {
@@ -636,6 +664,10 @@ receiver.openapi(quotaRoute, async (c) => {
       storage_quota: storageQuota,
       usage_percent: Math.round((storageUsed / storageQuota) * 1000) / 10,
       photo_count: photoCount,
+      expiring_soon: {
+        count: expiringResult?.count ?? 0,
+        earliest_expires_at: expiringResult?.earliest ?? null,
+      },
     },
     200,
   );

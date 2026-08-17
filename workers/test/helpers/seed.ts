@@ -1,6 +1,7 @@
 // D1 にテストデータを投入するヘルパー。
 // 各テストは自身で必要なレコードを seed() する (固定 fixture は使わない = テスト同士を独立させる)。
 import { env } from "cloudflare:test";
+import { PHOTO_RETENTION_SECONDS } from "../../src/lib/retention";
 import { generateSendKey } from "../../src/lib/send-key";
 
 type SeedUserOptions = {
@@ -59,6 +60,11 @@ type SeedPhotoOptions = {
   thumbSize?: number;
   senderName?: string | null;
   createdAt?: number;
+  /**
+   * 省略時は本番と同じく `createdAt + 365日` を焼き込む。
+   * `null` を明示すると 0009 のバックフィル前に入った旧データ (NULL) を再現する。
+   */
+  expiresAt?: number | null;
 };
 
 /** photos に 1 行入れ、(必要なら) R2 にダミーバイトも投入する */
@@ -78,8 +84,8 @@ export async function seedPhoto(
   await env.DB.prepare(
     `INSERT INTO photos (id, receiver_id, session_id, r2_key_original, r2_key_thumb,
       sender_name, camera_model, watermark_text, original_filename, file_size, thumb_size,
-      width, height, upload_status, batch_index, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, NULL, NULL, 'test.jpg', ?, ?, NULL, NULL, ?, 0, ?, ?)`,
+      width, height, upload_status, batch_index, expires_at, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, NULL, NULL, 'test.jpg', ?, ?, NULL, NULL, ?, 0, ?, ?, ?)`,
   )
     .bind(
       photoId,
@@ -91,6 +97,7 @@ export async function seedPhoto(
       fileSize,
       thumbSize,
       opts.status ?? "completed",
+      opts.expiresAt === undefined ? now + PHOTO_RETENTION_SECONDS : opts.expiresAt,
       now,
       now,
     )

@@ -2,6 +2,7 @@ import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { asBool } from "../lib/d1";
 import { addStorageUsage } from "../lib/quota";
 import { buildR2Key, createThumbUploadUrl, createThumbViewUrl, createUploadUrl } from "../lib/r2";
+import { PHOTO_RETENTION_SECONDS } from "../lib/retention";
 import { defaultHook, ErrorSchema, HandleParam, PhotoIdParam, SessionIdParam } from "../lib/schema";
 import type { Env } from "../types";
 
@@ -35,6 +36,9 @@ const getReceiverRoute = createRoute({
               display_name: z.string(),
               avatar_url: z.string().nullable(),
               is_accepting: z.boolean(),
+              // 受け付けていない理由。送信者に「一時停止」と「容量いっぱい」を
+              // 区別して伝えるためだけに公開する (is_accepting=true のときは null)
+              unavailable_reason: z.enum(["paused", "full"]).nullable(),
               // キー必須かどうか。送信者側で「?k= の無いURLが正当か」を判断するために公開する
               require_send_key: z.boolean(),
               options: z.object({
@@ -81,8 +85,13 @@ sender.openapi(getReceiverRoute, async (c) => {
     return c.json({ error: { code: "NOT_FOUND", message: "User not found" } }, 404);
   }
 
-  const isAccepting =
-    user.is_active === 1 && (user.storage_used as number) < (user.storage_quota as number);
+  // 受付停止 (R11) と容量超過は送信者から見た結果は同じ「送れない」だが、
+  // 対処が違う (前者は受信者の意思、後者は受信者に空きを作ってもらう必要がある) ので
+  // 理由を分けて返す。停止と超過が重なった場合は受信者の意思を優先して paused とする
+  const isPaused = user.is_active !== 1;
+  const isFull = (user.storage_used as number) >= (user.storage_quota as number);
+  const isAccepting = !isPaused && !isFull;
+  const unavailableReason: "paused" | "full" | null = isPaused ? "paused" : isFull ? "full" : null;
 
   return c.json(
     {
@@ -91,6 +100,7 @@ sender.openapi(getReceiverRoute, async (c) => {
         display_name: user.display_name as string,
         avatar_url: user.avatar_url as string | null,
         is_accepting: isAccepting,
+        unavailable_reason: unavailableReason,
         require_send_key: asBool(user.require_send_key),
         options: {
           exif_embed_mode: asMode(user.exif_embed_mode),
@@ -435,11 +445,13 @@ sender.openapi(createPhotosRoute, async (c) => {
       const cameraModel = exifMode === "disabled" ? null : (photo.camera_model ?? null);
       const watermarkText = watermarkMode === "disabled" ? null : (photo.watermark_text ?? null);
 
+      // DL 期限は受信時点で実値を焼き込む (R13)。定数を後で変えても既存写真の
+      // 期限が動かないようにするため、COALESCE のフォールバックには頼らない。
       await c.env.DB.prepare(
         `INSERT INTO photos (id, receiver_id, session_id, r2_key_original, r2_key_thumb,
           sender_name, camera_model, watermark_text, original_filename,
-          file_size, width, height, upload_status, batch_index, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)`,
+          file_size, width, height, upload_status, batch_index, expires_at, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)`,
       )
         .bind(
           photoId,
@@ -455,6 +467,7 @@ sender.openapi(createPhotosRoute, async (c) => {
           photo.width ?? null,
           photo.height ?? null,
           batchIndex,
+          now + PHOTO_RETENTION_SECONDS,
           now,
           now,
         )

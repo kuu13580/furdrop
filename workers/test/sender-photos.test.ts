@@ -41,6 +41,15 @@ describe("POST /send/:handle/sessions/:sessionId/photos", () => {
       .bind(sessionId)
       .first<{ cnt: number }>();
     expect(pending?.cnt).toBe(2);
+
+    // DL 期限は受信時点で実値を焼き込む (R13)。COALESCE のフォールバック任せにしないことで、
+    // 将来 PHOTO_RETENTION_SECONDS を短くしても過去分が一斉削除されない
+    const baked = await env.DB.prepare(
+      "SELECT created_at, expires_at FROM photos WHERE session_id = ? LIMIT 1",
+    )
+      .bind(sessionId)
+      .first<{ created_at: number; expires_at: number }>();
+    expect(baked?.expires_at).toBe((baked?.created_at ?? 0) + 365 * 24 * 3600);
   });
 
   it("受信者が exif_embed_mode=required で camera_model が欠落していたら 400 (R14 サーバ側強制)", async () => {
