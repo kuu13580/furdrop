@@ -13,6 +13,9 @@ const BASE_URL =
     ? configuredBase.replace(/\/\/(localhost|127\.0\.0\.1)/, `//${window.location.hostname}`)
     : configuredBase;
 
+/** 一括 DL のフォーム POST は api.ts の request() を通らないので URL の組み立てに使う */
+export const API_BASE_URL = BASE_URL;
+
 export type EmbedMode = "disabled" | "optional" | "required";
 
 async function request<T>(

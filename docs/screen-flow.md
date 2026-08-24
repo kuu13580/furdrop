@@ -310,6 +310,7 @@ DashboardPage
 |-----------------------------|
 |  [v][thumb] [ ][thumb] ...  |
 +-----------------------------+
+(上限超過の選択は 2 行目の下にインラインでエラー表示)
 ```
 
 **削除予告バッジ (R13):**
@@ -328,7 +329,13 @@ DashboardPage
 - 右上「選択」トグルで切替
 - チェックボックス表示
 - 下部にアクションバー（DL / 削除）
-- 一括DL: 各写真の Presigned URL を取得して fetch → zip.js で ZIP 化 → `<a download>`。R17 が有効なら ZIP に入れる直前に EXIF へ撮影者名を書き込む
+- 一括DL (R08): 隠しフォームの POST (`target="_self"`) で `POST /download/zip` を叩き、
+  Workers が返すストリーミング ZIP をブラウザのダウンロードマネージャに書かせる。
+  **アプリ側の進捗モーダルは持たない** (ブラウザが進捗を出す)。R17 が有効なら Workers が
+  ZIP に入れる直前に EXIF へ撮影者名を書き込む。
+  合計サイズが上限 (3.5GB) を超える選択は、フォーム送信の前に `dry_run` で弾いて
+  選択バーにインラインのエラーを出す (`_self` のフォーム POST でエラー JSON を返すと
+  SPA から離脱してしまうため)
 - 「ダウンロードオプション ▾」は R17 の DL 設定 (§5.5)。押すと設定ダイアログが開く
 - バーは 2 行構成。枚数と DL 設定を 2 行目に逃がしているのは、訳文の長い言語 (en: `Deselect all` / `Download` / `2 selected`) をモバイル幅で 1 行に詰めると折り返して潰れるため
 
@@ -547,10 +554,13 @@ ASCII 専用の欄なので、接頭辞はロケールに関わらず英語で�
 なく「自分の手元のコピーをどう保存するか」の設定なので、DL 導線に置く)。ボタンにはダイアログと同じ
 名前だけを出し、現在値は載せない (「撮影者名: 撮影者+機種欄」のような読み解きの要る表示を避ける)。
 
-**実装**: presigned GET を fetch → `piexifjs` で APP1 セグメントを差し替え → Blob を `a[download]`。
-一括 DL は `zip-download.ts` の fetch と ZIP 追加の間に挟む。「記録しない」の単体 DL は presigned URL
-への直リンクのままで、無加工の最速パスを保つ。画像全体を dataURL 化せず APP1 だけを piexif に渡す
-(20MB × ZIP 並列 4 のメモリ対策)。書き込みに失敗しても無加工で保存し、DL 自体は成立させる。
+**実装**: 単体 DL は presigned GET を fetch → `piexifjs` で APP1 セグメントを差し替え →
+Blob を `a[download]` (`frontend/src/lib/exif-credit.ts`)。**一括 DL は Workers 側**
+(`workers/src/lib/zip-stream.ts` の `applyExifCredit`) が、先頭 256KB だけバッファして
+APP1 を差し替え残りをパススルーする。受信者の選択はフォームの `exif_credit` で渡す。
+「記録しない」の単体 DL は presigned URL への直リンクのままで、無加工の最速パスを保つ。
+画像全体を dataURL 化せず APP1 だけを piexif に渡す。書き込みに失敗しても無加工で保存し、
+DL 自体は成立させる。
 
 ---
 

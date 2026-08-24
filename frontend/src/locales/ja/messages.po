@@ -38,10 +38,6 @@ msgstr "{completedCount, plural, other {#枚の写真を送信しました！}}"
 msgid "{count, plural, other {#枚の写真が自動削除の期限に近づいています}}"
 msgstr "{count, plural, other {#枚の写真が自動削除の期限に近づいています}}"
 
-#: src/components/BatchDownloadModal.tsx
-msgid "{creditFailed, plural, other {#枚は撮影者名を記録できませんでした (写真はそのまま ZIP に含まれます)}}"
-msgstr "{creditFailed, plural, other {#枚は撮影者名を記録できませんでした (写真はそのまま ZIP に含まれます)}}"
-
 #: src/pages/send/UploadingPage.tsx
 msgid "{current}/{total}枚 · {percent}%"
 msgstr "{current}/{total}枚 · {percent}%"
@@ -53,10 +49,6 @@ msgstr "{days, plural, other {最短であと#日で削除されます。}}"
 #: src/pages/send/LandingPage.tsx
 msgid "{displayName}さんの保存容量がいっぱいです。空きを作ってもらうよう伝えてください。"
 msgstr "{displayName}さんの保存容量がいっぱいです。空きを作ってもらうよう伝えてください。"
-
-#: src/components/BatchDownloadModal.tsx
-msgid "{failed, plural, other {#枚の取得に失敗しました (成功分のみ ZIP に含まれます)}}"
-msgstr "{failed, plural, other {#枚の取得に失敗しました (成功分のみ ZIP に含まれます)}}"
 
 #: src/pages/send/DonePage.tsx
 msgid "{failedCount, plural, other {#枚のアップロードに失敗しました}}"
@@ -81,10 +73,6 @@ msgstr "{name}: 20MBを超えています"
 #: src/pages/send/UploadPage.tsx
 msgid "{name}: 対応外の形式"
 msgstr "{name}: 対応外の形式"
-
-#: src/components/BatchDownloadModal.tsx
-msgid "{processed} / {total} 枚"
-msgstr "{processed} / {total} 枚"
 
 #: src/pages/send/UploadPage.tsx
 msgid "{receiverName}さんへ送信"
@@ -363,10 +351,6 @@ msgid "X (Twitter)で30秒。\n"
 "{PUBLIC_HOST}/send/your_handle が完成。"
 msgstr "X (Twitter)で30秒。\n"
 "{PUBLIC_HOST}/send/your_handle が完成。"
-
-#: src/components/BatchDownloadModal.tsx
-msgid "ZIP を作成中"
-msgstr "ZIP を作成中"
 
 #: src/lib/api-error.ts
 msgid "アカウントが見つかりません"
@@ -671,6 +655,18 @@ msgstr "ダウンロードするときに撮影者名を残せます"
 msgid "ダウンロードする写真に、撮影者名を記録しますか？"
 msgstr "ダウンロードする写真に、撮影者名を記録しますか？"
 
+#: src/lib/bulk-download.ts
+msgid "ダウンロードの回数が多すぎます。1分ほど時間をおいてからお試しください。"
+msgstr "ダウンロードの回数が多すぎます。1分ほど時間をおいてからお試しください。"
+
+#: src/lib/bulk-download.ts
+msgid "ダウンロードを開始できませんでした。時間をおいてお試しください。"
+msgstr "ダウンロードを開始できませんでした。時間をおいてお試しください。"
+
+#: src/lib/bulk-download.ts
+msgid "ダウンロードを開始できませんでした。通信環境をご確認ください。"
+msgstr "ダウンロードを開始できませんでした。通信環境をご確認ください。"
+
 #: src/components/DownloadOptionsDialog.tsx
 msgid "ダウンロード時に撮影者名を記録するかを設定する"
 msgstr "ダウンロード時に撮影者名を記録するかを設定する"
@@ -957,6 +953,10 @@ msgstr "ログインに失敗しました。時間をおいてもう一度お試
 msgid "ログインの有効期限が切れました。もう一度ログインしてください"
 msgstr "ログインの有効期限が切れました。もう一度ログインしてください"
 
+#: src/lib/bulk-download.ts
+msgid "ログインの有効期限が切れました。再度ログインしてください。"
+msgstr "ログインの有効期限が切れました。再度ログインしてください。"
+
 #: src/pages/LoginPage.tsx
 msgid "ログイン中..."
 msgstr "ログイン中..."
@@ -984,10 +984,6 @@ msgstr "上限を超えると新しい写真を受け取れなくなります。
 #: src/pages/GuidePage.tsx
 msgid "不明点をフィードバック"
 msgstr "不明点をフィードバック"
-
-#: src/components/BatchDownloadModal.tsx
-msgid "中断"
-msgstr "中断"
 
 #: src/lib/watermark.ts
 msgid "丸ゴ・ポップ"
@@ -1066,10 +1062,6 @@ msgstr "入力内容を確認してください"
 #: src/lib/api-error.ts
 msgid "入力内容を確認してください。受信者が名前の入力を必須にしている場合があります"
 msgstr "入力内容を確認してください。受信者が名前の入力を必須にしている場合があります"
-
-#: src/lib/zip-download.ts
-msgid "全ての写真のダウンロードに失敗しました"
-msgstr "全ての写真のダウンロードに失敗しました"
 
 #: src/pages/send/UploadingPage.tsx
 msgid "全ての画像の加工に失敗しました"
@@ -2068,9 +2060,13 @@ msgstr "選んだ写真は即座にプレビューが表示されます。"
 msgid "選択/DL"
 msgstr "選択/DL"
 
-#: src/components/BatchDownloadModal.tsx
-msgid "選択した写真を1つの ZIP ファイルにまとめています。"
-msgstr "選択した写真を1つの ZIP ファイルにまとめています。"
+#: src/lib/bulk-download.ts
+msgid "選択した写真が大きすぎます ({selected} / 1回の上限 {limit})。枚数を減らして何回かに分けてダウンロードしてください。"
+msgstr "選択した写真が大きすぎます ({selected} / 1回の上限 {limit})。枚数を減らして何回かに分けてダウンロードしてください。"
+
+#: src/lib/bulk-download.ts
+msgid "選択した写真が見つかりませんでした。すでに削除されている可能性があります。一覧を再読み込みしてお試しください。"
+msgstr "選択した写真が見つかりませんでした。すでに削除されている可能性があります。一覧を再読み込みしてお試しください。"
 
 #: src/pages/SettingsPage.tsx
 msgid "選択できる"

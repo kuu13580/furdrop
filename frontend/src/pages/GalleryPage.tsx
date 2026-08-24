@@ -1,10 +1,9 @@
 import { msg } from "@lingui/core/macro";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
-import { useAtomValue } from "jotai";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
-import BatchDownloadModal from "../components/BatchDownloadModal";
 import DownloadOptionsDialog, { DownloadOptionsTrigger } from "../components/DownloadOptionsDialog";
+import Alert from "../components/ui/Alert";
 import Button from "../components/ui/Button";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
 import LoadingSpinner from "../components/ui/LoadingSpinner";
@@ -12,11 +11,10 @@ import ScrollToTopButton from "../components/ui/ScrollToTopButton";
 import { useDownloadOptions } from "../hooks/useDownloadOptions";
 import { onImageError } from "../lib/analytics";
 import { receiverApi } from "../lib/api";
+import { startBulkDownload } from "../lib/bulk-download";
 import type { ExifCreditMode } from "../lib/exif-credit";
 import { daysUntilExpiry, expiryBadgeLevel } from "../lib/retention";
 import { buildDateKeyAndLabel, getTzOffsetMin } from "../lib/timezone";
-import { buildZipName, downloadAsZip } from "../lib/zip-download";
-import { userAtom } from "../stores/user";
 import type { Photo } from "../types/photo";
 
 const PAGE_SIZE = 50;
@@ -90,17 +88,12 @@ export default function GalleryPage() {
   const [tzOffsetMin] = useState(getTzOffsetMin);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false);
-  const user = useAtomValue(userAtom);
   const downloadOptions = useDownloadOptions();
 
-  // 一括 ZIP DL 用ステート
-  const [zipState, setZipState] = useState<{
-    processed: number;
-    total: number;
-    failed: number;
-    creditFailed: number;
-  } | null>(null);
-  const zipControllerRef = useRef<AbortController | null>(null);
+  // 一括 DL (R08) は Workers がストリーミング ZIP を返すのをフォーム POST で受け取る。
+  // 進捗はブラウザのダウンロードマネージャが出すので、こちらは開始までの状態だけ持つ
+  const [zipStarting, setZipStarting] = useState(false);
+  const [zipError, setZipError] = useState<string | null>(null);
 
   // Shift+クリック & ドラッグ選択用
   const lastClickedRef = useRef<number | null>(null);
@@ -500,32 +493,27 @@ export default function GalleryPage() {
     [groupMode, cursor, hasMore, selected, fetchPhotos, tzOffsetMin],
   );
 
+  // 選択を変えたら前回のエラーは意味を失うので消す
+  // biome-ignore lint/correctness/useExhaustiveDependencies: selected の変化の検知のみが目的
+  useEffect(() => {
+    setZipError(null);
+  }, [selected]);
+
   const runBatchDownload = useCallback(
     async (exifCredit: ExifCreditMode) => {
       const ids = [...selected];
-      if (ids.length === 0) return;
-      if (zipControllerRef.current) return;
+      if (ids.length === 0 || zipStarting) return;
 
-      const controller = new AbortController();
-      zipControllerRef.current = controller;
-      setZipState({ processed: 0, total: ids.length, failed: 0, creditFailed: 0 });
-
+      setZipStarting(true);
+      setZipError(null);
       try {
-        await downloadAsZip({
-          photoIds: ids,
-          zipName: buildZipName(user?.handle ?? "photos"),
-          exifCredit,
-          signal: controller.signal,
-          onProgress: (p) => setZipState(p),
-        });
-      } catch {
-        // 中断・致命エラーはモーダルを閉じるだけ
+        const result = await startBulkDownload({ photoIds: ids, exifCredit });
+        if (!result.ok) setZipError(result.message);
       } finally {
-        zipControllerRef.current = null;
-        setZipState(null);
+        setZipStarting(false);
       }
     },
-    [selected, user?.handle],
+    [selected, zipStarting],
   );
 
   // 初回 DL のときだけ EXIF 記録の確認ダイアログを挟む (R17)
@@ -534,20 +522,6 @@ export default function GalleryPage() {
       void runBatchDownload(mode);
     });
   }, [downloadOptions, runBatchDownload]);
-
-  const cancelBatchDownload = useCallback(() => {
-    zipControllerRef.current?.abort();
-  }, []);
-
-  // ZIP 生成中はページ離脱を抑止
-  useEffect(() => {
-    if (!zipState) return;
-    const onBeforeUnload = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-    };
-    window.addEventListener("beforeunload", onBeforeUnload);
-    return () => window.removeEventListener("beforeunload", onBeforeUnload);
-  }, [zipState]);
 
   if (loading) {
     return (
@@ -595,8 +569,8 @@ export default function GalleryPage() {
                 variant="secondary"
                 className="whitespace-nowrap"
                 onClick={handleBatchDownload}
-                disabled={selected.size === 0 || zipState !== null}
-                loading={zipState !== null}
+                disabled={selected.size === 0 || zipStarting}
+                loading={zipStarting}
               >
                 <Trans>DL</Trans>
               </Button>
@@ -626,6 +600,7 @@ export default function GalleryPage() {
             </span>
             <DownloadOptionsTrigger onClick={downloadOptions.openEditor} />
           </div>
+          {zipError && <Alert variant="error">{zipError}</Alert>}
         </div>
       )}
 
@@ -814,15 +789,6 @@ export default function GalleryPage() {
         confirmLabel={t`削除する`}
         variant="danger"
         loading={deleting}
-      />
-
-      <BatchDownloadModal
-        open={zipState !== null}
-        processed={zipState?.processed ?? 0}
-        total={zipState?.total ?? 0}
-        failed={zipState?.failed ?? 0}
-        creditFailed={zipState?.creditFailed ?? 0}
-        onCancel={cancelBatchDownload}
       />
 
       <DownloadOptionsDialog {...downloadOptions.dialogProps} />
