@@ -49,6 +49,26 @@ export async function seedUser(
   return { uid: opts.uid, handle: opts.handle, sendKey };
 }
 
+/**
+ * upload_sessions に 1 行入れる。`photos.session_id` は FK なので、
+ * セッション内の連番 (DL ファイル名の `_NN`) を検証したいときに必要。
+ */
+export async function seedSession(opts: {
+  receiverId: string;
+  senderName?: string | null;
+  createdAt?: number;
+}): Promise<string> {
+  const now = opts.createdAt ?? Math.floor(Date.now() / 1000);
+  const id = crypto.randomUUID();
+  await env.DB.prepare(
+    `INSERT INTO upload_sessions (id, receiver_id, sender_name, photo_count, total_size, status, expires_at, created_at, updated_at)
+     VALUES (?, ?, ?, 0, 0, 'completed', ?, ?, ?)`,
+  )
+    .bind(id, opts.receiverId, opts.senderName ?? null, now + 3600, now, now)
+    .run();
+  return id;
+}
+
 type SeedPhotoOptions = {
   receiverId: string;
   handle: string;

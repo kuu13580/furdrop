@@ -43,6 +43,23 @@ type = "ratelimit"
 namespace_id = "1003"
 simple = { limit = 60, period = 60 }
 
+# 一括 DL (R08) は 1 リクエストで最大 3.5GB を ZIP に固める。認証済み UID 単位で絞り、
+# denial-of-wallet の回数を抑える (1 発の被害額は [limits] cpu_ms で決まる)
+[[unsafe.bindings]]
+name = "RATE_LIMITER_ZIP"
+type = "ratelimit"
+namespace_id = "1004"
+simple = { limit = 6, period = 60 }
+
+# 1 invocation で焼ける CPU の上限。**worker 全体に効く** (ルート単位では設定できない) ので、
+# ZIP 以外のルートの上限も既定の 30s からここまで上がる点に注意。
+# Cloudflare が用意している唯一の支出コントロールで、
+# denial-of-wallet の 1 発あたりの被害額を決める (120 CPU 秒 = 約 $0.0024)。
+# 実測 27 CPU-ms/MiB なので約 4.6GB が上限になり、routes/download.ts の
+# MAX_ZIP_BYTES (3.5GB) が余裕を持ってその下に入る
+[limits]
+cpu_ms = 120000
+
 [vars]
 ENVIRONMENT = "production"
 FIREBASE_PROJECT_ID = "furdrop"
