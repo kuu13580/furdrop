@@ -52,8 +52,7 @@ CREATE TABLE users (
     -- 受信オプション設定 (R14: 送信者に提示するオプションを制御)
     -- 'disabled' | 'optional' | 'required' の3値。
     -- 'required' は送信者に必ず埋め込みを行わせる(サーバ側でも必須検証)
-    -- EXIF への送信者名の記録は R17 で受信者の DL 時処理に移したので exif_embed_mode は廃止
-    -- (DROP COLUMN は旧コードとの共存期間があるので 0010 では行わず追いマイグレーションで落とす)
+    -- EXIF への送信者名の記録は R17 で受信者の DL 時処理に移したのでカラムを持たない
     watermark_mode    TEXT NOT NULL DEFAULT 'disabled',  -- 透かしは不可逆のため慎重に
     require_sender_name INTEGER NOT NULL DEFAULT 0,      -- 送信者名の入力を必須にする (0=任意, 1=必須)
     -- R16 opt-out: 0 のとき送信URLのアクセスキーを検証しない (handle だけで送信できる)
