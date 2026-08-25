@@ -43,6 +43,7 @@ export default function PhotoDetailPage() {
     let cancelled = false;
     // photoId 変更で表示写真とneighborsをリセット
     setViewLoaded(false);
+    setCreditFailed(false);
     setPrevId(null);
     setNextId(null);
     receiverApi

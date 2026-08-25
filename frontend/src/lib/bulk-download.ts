@@ -47,8 +47,18 @@ export async function startBulkDownload(args: {
     };
   }
 
+  let token: string;
+  try {
+    token = await user.getIdToken();
+  } catch {
+    return {
+      ok: false,
+      message: i18n._(msg`ダウンロードを開始できませんでした。通信環境をご確認ください。`),
+    };
+  }
+
   const fields = {
-    token: await user.getIdToken(),
+    token,
     photo_ids: photoIds.join(","),
     exif_credit: exifCredit,
     tz_offset_min: String(getTzOffsetMin()),

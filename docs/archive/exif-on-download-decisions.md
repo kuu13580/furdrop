@@ -4,6 +4,9 @@
 埋め込みは受信者ブラウザで実行する (presigned GET を fetch → EXIF 書き込み → 保存)。
 Workers を経由させる案は `.claude/rules/workers.md` の「R2 は Presigned URL 経由・Workers を通してストリームしない」に反するため不採用。
 
+> **その後の変更**: 一括 DL (R08) だけは iOS の Blob 制約でクライアント ZIP が成立せず、
+> Workers 経由 + Workers 側での EXIF 書き込みに変えた (`server-zip-decisions.md`)。
+
 ## 決定事項
 
 | ID | 論点 | 決定 |
@@ -16,10 +19,10 @@ Workers を経由させる案は `.claude/rules/workers.md` の「R2 は Presign
 | B1 | 選ばせ方 | **初回 DL 時にダイアログ**を出して選ばせ、localStorage に保存。2 回目以降は即 DL |
 | B2 | 保存場所 | localStorage (スキーマ変更なし) |
 | B3 | 既定値 | 未設定 (= 記録しない)。初回 DL のダイアログで必ず一度は選ばせる |
-| B4 | UI の置き場 | ギャラリーの選択バーと写真詳細の DL ボタン脇に「撮影者名: ○○ ▾」を常時表示し、押すと同じダイアログで変更。**設定画面 (S10) には置かない** (受信オプションではないため) |
+| B4 | UI の置き場 | ギャラリーの選択バーと写真詳細の DL ボタン脇に「撮影者名: ○○ ▾」を常時表示し、押すと同じダイアログで変更 (実装時のボタン名は「ダウンロードオプション ▾」)。**設定画面 (S10) には置かない** (受信オプションではないため) |
 | B5 | 埋め込み失敗時 | 無加工で保存し DL 自体は成功させる。ただし失敗したことは UI で伝える |
-| C1 | `users.exif_embed_mode` | マイグレーション `0009` で DROP |
-| C2 | `required` の意図保存 | DROP 前に `UPDATE users SET require_sender_name = 1 WHERE exif_embed_mode = 'required'` |
+| C1 | `users.exif_embed_mode` | マイグレーション `0010` で DROP (実際には後続マイグレーションに分離) |
+| C2 | `required` の意図保存 | DROP 前に `UPDATE users SET require_sender_name = 1 WHERE exif_embed_mode = 'required'` (`0010`) |
 | C3 | 送信者への告知 | 出さない (名前の記録に同意した時点で、以後の扱いは受信者の自由) |
 | D1 | `photos.camera_model` | カラムごと DROP。プライバシーポリシーの収集項目から外す判断 (E2) と整合させる |
 | D2 | 既存写真の DL | D1 の結果、特別扱い不要。全写真を同じ経路で処理する |

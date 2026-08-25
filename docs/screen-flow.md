@@ -450,14 +450,14 @@ DashboardPage
 ```mermaid
 flowchart TD
     A[ファイル選択<br/>JPEG / PNG / HEIC] --> B{フォーマット判定}
-    B -->|JPEG| D[EXIF GPS 除去<br/>piexifjs]
+    B -->|JPEG| E[Canvas描画 + 透かし合成<br/>Canvas 2D API]
     B -->|PNG| C1[Canvas → JPEG変換]
     B -->|HEIC| C2[heic2any → JPEG変換]
-    C1 --> D
-    C2 --> D
-    D --> E[Canvas描画 + 透かし合成<br/>Canvas 2D API]
-    E --> F[加工済みJPEG Blob]
-    E --> G[サムネイル生成<br/>Canvas, 長辺400px, 品質0.7]
+    C1 --> E
+    C2 --> E
+    E --> D[EXIF GPS 除去<br/>piexifjs]
+    D --> F[加工済みJPEG Blob]
+    D --> G[サムネイル生成<br/>Canvas, 長辺400px, 品質0.7]
     G --> H[サムネイル Blob]
     F --> I[Presigned URLへPUT<br/>並列アップロード]
     H --> I

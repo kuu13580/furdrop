@@ -440,10 +440,11 @@ Response: 200
 `filename` は `受信日時_連番.jpg` = `YYYYMMDD-HHMMSS_NN.jpg` 形式 (元のファイル名ではない)。
 日時は `tz_offset_min` のタイムゾーン基準 (省略時 JST)。
 
-`sender_name` は R17 (DL 時の EXIF 埋め込み) でクライアントが書き込むクレジット。一括 DL は
-`GET /receiver/photo-ids` 経由で写真 ID しか持たないため、このレスポンスに含めて渡す。匿名送信は null。
+`sender_name` は R17 (DL 時の EXIF 埋め込み) で**単体 DL のクライアント**が書き込むクレジット。
+匿名送信は null。一括 DL (§4.3.1) はクライアントから受け取らず、Workers が写真 ID から
+`photos.sender_name` を引く (クレジットの値をクライアント入力に依存させない)。
 
-**R17 の埋め込みはクライアントで行う。** presigned GET で取得したバイト列に `piexifjs` で
+**単体 DL の埋め込みはクライアントで行う。** presigned GET で取得したバイト列に `piexifjs` で
 APP1 セグメントを差し替え、`a[download]` で保存する。Workers を通してストリームしないという
 制約 (§3.3) を守りつつ、R2 の保存物を送信者が送ったまま保てる。`piexif.load` / `piexif.dump` は
 APP1 ペイロードだけを渡して使い、画像全体を dataURL 化しない (20MB × ZIP 並列4 のメモリ対策)。

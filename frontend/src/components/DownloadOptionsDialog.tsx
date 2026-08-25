@@ -121,13 +121,15 @@ export default function DownloadOptionsDialog({ open, purpose, value, onClose, o
           })}
         </div>
 
-        <p className="rounded-xl bg-surface-sand px-3.5 py-3 text-[12px] leading-[1.6] text-ink-soft">
-          <Trans>
-            記録されるのは「Photo by
-            撮影者名」の形式です。ダウンロードするファイルにだけ書き込まれ、 FurDrop
-            に保存されている写真は変わりません。
-          </Trans>
-        </p>
+        {selected !== "none" && (
+          <p className="rounded-xl bg-surface-sand px-3.5 py-3 text-[12px] leading-[1.6] text-ink-soft">
+            <Trans>
+              記録されるのは「Photo by
+              撮影者名」の形式です。ダウンロードするファイルにだけ書き込まれ、 FurDrop
+              に保存されている写真は変わりません。
+            </Trans>
+          </p>
+        )}
       </div>
     </Dialog>
   );
