@@ -52,11 +52,11 @@ describe("POST /send/:handle/sessions/:sessionId/photos", () => {
     expect(baked?.expires_at).toBe((baked?.created_at ?? 0) + 365 * 24 * 3600);
   });
 
-  it("受信者が exif_embed_mode=required で camera_model が欠落していたら 400 (R14 サーバ側強制)", async () => {
+  it("受信者が watermark_mode=required で watermark_text が欠落していたら 400 (R14 サーバ側強制)", async () => {
     const { handle, sendKey } = await seedUser({
       uid: "uid-ph-2",
       handle: "ph_required",
-      exif_embed_mode: "required",
+      watermark_mode: "required",
     });
     const sessionId = await createSession(handle, sendKey, 1);
 
@@ -65,13 +65,13 @@ describe("POST /send/:handle/sessions/:sessionId/photos", () => {
       {
         method: "POST",
         body: {
-          photos: [{ filename: "x.jpg", file_size: 1024, thumb_size: 128 }], // camera_model なし
+          photos: [{ filename: "x.jpg", file_size: 1024, thumb_size: 128 }], // watermark_text なし
         },
       },
     );
     expect(status).toBe(400);
     expect(body.error.code).toBe("INVALID_REQUEST");
-    expect(body.error.message).toMatch(/EXIF/i);
+    expect(body.error.message).toMatch(/watermark/i);
   });
 
   it("写真の合計サイズが残クォータを超えると 507 QUOTA_EXCEEDED (1 セッション内の楽観チェック)", async () => {

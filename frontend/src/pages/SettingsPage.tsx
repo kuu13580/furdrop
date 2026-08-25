@@ -173,7 +173,6 @@ function RegisterForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [handleError, setHandleError] = useState<string | null>(null);
-  const [exifEmbedMode, setExifEmbedMode] = useState<EmbedMode>("optional");
   const [watermarkMode, setWatermarkMode] = useState<EmbedMode>("disabled");
   const [requireSenderName, setRequireSenderName] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
@@ -213,7 +212,6 @@ function RegisterForm() {
         const { user: profile } = await authApi.register({
           handle,
           display_name: displayName.trim(),
-          exif_embed_mode: exifEmbedMode,
           watermark_mode: watermarkMode,
           require_sender_name: requireSenderName,
         });
@@ -236,7 +234,6 @@ function RegisterForm() {
     [
       handle,
       displayName,
-      exifEmbedMode,
       watermarkMode,
       requireSenderName,
       agreedToTerms,
@@ -298,13 +295,6 @@ function RegisterForm() {
               name="register-require-name"
               checked={requireSenderName}
               onChange={setRequireSenderName}
-            />
-            <EmbedModeRadioGroup
-              name="register-exif"
-              title={t`EXIF埋め込み`}
-              description={t`送信者がカメラモデル欄に名前を書き込みます（メタデータのみ、除去可能）`}
-              value={exifEmbedMode}
-              onChange={setExifEmbedMode}
             />
             <EmbedModeRadioGroup
               name="register-watermark"
@@ -477,11 +467,7 @@ function ReceiveOptionsCard({
   const [error, setError] = useState<string | null>(null);
 
   const updateOption = useCallback(
-    async (patch: {
-      exif_embed_mode?: EmbedMode;
-      watermark_mode?: EmbedMode;
-      require_sender_name?: boolean;
-    }) => {
+    async (patch: { watermark_mode?: EmbedMode; require_sender_name?: boolean }) => {
       setSaving(true);
       setError(null);
       try {
@@ -513,14 +499,6 @@ function ReceiveOptionsCard({
           name="settings-require-name"
           checked={user.require_sender_name}
           onChange={(v) => updateOption({ require_sender_name: v })}
-          disabled={saving}
-        />
-        <EmbedModeRadioGroup
-          name="settings-exif"
-          title={t`EXIF埋め込み`}
-          description={t`送信者がカメラモデル欄に名前を書き込みます（メタデータのみ、除去可能）`}
-          value={user.exif_embed_mode}
-          onChange={(v) => updateOption({ exif_embed_mode: v })}
           disabled={saving}
         />
         <EmbedModeRadioGroup

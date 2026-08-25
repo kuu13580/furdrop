@@ -9,7 +9,6 @@ export type UserProfile = {
   storage_quota: number;
   receive_url: string;
   is_active: boolean;
-  exif_embed_mode: EmbedMode;
   watermark_mode: EmbedMode;
   require_sender_name: boolean;
   require_send_key: boolean;

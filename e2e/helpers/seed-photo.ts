@@ -3,11 +3,47 @@
 // 製品コードと同じ経路を踏むので、専用の DB injection は不要。
 
 const WORKERS = "http://localhost:9000";
-const JPEG_HEADER = new Uint8Array([0xff, 0xd8, 0xff]);
-
+/**
+ * SOI + APP0(JFIF) + SOS + パディング + EOI の最小 JPEG。
+ * X10 のマジックバイト検証 (FF D8 FF) を通しつつ、DL 時の EXIF 差し替え (R17) が
+ * セグメントを走査できる形にしておく (サーバー側は SOS まで届かないと差し替えを諦める)。
+ */
 function buildJpegBuffer(size: number): Uint8Array {
-  const bytes = new Uint8Array(size);
-  bytes.set(JPEG_HEADER, 0);
+  const head = [
+    0xff,
+    0xd8, // SOI
+    0xff,
+    0xe0,
+    0x00,
+    0x10,
+    0x4a,
+    0x46,
+    0x49,
+    0x46,
+    0x00,
+    0x01,
+    0x01,
+    0x00,
+    0x00,
+    0x01,
+    0x00,
+    0x01,
+    0x00,
+    0x00, // APP0 (JFIF)
+    0xff,
+    0xda,
+    0x00,
+    0x08,
+    0x01,
+    0x01,
+    0x00,
+    0x00,
+    0x3f,
+    0x00, // SOS
+  ];
+  const bytes = new Uint8Array(Math.max(size, head.length + 2));
+  bytes.set(head, 0);
+  bytes.set([0xff, 0xd9], bytes.length - 2); // EOI
   return bytes;
 }
 

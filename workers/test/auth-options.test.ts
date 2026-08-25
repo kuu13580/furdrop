@@ -5,22 +5,22 @@ import { apiJson } from "./helpers/fetch";
 import { seedUser } from "./helpers/seed";
 
 describe("PATCH /auth/options", () => {
-  it("exif_embed_mode を required に更新すると /send/:handle のレスポンスに即座に反映される (R14: 送信者 UI の強制 ON 判定)", async () => {
+  it("watermark_mode を required に更新すると /send/:handle のレスポンスに即座に反映される (R14: 送信者 UI の強制 ON 判定)", async () => {
     const { idToken, uid } = await createEmulatorUser();
-    await seedUser({ uid, handle: "alice_opts", exif_embed_mode: "optional" });
+    await seedUser({ uid, handle: "alice_opts", watermark_mode: "optional" });
 
-    const updated = await apiJson<{ user: { exif_embed_mode: string } }>("/auth/options", {
+    const updated = await apiJson<{ user: { watermark_mode: string } }>("/auth/options", {
       method: "PATCH",
       headers: authHeader(idToken),
-      body: { exif_embed_mode: "required" },
+      body: { watermark_mode: "required" },
     });
     expect(updated.status).toBe(200);
-    expect(updated.body.user.exif_embed_mode).toBe("required");
+    expect(updated.body.user.watermark_mode).toBe("required");
 
     const profile = await apiJson<{
-      receiver: { options: { exif_embed_mode: string } };
+      receiver: { options: { watermark_mode: string } };
     }>("/send/alice_opts");
-    expect(profile.body.receiver.options.exif_embed_mode).toBe("required");
+    expect(profile.body.receiver.options.watermark_mode).toBe("required");
   });
 
   it("require_sender_name を更新すると /auth/options のレスポンスと /send/:handle の options に反映される (R14 名前必須設定)", async () => {
@@ -46,17 +46,17 @@ describe("PATCH /auth/options", () => {
     await seedUser({
       uid,
       handle: "bob_opts",
-      exif_embed_mode: "required",
+      require_sender_name: 1,
       watermark_mode: "optional",
     });
     const updated = await apiJson<{
-      user: { exif_embed_mode: string; watermark_mode: string };
+      user: { require_sender_name: boolean; watermark_mode: string };
     }>("/auth/options", {
       method: "PATCH",
       headers: authHeader(idToken),
-      body: { watermark_mode: "disabled" }, // exif_embed_mode は省略
+      body: { watermark_mode: "disabled" }, // require_sender_name は省略
     });
-    expect(updated.body.user.exif_embed_mode).toBe("required"); // 維持
+    expect(updated.body.user.require_sender_name).toBe(true); // 維持
     expect(updated.body.user.watermark_mode).toBe("disabled"); // 更新
   });
 

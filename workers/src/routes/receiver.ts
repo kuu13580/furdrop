@@ -37,7 +37,6 @@ const listPhotosRoute = createRoute({
               z.object({
                 id: z.string(),
                 sender_name: z.string().nullable(),
-                camera_model: z.string().nullable(),
                 file_size: z.number(),
                 width: z.number().nullable(),
                 height: z.number().nullable(),
@@ -68,7 +67,7 @@ receiver.openapi(listPhotosRoute, async (c) => {
 
   // expires_at は「実効値」に解決して返す。旧データ (NULL) をフロントに漏らさないことで、
   // クライアント側が保存期間の定数を持たなくて済む。
-  let query = `SELECT id, sender_name, camera_model, file_size, width, height, r2_key_thumb, batch_index, created_at, ${EFFECTIVE_EXPIRES_AT} AS expires_at FROM photos WHERE receiver_id = ? AND upload_status = 'completed'`;
+  let query = `SELECT id, sender_name, file_size, width, height, r2_key_thumb, batch_index, created_at, ${EFFECTIVE_EXPIRES_AT} AS expires_at FROM photos WHERE receiver_id = ? AND upload_status = 'completed'`;
   const params: (string | number)[] = [PHOTO_RETENTION_SECONDS, uid];
 
   if (cursor) {
@@ -134,7 +133,6 @@ receiver.openapi(listPhotosRoute, async (c) => {
     photos.map(async (p) => ({
       id: p.id as string,
       sender_name: p.sender_name as string | null,
-      camera_model: p.camera_model as string | null,
       file_size: p.file_size as number,
       width: p.width as number | null,
       height: p.height as number | null,
@@ -243,7 +241,6 @@ const getPhotoRoute = createRoute({
             photo: z.object({
               id: z.string(),
               sender_name: z.string().nullable(),
-              camera_model: z.string().nullable(),
               file_size: z.number(),
               width: z.number().nullable(),
               height: z.number().nullable(),
@@ -275,7 +272,7 @@ receiver.openapi(getPhotoRoute, async (c) => {
   const { group } = c.req.valid("query");
 
   const photo = await c.env.DB.prepare(
-    `SELECT id, sender_name, camera_model, file_size, width, height, r2_key_original, r2_key_thumb, batch_index, created_at, ${EFFECTIVE_EXPIRES_AT} AS expires_at FROM photos WHERE id = ? AND receiver_id = ? AND upload_status = 'completed'`,
+    `SELECT id, sender_name, file_size, width, height, r2_key_original, r2_key_thumb, batch_index, created_at, ${EFFECTIVE_EXPIRES_AT} AS expires_at FROM photos WHERE id = ? AND receiver_id = ? AND upload_status = 'completed'`,
   )
     .bind(PHOTO_RETENTION_SECONDS, photoId, uid)
     .first();
@@ -356,7 +353,6 @@ receiver.openapi(getPhotoRoute, async (c) => {
       photo: {
         id: currentId,
         sender_name: photo.sender_name as string | null,
-        camera_model: photo.camera_model as string | null,
         file_size: photo.file_size as number,
         width: photo.width as number | null,
         height: photo.height as number | null,
@@ -398,6 +394,8 @@ const downloadRoute = createRoute({
             download_url: z.string(),
             filename: z.string().nullable(),
             file_size: z.number(),
+            /** R17: DL 時に EXIF へ書き込むクレジット。匿名送信は null */
+            sender_name: z.string().nullable(),
           }),
         },
       },
@@ -417,7 +415,7 @@ receiver.openapi(downloadRoute, async (c) => {
 
   // session_index: 同一セッション内でこの写真が何枚目か (1-based)
   const photo = await c.env.DB.prepare(
-    `SELECT p.r2_key_original, p.file_size, p.created_at,
+    `SELECT p.r2_key_original, p.file_size, p.created_at, p.sender_name,
        (SELECT COUNT(*) FROM photos p2
           WHERE p2.session_id IS NOT NULL
             AND p2.session_id = p.session_id
@@ -447,6 +445,7 @@ receiver.openapi(downloadRoute, async (c) => {
       download_url: downloadUrl,
       filename,
       file_size: photo.file_size as number,
+      sender_name: photo.sender_name as string | null,
     },
     200,
   );

@@ -43,8 +43,6 @@ export type PreviewCandidate = {
 
 export type UploadFormState = {
   senderName: string;
-  /** EXIFカメラモデル欄に senderName を埋め込む */
-  exifEnabled: boolean;
   /** 透かしを入れる */
   watermarkEnabled: boolean;
   /** 透かし要素 (最大5) */
@@ -56,7 +54,6 @@ export const selectedFilesAtom = atom<SelectedFile[]>([]);
 function defaultUploadForm(): UploadFormState {
   return {
     senderName: "",
-    exifEnabled: false,
     watermarkEnabled: false,
     watermarkElements: createDefaultWatermarkElements(),
   };
@@ -70,7 +67,6 @@ function sanitizeUploadForm(raw: unknown): UploadFormState {
   const elements = sanitizeWatermarkElements(r.watermarkElements);
   return {
     senderName: typeof r.senderName === "string" ? r.senderName.slice(0, 100) : base.senderName,
-    exifEnabled: r.exifEnabled === true,
     watermarkEnabled: r.watermarkEnabled === true,
     watermarkElements: elements.length > 0 ? elements : base.watermarkElements,
   };

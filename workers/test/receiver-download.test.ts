@@ -26,6 +26,35 @@ describe("GET /receiver/photos/:photoId/download", () => {
     expect(body.file_size).toBeGreaterThan(0);
   });
 
+  // 目的: R17 の DL 時 EXIF 埋め込みはクライアントで行うため、書き込む送信者名を
+  // このレスポンスから受け取れること (一括 DL は photo-ids 経由で写真情報を持たないため)
+  it("EXIF に書き込む sender_name を返す (匿名送信は null)", async () => {
+    const { idToken, uid } = await createEmulatorUser();
+    await seedUser({ uid, handle: "rcv_dl_name" });
+    const named = await seedPhoto({
+      receiverId: uid,
+      handle: "rcv_dl_name",
+      senderName: "@hanako_photo",
+    });
+    const anonymous = await seedPhoto({
+      receiverId: uid,
+      handle: "rcv_dl_name",
+      senderName: null,
+    });
+
+    const withName = await apiJson<{ sender_name: string | null }>(
+      `/receiver/photos/${named.photoId}/download`,
+      { headers: authHeader(idToken) },
+    );
+    expect(withName.body.sender_name).toBe("@hanako_photo");
+
+    const withoutName = await apiJson<{ sender_name: string | null }>(
+      `/receiver/photos/${anonymous.photoId}/download`,
+      { headers: authHeader(idToken) },
+    );
+    expect(withoutName.body.sender_name).toBeNull();
+  });
+
   // 目的: DL ファイル名の日時も受信者のタイムゾーン基準になること (JST 固定でない)
   it("tz_offset_min に応じて filename の日付が変わる", async () => {
     const { idToken, uid } = await createEmulatorUser();

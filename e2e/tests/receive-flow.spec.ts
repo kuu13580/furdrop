@@ -32,7 +32,11 @@ test("ログイン → ダッシュボード → ギャラリー → 写真詳�
   await expect(photoImg).toBeVisible({ timeout: 15_000 });
 
   // 5. 写真詳細 → DL リンク (ダウンロードボタンを目視確認、実 DL は別経路)
+  //    R17 で「ダウンロードオプション」ボタンが隣に増えたので exact 一致で絞る
+  //    (部分一致だと両方拾って strict mode 違反になり、描画順で落ちたり通ったりする)
   await photoImg.click();
   await expect(page).toHaveURL(/\/gallery\/[0-9a-f-]+/);
-  await expect(page.getByText(/ダウンロード|DL/i)).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByRole("button", { name: "ダウンロード", exact: true })).toBeVisible({
+    timeout: 10_000,
+  });
 });

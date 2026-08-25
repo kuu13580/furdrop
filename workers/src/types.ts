@@ -30,6 +30,8 @@ export interface Env {
   RATE_LIMITER_SESSION: RateLimit;
   RATE_LIMITER_PHOTOS: RateLimit;
   RATE_LIMITER_PROFILE: RateLimit;
+  /** R08: 一括 DL (認証済み UID 単位) */
+  RATE_LIMITER_ZIP: RateLimit;
 
   // テスト時のみセットされ、firebase-auth-cloudflare-workers の verifyIdToken に
   // 第 3 引数として渡すと Auth Emulator REST に切り替わる (本番は未定義のままで no-op)。

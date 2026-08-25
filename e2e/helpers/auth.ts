@@ -44,7 +44,6 @@ export async function registerReceiver(
   handle: string,
   displayName = handle,
   options?: {
-    exif_embed_mode?: EmbedMode;
     watermark_mode?: EmbedMode;
     require_sender_name?: boolean;
   },
@@ -72,7 +71,6 @@ export async function registerReceiver(
 export async function patchOptions(
   user: TestUser,
   options: {
-    exif_embed_mode?: EmbedMode;
     watermark_mode?: EmbedMode;
     require_sender_name?: boolean;
     is_active?: boolean;

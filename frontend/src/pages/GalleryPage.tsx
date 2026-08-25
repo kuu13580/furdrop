@@ -1,19 +1,20 @@
 import { msg } from "@lingui/core/macro";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
-import { useAtomValue } from "jotai";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
-import BatchDownloadModal from "../components/BatchDownloadModal";
+import DownloadOptionsDialog, { DownloadOptionsTrigger } from "../components/DownloadOptionsDialog";
+import Alert from "../components/ui/Alert";
 import Button from "../components/ui/Button";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
 import LoadingSpinner from "../components/ui/LoadingSpinner";
 import ScrollToTopButton from "../components/ui/ScrollToTopButton";
+import { useDownloadOptions } from "../hooks/useDownloadOptions";
 import { onImageError } from "../lib/analytics";
 import { receiverApi } from "../lib/api";
+import { startBulkDownload } from "../lib/bulk-download";
+import type { ExifCreditMode } from "../lib/exif-credit";
 import { daysUntilExpiry, expiryBadgeLevel } from "../lib/retention";
 import { buildDateKeyAndLabel, getTzOffsetMin } from "../lib/timezone";
-import { buildZipName, downloadAsZip } from "../lib/zip-download";
-import { userAtom } from "../stores/user";
 import type { Photo } from "../types/photo";
 
 const PAGE_SIZE = 50;
@@ -87,15 +88,12 @@ export default function GalleryPage() {
   const [tzOffsetMin] = useState(getTzOffsetMin);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false);
-  const user = useAtomValue(userAtom);
+  const downloadOptions = useDownloadOptions();
 
-  // 一括 ZIP DL 用ステート
-  const [zipState, setZipState] = useState<{
-    processed: number;
-    total: number;
-    failed: number;
-  } | null>(null);
-  const zipControllerRef = useRef<AbortController | null>(null);
+  // 一括 DL (R08) は Workers がストリーミング ZIP を返すのをフォーム POST で受け取る。
+  // 進捗はブラウザのダウンロードマネージャが出すので、こちらは開始までの状態だけ持つ
+  const [zipStarting, setZipStarting] = useState(false);
+  const [zipError, setZipError] = useState<string | null>(null);
 
   // Shift+クリック & ドラッグ選択用
   const lastClickedRef = useRef<number | null>(null);
@@ -495,43 +493,35 @@ export default function GalleryPage() {
     [groupMode, cursor, hasMore, selected, fetchPhotos, tzOffsetMin],
   );
 
-  const handleBatchDownload = useCallback(async () => {
-    const ids = [...selected];
-    if (ids.length === 0) return;
-    if (zipControllerRef.current) return;
-
-    const controller = new AbortController();
-    zipControllerRef.current = controller;
-    setZipState({ processed: 0, total: ids.length, failed: 0 });
-
-    try {
-      await downloadAsZip({
-        photoIds: ids,
-        zipName: buildZipName(user?.handle ?? "photos"),
-        signal: controller.signal,
-        onProgress: (p) => setZipState(p),
-      });
-    } catch {
-      // 中断・致命エラーはモーダルを閉じるだけ
-    } finally {
-      zipControllerRef.current = null;
-      setZipState(null);
-    }
-  }, [selected, user?.handle]);
-
-  const cancelBatchDownload = useCallback(() => {
-    zipControllerRef.current?.abort();
-  }, []);
-
-  // ZIP 生成中はページ離脱を抑止
+  // 選択を変えたら前回のエラーは意味を失うので消す
+  // biome-ignore lint/correctness/useExhaustiveDependencies: selected の変化の検知のみが目的
   useEffect(() => {
-    if (!zipState) return;
-    const onBeforeUnload = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-    };
-    window.addEventListener("beforeunload", onBeforeUnload);
-    return () => window.removeEventListener("beforeunload", onBeforeUnload);
-  }, [zipState]);
+    setZipError(null);
+  }, [selected]);
+
+  const runBatchDownload = useCallback(
+    async (exifCredit: ExifCreditMode) => {
+      const ids = [...selected];
+      if (ids.length === 0 || zipStarting) return;
+
+      setZipStarting(true);
+      setZipError(null);
+      try {
+        const result = await startBulkDownload({ photoIds: ids, exifCredit });
+        if (!result.ok) setZipError(result.message);
+      } finally {
+        setZipStarting(false);
+      }
+    },
+    [selected, zipStarting],
+  );
+
+  // 初回 DL のときだけ EXIF 記録の確認ダイアログを挟む (R17)
+  const handleBatchDownload = useCallback(() => {
+    downloadOptions.startDownload((mode) => {
+      void runBatchDownload(mode);
+    });
+  }, [downloadOptions, runBatchDownload]);
 
   if (loading) {
     return (
@@ -564,46 +554,53 @@ export default function GalleryPage() {
       </div>
 
       {selectMode && (
-        <div className="sticky top-[calc(theme(spacing.14)+0.5rem)] z-20 flex items-center justify-between rounded-2xl border border-surface-sand-deep bg-surface-sand/95 px-4 py-2.5 backdrop-blur-sm sm:top-[calc(theme(spacing.16)+0.5rem)]">
-          <div className="flex items-center gap-3">
+        <div className="sticky top-[calc(theme(spacing.14)+0.5rem)] z-20 space-y-1 rounded-2xl border border-surface-sand-deep bg-surface-sand/95 px-4 py-2.5 backdrop-blur-sm sm:top-[calc(theme(spacing.16)+0.5rem)]">
+          <div className="flex items-center justify-between gap-2">
             <button
               type="button"
               onClick={toggleSelectAll}
-              className="text-[14px] font-medium text-brand transition-colors hover:text-brand-deep"
+              className="whitespace-nowrap text-[14px] font-medium text-brand transition-colors hover:text-brand-deep"
             >
               {selected.size === photos.length ? t`全解除` : t`全選択`}
             </button>
-            <span className="text-[14px] text-ink-soft">
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="secondary"
+                className="whitespace-nowrap"
+                onClick={handleBatchDownload}
+                disabled={selected.size === 0 || zipStarting}
+                loading={zipStarting}
+              >
+                <Trans>DL</Trans>
+              </Button>
+              <Button
+                size="sm"
+                variant="danger"
+                className="whitespace-nowrap"
+                onClick={() => setDeleteConfirmOpen(true)}
+                disabled={selected.size === 0}
+                loading={deleting}
+              >
+                <Trans>削除</Trans>
+              </Button>
+              <button
+                type="button"
+                onClick={exitSelectMode}
+                className="whitespace-nowrap rounded-lg px-2.5 py-1.5 text-[14px] font-medium text-brand transition-colors hover:bg-brand-tint"
+              >
+                <Trans>完了</Trans>
+              </button>
+            </div>
+          </div>
+          {/* 枚数と DL 設定は 2 行目へ。訳文の長い言語 (en) で 1 行に詰めると折り返して潰れる */}
+          <div className="-mr-2 flex items-center justify-between gap-2">
+            <span className="whitespace-nowrap text-[13px] text-ink-soft">
               <Plural value={selectedCount} other="#枚選択中" />
             </span>
+            <DownloadOptionsTrigger onClick={downloadOptions.openEditor} />
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={handleBatchDownload}
-              disabled={selected.size === 0 || zipState !== null}
-              loading={zipState !== null}
-            >
-              <Trans>DL</Trans>
-            </Button>
-            <Button
-              size="sm"
-              variant="danger"
-              onClick={() => setDeleteConfirmOpen(true)}
-              disabled={selected.size === 0}
-              loading={deleting}
-            >
-              <Trans>削除</Trans>
-            </Button>
-            <button
-              type="button"
-              onClick={exitSelectMode}
-              className="rounded-lg px-2.5 py-1.5 text-[14px] font-medium text-brand transition-colors hover:bg-brand-tint"
-            >
-              <Trans>完了</Trans>
-            </button>
-          </div>
+          {zipError && <Alert variant="error">{zipError}</Alert>}
         </div>
       )}
 
@@ -794,13 +791,7 @@ export default function GalleryPage() {
         loading={deleting}
       />
 
-      <BatchDownloadModal
-        open={zipState !== null}
-        processed={zipState?.processed ?? 0}
-        total={zipState?.total ?? 0}
-        failed={zipState?.failed ?? 0}
-        onCancel={cancelBatchDownload}
-      />
+      <DownloadOptionsDialog {...downloadOptions.dialogProps} />
 
       <ScrollToTopButton />
     </div>

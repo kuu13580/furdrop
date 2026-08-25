@@ -15,7 +15,6 @@ type Receiver = {
   is_accepting: boolean;
   unavailable_reason: "paused" | "full" | null;
   options: {
-    exif_embed_mode: EmbedMode;
     watermark_mode: EmbedMode;
     require_sender_name: boolean;
   };

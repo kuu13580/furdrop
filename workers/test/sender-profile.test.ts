@@ -16,8 +16,8 @@ describe("GET /send/:handle", () => {
       uid: "uid-active",
       handle: "active_user",
       display_name: "Active",
-      exif_embed_mode: "required",
       watermark_mode: "optional",
+      require_sender_name: 1,
     });
     const { status, body } = await apiJson<{
       receiver: {
@@ -25,7 +25,7 @@ describe("GET /send/:handle", () => {
         display_name: string;
         is_accepting: boolean;
         unavailable_reason: string | null;
-        options: { exif_embed_mode: string; watermark_mode: string };
+        options: { watermark_mode: string; require_sender_name: boolean };
       };
     }>("/send/active_user");
     expect(status).toBe(200);
@@ -33,8 +33,8 @@ describe("GET /send/:handle", () => {
     expect(body.receiver.display_name).toBe("Active");
     expect(body.receiver.is_accepting).toBe(true);
     expect(body.receiver.unavailable_reason).toBeNull();
-    expect(body.receiver.options.exif_embed_mode).toBe("required");
     expect(body.receiver.options.watermark_mode).toBe("optional");
+    expect(body.receiver.options.require_sender_name).toBe(true);
   });
 
   type Unavailable = { receiver: { is_accepting: boolean; unavailable_reason: string | null } };

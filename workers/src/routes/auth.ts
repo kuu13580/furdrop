@@ -18,14 +18,13 @@ const UserSchema = z.object({
   storage_quota: z.number(),
   receive_url: z.string(),
   is_active: z.boolean(),
-  exif_embed_mode: EmbedModeSchema,
   watermark_mode: EmbedModeSchema,
   require_sender_name: z.boolean(),
   require_send_key: z.boolean(),
 });
 
 const USER_COLUMNS =
-  "id, handle, display_name, storage_used, storage_quota, is_active, exif_embed_mode, watermark_mode, require_sender_name, require_send_key";
+  "id, handle, display_name, storage_used, storage_quota, is_active, watermark_mode, require_sender_name, require_send_key";
 
 type EmbedMode = z.infer<typeof EmbedModeSchema>;
 
@@ -75,7 +74,6 @@ const registerRoute = createRoute({
           schema: z.object({
             handle: z.string().regex(HANDLE_REGEX),
             display_name: z.string().min(1).max(50),
-            exif_embed_mode: EmbedModeSchema.optional(),
             watermark_mode: EmbedModeSchema.optional(),
             require_sender_name: z.boolean().optional(),
           }),
@@ -98,8 +96,7 @@ const registerRoute = createRoute({
 auth.openapi(registerRoute, async (c) => {
   const uid = c.get("uid");
   const email = c.get("email");
-  const { handle, display_name, exif_embed_mode, watermark_mode, require_sender_name } =
-    c.req.valid("json");
+  const { handle, display_name, watermark_mode, require_sender_name } = c.req.valid("json");
 
   // UID重複チェック (べき等性: 既存ユーザーをそのまま返す)
   const existing = await c.env.DB.prepare(`SELECT ${USER_COLUMNS} FROM users WHERE id = ?`)
@@ -123,7 +120,6 @@ auth.openapi(registerRoute, async (c) => {
           storage_quota: existing.storage_quota as number,
           receive_url: receiveUrl,
           is_active: asBool(existing.is_active),
-          exif_embed_mode: asMode(existing.exif_embed_mode),
           watermark_mode: asMode(existing.watermark_mode),
           require_sender_name: asBool(existing.require_sender_name),
           require_send_key: asBool(existing.require_send_key),
@@ -135,15 +131,14 @@ auth.openapi(registerRoute, async (c) => {
 
   const now = Math.floor(Date.now() / 1000);
   const avatarUrl = c.get("picture") ?? null;
-  const exifMode: EmbedMode = exif_embed_mode ?? "optional";
   const watermarkMode: EmbedMode = watermark_mode ?? "disabled";
   const requireSenderName = require_sender_name === true;
 
   // INSERT first — UNIQUE制約違反でhandle重複を検出 (レースコンディション防止)
   try {
     await c.env.DB.prepare(
-      `INSERT INTO users (id, handle, display_name, email, avatar_url, storage_used, storage_quota, is_active, exif_embed_mode, watermark_mode, require_sender_name, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, 0, 10737418240, 1, ?, ?, ?, ?, ?)`,
+      `INSERT INTO users (id, handle, display_name, email, avatar_url, storage_used, storage_quota, is_active, watermark_mode, require_sender_name, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, 0, 10737418240, 1, ?, ?, ?, ?)`,
     )
       .bind(
         uid,
@@ -151,7 +146,6 @@ auth.openapi(registerRoute, async (c) => {
         display_name,
         email,
         avatarUrl,
-        exifMode,
         watermarkMode,
         requireSenderName ? 1 : 0,
         now,
@@ -188,7 +182,6 @@ auth.openapi(registerRoute, async (c) => {
         storage_quota: 10737418240,
         receive_url: `/send/${handle}?k=${keyValue}`,
         is_active: true,
-        exif_embed_mode: exifMode,
         watermark_mode: watermarkMode,
         require_sender_name: requireSenderName,
         require_send_key: true,
@@ -245,7 +238,6 @@ auth.openapi(meRoute, async (c) => {
         storage_quota: user.storage_quota as number,
         receive_url: receiveUrl,
         is_active: asBool(user.is_active),
-        exif_embed_mode: asMode(user.exif_embed_mode),
         watermark_mode: asMode(user.watermark_mode),
         require_sender_name: asBool(user.require_sender_name),
         require_send_key: asBool(user.require_send_key),
@@ -267,7 +259,6 @@ const updateOptionsRoute = createRoute({
       content: {
         "application/json": {
           schema: z.object({
-            exif_embed_mode: EmbedModeSchema.optional(),
             watermark_mode: EmbedModeSchema.optional(),
             require_sender_name: z.boolean().optional(),
             is_active: z.boolean().optional(),
@@ -302,7 +293,6 @@ auth.openapi(updateOptionsRoute, async (c) => {
     const now = Math.floor(Date.now() / 1000);
     await c.env.DB.prepare(
       `UPDATE users SET
-         exif_embed_mode     = COALESCE(?, exif_embed_mode),
          watermark_mode      = COALESCE(?, watermark_mode),
          require_sender_name = COALESCE(?, require_sender_name),
          is_active           = COALESCE(?, is_active),
@@ -311,7 +301,6 @@ auth.openapi(updateOptionsRoute, async (c) => {
        WHERE id = ?`,
     )
       .bind(
-        body.exif_embed_mode ?? null,
         body.watermark_mode ?? null,
         asFlag(body.require_sender_name),
         asFlag(body.is_active),
@@ -347,7 +336,6 @@ auth.openapi(updateOptionsRoute, async (c) => {
         storage_quota: user.storage_quota as number,
         receive_url: receiveUrl,
         is_active: asBool(user.is_active),
-        exif_embed_mode: asMode(user.exif_embed_mode),
         watermark_mode: asMode(user.watermark_mode),
         require_sender_name: asBool(user.require_sender_name),
         require_send_key: asBool(user.require_send_key),

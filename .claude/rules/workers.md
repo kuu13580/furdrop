@@ -15,8 +15,20 @@ paths:
 - UUIDやenumは `TEXT` 型を使用する
 
 ## R2
-- R2へのアクセスは全てPresigned URL経由。Workersを通してストリームしない（CPU制限のため）
+- 画像のデコード・リサイズ・再エンコードは Workers で行わない（CPU制限のため）。クライアントでやる
+- 表示・単体DL・アップロードは Presigned URL 経由でクライアントが R2 と直接やり取りする
+- **例外: 一括DL (R08) だけは Workers を通してバイトを流す。** ZIP は複数オブジェクトを
+  1本のレスポンスにまとめる必要があり、クライアントで組み立てるとメモリに全量が溜まるため。
+  CPU は CRC32 のみで約 27 CPU-ms/MiB。`[limits] cpu_ms` と `MAX_ZIP_BYTES` で上限を縛る
 - Presigned PUTにはContent-Lengthを署名に含める
+
+## ストリーミングレスポンス
+- `ZipWriter.add` は必ず直列化する（並列に呼ぶと zip.js が内部バッファ経路に入り、
+  ランタイム次第でメモリが溜まるか無言でエントリが欠落する）。`createZipStream` が内部で担保済み
+- ヘッダを送出した後はエラーに切り替えられない。**途中で切れたレスポンスはブラウザが
+  「DL完了」として保存してしまう**ので、失敗しうる検証はすべてヘッダ送出前に済ませる。
+  1 バイトも書く前に分かる失敗 (R2 に対象が無い) はスキップして `MISSING.txt` に落とすが、
+  エントリ本体の転送中に落ちたら abort しかなく、壊れた ZIP が残る
 
 ## 認証
 - Firebase IDトークンの検証は `firebase-auth-cloudflare-workers` ライブラリで行う

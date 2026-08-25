@@ -674,7 +674,7 @@ function BadgesSection() {
             NEW
           </span>
           <span className="rounded-full bg-brand-tint px-2.5 py-1 text-[12px] font-semibold text-brand-deep">
-            EXIF埋め込み
+            撮影者名を記録
           </span>
           <span className="rounded-full bg-brand-tint px-2.5 py-1 text-[12px] font-semibold text-brand-deep">
             透かし OK

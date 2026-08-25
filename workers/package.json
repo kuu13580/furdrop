@@ -17,12 +17,15 @@
     "@aws-sdk/s3-request-presigner": "^3.1028.0",
     "@hono/swagger-ui": "^0.6.1",
     "@hono/zod-openapi": "^1.2.4",
+    "@zip.js/zip.js": "^2.8.26",
     "firebase-auth-cloudflare-workers": "^2.0.6",
     "hono": "^4.12.12",
+    "piexifjs": "^1.0.6",
     "zod": "^4.3.6"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.10.0",
+    "@types/piexifjs": "^1.0.0",
     "@cloudflare/workers-types": "^4.20260409.1",
     "typescript": "^6.0.2",
     "vitest": "^3.0.0",

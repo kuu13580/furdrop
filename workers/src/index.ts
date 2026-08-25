@@ -7,6 +7,7 @@ import { logError } from "./lib/logger";
 import { defaultHook } from "./lib/schema";
 import auth from "./routes/auth";
 import dev from "./routes/dev";
+import download from "./routes/download";
 import receiver from "./routes/receiver";
 import sender from "./routes/sender";
 import type { Env } from "./types";
@@ -46,6 +47,9 @@ app.get("/health", (c) => {
 app.route("/send", sender);
 app.route("/auth", auth);
 app.route("/receiver", receiver);
+// 一括 DL (R08)。ブラウザの DL は Authorization ヘッダを送れないので
+// トークンをボディで受ける専用の経路 (routes/download.ts の冒頭参照)
+app.route("/download", download);
 
 // 開発用画像プロキシ（本番ではマウントしない）
 app.use("/dev/*", async (c, next) => {

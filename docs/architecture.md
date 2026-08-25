@@ -52,7 +52,8 @@ CREATE TABLE users (
     -- 受信オプション設定 (R14: 送信者に提示するオプションを制御)
     -- 'disabled' | 'optional' | 'required' の3値。
     -- 'required' は送信者に必ず埋め込みを行わせる(サーバ側でも必須検証)
-    exif_embed_mode   TEXT NOT NULL DEFAULT 'disabled',
+    -- EXIF への送信者名の記録は R17 で受信者の DL 時処理に移したので exif_embed_mode は廃止
+    -- (DROP COLUMN は旧コードとの共存期間があるので 0010 では行わず追いマイグレーションで落とす)
     watermark_mode    TEXT NOT NULL DEFAULT 'disabled',  -- 透かしは不可逆のため慎重に
     require_sender_name INTEGER NOT NULL DEFAULT 0,      -- 送信者名の入力を必須にする (0=任意, 1=必須)
     -- R16 opt-out: 0 のとき送信URLのアクセスキーを検証しない (handle だけで送信できる)
@@ -133,7 +134,6 @@ CREATE TABLE photos (
 
     -- 送信者メタデータ
     sender_name       TEXT,                   -- 送信者名 / TwitterID
-    camera_model      TEXT,                   -- EXIFカメラモデル欄に埋め込んだ送信者情報
     watermark_text    TEXT,                   -- 適用したウォーターマーク (記録用)。要素配列を serialize した JSON 文字列 ({"v":1,"elements":[...]})
     original_filename TEXT,                   -- 元ファイル名
 
@@ -218,9 +218,16 @@ furdrop-thumbs/
 | オリジナルアップロード | PUT | 15分 | Content-Type: image/jpeg, Content-Length制限 |
 | サムネイルアップロード | PUT | 15分 | Content-Type: image/jpeg, 最大500KB |
 | サムネイル表示 | GET | 60分 | - |
-| オリジナルDL | GET | 60分 | - |
+| オリジナルDL (単体) | GET | 60分 | - |
 
 Workers内で `@aws-sdk/s3-request-presigner` を使ってPresigned URLを生成する。
+
+**例外: 一括DL (R08) は Workers を通す。** ZIP は複数オブジェクトを1本のレスポンスに
+まとめる必要があり、Presigned URL では表現できない。クライアントで組み立てると Blob に
+全量が溜まり、iOS の WebKit は Blob をディスクへ退避できないため枚数に天井ができる。
+Workers から `Content-Disposition: attachment` で流せば、ブラウザのダウンロード
+マネージャが単体DLと同じようにディスクへ逐次書きする。画像のデコードは行わず
+バイトを通すだけなので、CPU は CRC32 の約 27 CPU-ms/MiB に収まる。
 
 ---
 
@@ -260,6 +267,7 @@ Content-Type: application/json
 | `POST /send/:handle/sessions` | 5 / 60秒 / IP | 429 + `Retry-After: 60` |
 | `POST /send/:handle/sessions/:id/photos` | 30 / 60秒 / IP | 429 + `Retry-After: 60` |
 | `GET /send/:handle` (handle 不在時のみ) | 60 / 60秒 / IP | 429 + `Retry-After: 60` |
+| `POST /download/zip` (`dry_run` は除く) | 6 / 60秒 / 受信者UID | 429 + HTML のエラーページ |
 | その他 GET 系 | 制限なし | — |
 
 `GET /send/:handle` の制限は handle 列挙の速度を落とすためのもの (R16 opt-out した受信者は
@@ -275,6 +283,7 @@ handle さえ当たれば送信されうる)。**空振り (404) のときだけ
 | HTTP | code | 説明 |
 |---|---|---|
 | 400 | INVALID_REQUEST | バリデーション失敗 (zod の失敗も `lib/schema.ts` の `defaultHook` でこの形式に揃える) |
+| 400 | SELECTION_TOO_LARGE | 一括DL (R08) の選択が 1 リクエストの上限を超えた |
 | 401 | UNAUTHORIZED | トークンなし/期限切れ |
 | 403 | FORBIDDEN | 権限なし |
 | 403 | INVALID_KEY | 送信URLのアクセスキー (R16) が不一致 |
@@ -333,7 +342,6 @@ Response: 200
 ```
 Request (すべて任意):
 {
-  "exif_embed_mode": "optional",   // R14
   "watermark_mode": "disabled",    // R14
   "require_sender_name": false,    // R14
   "is_active": true,               // R11 受付停止/再開
@@ -385,7 +393,6 @@ Response: 200
     {
       "id": "uuid",
       "sender_name": "@hanako_photo",
-      "camera_model": "@hanako_photo",
       "original_filename": "IMG_0042.JPG",
       "file_size": 9437184,
       "width": 6000,
@@ -425,12 +432,22 @@ Response: 200
 {
   "download_url": "https://...presigned...",
   "filename": "20260410-153000_01.jpg",
-  "file_size": 9437184
+  "file_size": 9437184,
+  "sender_name": "@hanako_photo"
 }
 ```
 
 `filename` は `受信日時_連番.jpg` = `YYYYMMDD-HHMMSS_NN.jpg` 形式 (元のファイル名ではない)。
 日時は `tz_offset_min` のタイムゾーン基準 (省略時 JST)。
+
+`sender_name` は R17 (DL 時の EXIF 埋め込み) で**単体 DL のクライアント**が書き込むクレジット。
+匿名送信は null。一括 DL (§4.3.1) はクライアントから受け取らず、Workers が写真 ID から
+`photos.sender_name` を引く (クレジットの値をクライアント入力に依存させない)。
+
+**単体 DL の埋め込みはクライアントで行う。** presigned GET で取得したバイト列に `piexifjs` で
+APP1 セグメントを差し替え、`a[download]` で保存する。Workers を通してストリームしないという
+制約 (§3.3) を守りつつ、R2 の保存物を送信者が送ったまま保てる。`piexif.load` / `piexif.dump` は
+APP1 ペイロードだけを渡して使い、画像全体を dataURL 化しない (20MB × ZIP 並列4 のメモリ対策)。
 
 #### DELETE /receiver/photos/:photoId
 
@@ -451,6 +468,63 @@ Request:
 Response: 200
 { "deleted_count": 2 }
 ```
+
+### 4.3.1 一括ダウンロード (認証はボディのトークン)
+
+#### POST /download/zip
+
+R08 の一括ダウンロード。選択した写真を Workers が ZIP に固めて **1 本のストリーミング
+レスポンス**で返す。
+
+**なぜ `/receiver/*` ではないのか**: ブラウザのダウンロードは `Authorization` ヘッダを
+送れない。API は別オリジンなので Cookie も third-party 扱いで Safari の ITP に潰される。
+そのため受信者フロントは**隠しフォームの POST** で ID トークンと写真 ID をボディに載せる
+(URL に載せると UUID 数百個で数十KB になる)。ヘッダ前提の `requireAuth` は使えないので、
+このエンドポイントだけボディからトークンを検証する。
+
+```
+Request: application/x-www-form-urlencoded
+  token         = Firebase ID トークン
+  photo_ids     = カンマ区切りの UUID
+  exif_credit   = none | artist | artist_model   (R17)
+  tz_offset_min = 540                            (ファイル名の日時基準。省略時は 540=JST)
+  dry_run       = 1                              (任意。検証だけして JSON を返す)
+
+Response: 200
+  Content-Type: application/zip
+  Content-Disposition: attachment; filename="furdrop-<handle>-YYYYMMDDHHMMSS.zip"
+  (Transfer-Encoding: chunked — Content-Length は付けない)
+
+エラー:
+- 400 INVALID_REQUEST:     photo_ids が空
+- 400 SELECTION_TOO_LARGE: 合計 file_size が上限 (3.5GB) 超過
+- 401 UNAUTHORIZED:        トークン不正
+- 404 NOT_FOUND:           DL 可能な写真が 1 枚も無い
+- 429 RATE_LIMITED:        受信者UID 単位のレート制限超過
+```
+
+実装上のポイント:
+
+- **`target="_self"` のフォーム POST で発火する。** `Content-Disposition: attachment` の
+  レスポンスはナビゲーションを置き換えないのでページはそのまま残り、ポップアップブロッカーも
+  ユーザージェスチャの連鎖も原理的に関与しない (実機で確認済み)
+- **エラーは `dry_run` で先に取る。** `_self` のフォーム POST でサーバーがエラーを返すと
+  その中身がページとして描画されてしまう。フロントは先に `fetch` で `dry_run=1` を打ち、
+  200 が返ってからフォームを submit する。検証ロジックは同一パスなので二重化しない
+- **それでも塞げない隙間があるので、非 `dry_run` のエラーは JSON ではなく最小の HTML で
+  返す。** dry-run と実 POST の間に写真が削除される (TOCTOU)、レート制限に当たる、といった
+  ケースが残るため。レート制限は実 POST だけに効かせて、dry-run と実 POST の判定がズレない
+  ようにしている
+- **ヘッダ送出後は中断しない。** R2 の `get()` 失敗はまだ 1 バイトも書く前に分かるので、
+  その写真をスキップして続行し、最後に `MISSING.txt` を同梱して ZIP を正常に閉じる。
+  途中で切れた ZIP はブラウザが「DL 完了」として保存してしまい、ユーザーに失敗が見えない
+- **D1 の bind パラメータは 1 クエリ 100 個まで**なので `IN (...)` で ID を列挙できない。
+  受信者の completed 写真を全件引いて JS で絞る (同一セッション内の連番の算出にも
+  セッションの全行が必要なので、結果的にこれが自然な形)
+- 上限 3.5GB は実測 (deployed worker / `cpu_ms = 120000`) の約 4.6GB に対して約 24% の余裕。
+  CRC32 が約 27 CPU-ms/MiB で、超えるとストリーム途中で kill される
+- EXIF への送信者名の書き込み (R17) はここで行う。先頭 256KB だけバッファして APP1 を
+  差し替え、残りはパススルーする (1 枚あたり約 1ms、写真サイズに依存しない)
 
 #### GET /receiver/quota
 
@@ -489,7 +563,6 @@ Response: 200
     "unavailable_reason": null,
     "require_send_key": true,
     "options": {
-      "exif_embed_mode": "optional",
       "watermark_mode": "disabled",
       "require_sender_name": false
     }
@@ -506,6 +579,7 @@ Response: 200
   - `disabled`: 送信者UIに表示しない
   - `optional`: 送信者が任意で選択
   - `required`: 送信者は必ず埋め込み (UIで強制ON、サーバ側でも未指定時は400)
+  - EXIF への送信者名の記録は送信者オプションではなく、受信者の DL 時の選択 (R17) になった
 
 #### POST /send/:handle/sessions
 
@@ -549,7 +623,6 @@ Request:
       "file_size": 9437184,
       "width": 6000,
       "height": 4000,
-      "camera_model": "@hanako_photo",
       "watermark_text": "{\"v\":1,\"elements\":[{\"text\":\"撮影：@hanako_photo\",\"font\":\"noto-sans\",\"size\":0.02,\"opacity\":0.8,\"color\":\"mono\",\"stroke\":false,\"anchor\":[1,1],\"offset\":[-0.02,-0.02]}]}"
     }
   ]
@@ -698,6 +771,7 @@ flowchart TD
 | DELETE /auth/account | Firebase必須 | UID登録済み + confirm_handle 一致 |
 | GET /receiver/* | Firebase必須 | receiver_id == 認証UID |
 | DELETE /receiver/* | Firebase必須 | receiver_id == 認証UID |
+| POST /download/zip | **ボディの Firebase トークン** | receiver_id == トークンの UID (ヘッダを送れないため) |
 
 ---
 
@@ -713,7 +787,7 @@ sequenceDiagram
     C->>W: GET /send/:handle
     W-->>C: 受信者プロフィール
 
-    Note over C: クライアントサイド処理<br/>フォーマット変換 (PNG/HEIC→JPEG)<br/>EXIF書き換え (piexifjs)<br/>透かし適用 (Canvas API)<br/>サムネイル生成 (Canvas API)
+    Note over C: クライアントサイド処理<br/>フォーマット変換 (PNG/HEIC→JPEG)<br/>透かし適用 (Canvas API)<br/>EXIF GPS 除去 (piexifjs)<br/>サムネイル生成 (Canvas API)
 
     C->>W: POST /send/:handle/sessions (body: { key, sender_name, photo_count })
     Note over W: require_send_key=1 なら send_keys で key 一致を確認 (R16)
@@ -776,7 +850,9 @@ furdrop/
       pages/                  # ページコンポーネント
       hooks/                  # カスタムフック
       lib/
-        image-processing.ts   # EXIF書換・透かし・サムネイル・フォーマット変換
+        image-processing.ts   # 透かし・GPS除去・サムネイル・フォーマット変換
+        exif-credit.ts        # R17: 単体 DL 時に EXIF へ撮影者名を書き込む (APP1 splice)
+        bulk-download.ts      # R08: 隠しフォーム POST で Workers の ZIP を受け取る
         firebase.ts           # Firebase Auth初期化
         api.ts                # Workers APIクライアント
       stores/                 # Jotaiアトム
@@ -794,10 +870,13 @@ furdrop/
         auth.ts               # POST /auth/register, GET /auth/me
         receiver.ts           # GET/DELETE /receiver/*
         sender.ts             # GET/POST /send/:handle/*
+        download.ts           # POST /download/zip (R08 一括DL。認証はボディのトークン)
       lib/
         firebase-auth.ts      # Firebase IDトークン検証
         r2.ts                 # Presigned URL生成
         quota.ts              # クォータチェック・更新
+        zip-stream.ts         # R08: ストリーミング ZIP + DL 時の EXIF 差し替え
+        exif-credit.ts        # R17: APP1 差し替え (frontend 版から移植)
       middleware/
         auth.ts               # 認証ミドルウェア
       types.ts                # Env, Bindings型定義
@@ -883,6 +962,12 @@ R2クレデンシャル (`R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_ENDPOIN
 | `R2_SECRET_ACCESS_KEY` | R2 Presigned URL署名 | dotenvx → .dev.vars / wrangler secret |
 | `R2_ENDPOINT` | R2 S3互換APIエンドポイント | dotenvx → .dev.vars / wrangler secret |
 | `FIREBASE_PROJECT_ID` | IDトークン検証 | wrangler.toml [vars]（非秘密） |
+
+**`[limits] cpu_ms` について**: 一括DL (R08) のために既定の 30秒から **120,000ms (2分)** に
+上げている。これは Cloudflare が用意している唯一の支出コントロールで、denial-of-wallet の
+1リクエストあたりの被害額を決める (120 CPU秒 ≒ $0.0024)。**worker 全体に効く設定**なので、
+ZIP 以外のルートの 1 invocation の上限も 30秒→120秒 になる点に注意 (ルート単位で
+設定する手段はない)。
 | `VITE_FIREBASE_API_KEY` | Firebase SDK初期化 | .env.local（公開可、ドメイン制限で保護） |
 | `VITE_FIREBASE_AUTH_DOMAIN` | Firebase SDK初期化 | .env.local（公開可） |
 | `VITE_FEEDBACK_URL` | フッターのフィードバック導線 (GoogleフォームURL、空で非表示) | .env.local（公開可） |

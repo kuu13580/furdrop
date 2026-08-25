@@ -50,10 +50,6 @@ msgstr "{days, plural, one {The earliest photo will be deleted in # day.} other 
 msgid "{displayName}さんの保存容量がいっぱいです。空きを作ってもらうよう伝えてください。"
 msgstr "{displayName}'s storage is full. Let them know they need to free up space."
 
-#: src/components/BatchDownloadModal.tsx
-msgid "{failed, plural, other {#枚の取得に失敗しました (成功分のみ ZIP に含まれます)}}"
-msgstr "{failed, plural, one {# photo could not be fetched (only successful ones are in the ZIP)} other {# photos could not be fetched (only successful ones are in the ZIP)}}"
-
 #: src/pages/send/DonePage.tsx
 msgid "{failedCount, plural, other {#枚のアップロードに失敗しました}}"
 msgstr "{failedCount, plural, one {# photo failed to upload} other {# photos failed to upload}}"
@@ -77,10 +73,6 @@ msgstr "{name}: larger than 20MB"
 #: src/pages/send/UploadPage.tsx
 msgid "{name}: 対応外の形式"
 msgstr "{name}: unsupported format"
-
-#: src/components/BatchDownloadModal.tsx
-msgid "{processed} / {total} 枚"
-msgstr "{processed} / {total}"
 
 #: src/pages/send/UploadPage.tsx
 msgid "{receiverName}さんへ送信"
@@ -155,14 +147,6 @@ msgid "<0>「受信オプション」</0>では、送信者がどこまで自分
 msgstr "Under <0>Receiving options</0>, you decide how much of their name senders may leave on a photo."
 
 #: src/pages/GuidePage.tsx
-msgid "<0>EXIFカメラモデル欄に埋め込む</0>：写真のメタデータに名前を残します（あとから消すことも可能）"
-msgstr "<0>Embed in the EXIF camera model field</0>: leaves your name in the photo's metadata (removable later)"
-
-#: src/pages/GuidePage.tsx
-msgid "<0>EXIF埋め込み</0>：メタデータのみなので画像は変わりません。あとから除去も可能。"
-msgstr "<0>EXIF embed</0>: metadata only, so the image itself is unchanged. Can be stripped later."
-
-#: src/pages/GuidePage.tsx
 msgid "<0>QR</0>：QRコードを表示・ダウンロード。名刺やイベントポスターへの掲載に"
 msgstr "<0>QR</0>: show and download a QR code — for business cards or event posters"
 
@@ -234,22 +218,6 @@ msgstr "I only want DMs open to people I know"
 msgid "Driveの招待でメアドを知られたくない"
 msgstr "A Drive invite would expose my email address"
 
-#: src/pages/send/UploadPage.tsx
-msgid "EXIFカメラモデル欄に埋め込む"
-msgstr "Embed in the EXIF camera model field"
-
-#: src/pages/LandingPage.tsx
-msgid "EXIFのカメラモデル欄や目立たない透かしで、撮影者情報を写真ファイル自体に埋め込み可能。 匿名性と「誰が撮ったか」の追跡可能性を両立できます。"
-msgstr "The EXIF camera model field or a subtle watermark can carry the photographer's details inside the photo file itself — anonymity and \"who took this\" at the same time."
-
-#: src/pages/SettingsPage.tsx
-msgid "EXIF埋め込み"
-msgstr "EXIF embed"
-
-#: src/pages/LandingPage.tsx
-msgid "EXIF埋め込み (Camera Model欄)"
-msgstr "EXIF embed (Camera Model field)"
-
 #: src/components/I18nProvider.tsx
 msgid "FurDrop — 撮ってもらった写真を、ちゃんと受け取る。"
 msgstr "FurDrop — Get the photos taken of you."
@@ -282,6 +250,10 @@ msgstr "FurDrop lets you <0>keep the photographer's credit on the photo without 
 msgid "Google Drive"
 msgstr "Google Drive"
 
+#: src/components/DownloadOptionsDialog.tsx
+msgid "Google フォトや iPhone の写真アプリでも表示されます。元のカメラ機種名は上書きされます"
+msgstr "Also shown in Google Photos and the iPhone Photos app. The original camera model name is overwritten"
+
 #: src/pages/send/UploadingPage.tsx
 msgid "HEIC変換中..."
 msgstr "Converting HEIC..."
@@ -297,6 +269,10 @@ msgstr "JPEG · PNG · HEIC · up to 20MB each"
 #: src/pages/send/UploadPage.tsx
 msgid "JPEG / PNG / HEIC ・ 最大 20MB / 枚 ・ 100 枚まで"
 msgstr "JPEG / PNG / HEIC · up to 20MB each · 100 photos max"
+
+#: src/components/DownloadOptionsDialog.tsx
+msgid "Lightroom や Adobe Bridge などで表示されます。元のカメラ情報はそのまま残ります"
+msgstr "Shown in Lightroom, Adobe Bridge and similar apps. The original camera info is left untouched"
 
 #: src/lib/watermark.ts
 msgid "Mプラス丸"
@@ -375,10 +351,6 @@ msgid "X (Twitter)で30秒。\n"
 "{PUBLIC_HOST}/send/your_handle が完成。"
 msgstr "30 seconds with X (Twitter).\n"
 "{PUBLIC_HOST}/send/your_handle is ready."
-
-#: src/components/BatchDownloadModal.tsx
-msgid "ZIP を作成中"
-msgstr "Building ZIP"
 
 #: src/lib/api-error.ts
 msgid "アカウントが見つかりません"
@@ -484,6 +456,10 @@ msgstr "Custom color"
 msgid "カスタム色（明暗の自動調整なし・固定色）"
 msgstr "Custom color (fixed, no automatic light/dark)"
 
+#: src/components/DownloadOptionsDialog.tsx
+msgid "カメラ機種 (Model) 欄にも記録"
+msgstr "Also write to the camera model field"
+
 #: src/lib/watermark.ts
 msgid "キウイ丸"
 msgstr "Kiwi Maru"
@@ -505,6 +481,7 @@ msgstr "Check the gallery →"
 msgid "ギャラリーに戻る"
 msgstr "Back to gallery"
 
+#: src/components/DownloadOptionsDialog.tsx
 #: src/components/ui/ConfirmDialog.tsx
 #: src/pages/SettingsPage.tsx
 msgid "キャンセル"
@@ -661,9 +638,38 @@ msgstr "Clear all"
 msgid "セッションが期限切れです"
 msgstr "This session has expired"
 
+#: src/components/DownloadOptionsDialog.tsx
 #: src/pages/PhotoDetailPage.tsx
 msgid "ダウンロード"
 msgstr "Download"
+
+#: src/components/DownloadOptionsDialog.tsx
+msgid "ダウンロードオプション"
+msgstr "Download options"
+
+#: src/pages/GuidePage.tsx
+msgid "ダウンロードするときに撮影者名を残せます"
+msgstr "You can keep the credit when you download"
+
+#: src/components/DownloadOptionsDialog.tsx
+msgid "ダウンロードする写真に、撮影者名を記録しますか？"
+msgstr "Record the photographer's name in the photos you download?"
+
+#: src/lib/bulk-download.ts
+msgid "ダウンロードの回数が多すぎます。1分ほど時間をおいてからお試しください。"
+msgstr "Too many downloads in a short time. Please wait about a minute and try again."
+
+#: src/lib/bulk-download.ts
+msgid "ダウンロードを開始できませんでした。時間をおいてお試しください。"
+msgstr "Could not start the download. Please try again later."
+
+#: src/lib/bulk-download.ts
+msgid "ダウンロードを開始できませんでした。通信環境をご確認ください。"
+msgstr "Could not start the download. Please check your connection."
+
+#: src/components/DownloadOptionsDialog.tsx
+msgid "ダウンロード時に撮影者名を記録するかを設定する"
+msgstr "Choose whether to record the photographer's name when downloading"
 
 #: src/components/layout/AppLayout.tsx
 #: src/pages/DashboardPage.tsx
@@ -783,6 +789,10 @@ msgstr "Feedback"
 msgid "フォント"
 msgstr "Font"
 
+#: src/pages/LandingPage.tsx
+msgid "フォント・色・縁取りまで指定できる"
+msgstr "Pick the font, color and outline"
+
 #: src/components/layout/AppFooter.tsx
 msgid "プライバシー"
 msgstr "Privacy"
@@ -871,14 +881,6 @@ msgstr "Your email address is never published. Senders never see it either."
 msgid "メアド・氏名が共有相手に見える"
 msgstr "Your email and name are visible to everyone shared with"
 
-#: src/pages/send/UploadPage.tsx
-msgid "メタデータに送信者名<0>{credit}</0>を書き込みます（元のカメラ情報は上書き）"
-msgstr "Writes your name <0>{credit}</0> into the metadata (the original camera info is overwritten)"
-
-#: src/pages/send/UploadPage.tsx
-msgid "メタデータに送信者名を書き込みます（元のカメラ情報は上書き）"
-msgstr "Writes your name into the metadata (the original camera info is overwritten)"
-
 #: src/pages/LandingPage.tsx
 msgid "メニュー"
 msgstr "Menu"
@@ -951,6 +953,10 @@ msgstr "Sign-in failed. Please wait a moment and try again"
 msgid "ログインの有効期限が切れました。もう一度ログインしてください"
 msgstr "Your session has expired. Please sign in again"
 
+#: src/lib/bulk-download.ts
+msgid "ログインの有効期限が切れました。再度ログインしてください。"
+msgstr "Your session has expired. Please sign in again."
+
 #: src/pages/LoginPage.tsx
 msgid "ログイン中..."
 msgstr "Signing in..."
@@ -978,10 +984,6 @@ msgstr "Once you hit the limit, you can't receive new photos."
 #: src/pages/GuidePage.tsx
 msgid "不明点をフィードバック"
 msgstr "Something unclear? Tell us"
-
-#: src/components/BatchDownloadModal.tsx
-msgid "中断"
-msgstr "Stop"
 
 #: src/lib/watermark.ts
 msgid "丸ゴ・ポップ"
@@ -1015,6 +1017,10 @@ msgstr "Yuji Syuku"
 #: src/pages/LandingPage.tsx
 msgid "使い方"
 msgstr "How it works"
+
+#: src/components/DownloadOptionsDialog.tsx
+msgid "保存"
+msgstr "Save"
 
 #: src/lib/api-error.ts
 #: src/pages/DashboardPage.tsx
@@ -1056,10 +1062,6 @@ msgstr "Please check what you entered"
 #: src/lib/api-error.ts
 msgid "入力内容を確認してください。受信者が名前の入力を必須にしている場合があります"
 msgstr "Please check what you entered. The recipient may require you to enter a name"
-
-#: src/lib/zip-download.ts
-msgid "全ての写真のダウンロードに失敗しました"
-msgstr "Every photo failed to download"
 
 #: src/pages/send/UploadingPage.tsx
 msgid "全ての画像の加工に失敗しました"
@@ -1128,8 +1130,8 @@ msgid "写真の受付"
 msgstr "Accepting photos"
 
 #: src/pages/GuidePage.tsx
-msgid "写真の受付チェックボックスと受信オプションの3段階ラジオボタン"
-msgstr "Accepting-photos checkboxes and the three-level receiving option radio buttons"
+msgid "写真の受付チェックボックスと透かしの3段階ラジオボタン"
+msgstr "The accepting-photos checkbox and the three-way watermark radio buttons"
 
 #: src/pages/DashboardPage.tsx
 msgid "写真の受付を停止中です。このURLを開いても写真は送れません。設定から再開できます。"
@@ -1180,6 +1182,10 @@ msgstr "Choose your photos"
 #: src/pages/PhotoDetailPage.tsx
 msgid "写真情報"
 msgstr "Photo details"
+
+#: src/pages/GuidePage.tsx
+msgid "初めてダウンロードするときに、写真のメタデータ (EXIF) へ撮影者名を記録するか選べます。 書き込まれるのは手元に保存するファイルだけで、FurDrop 上の写真は変わりません。 カメラ機種欄にも記録すると、Google フォトや iPhone の写真アプリでも撮影者名が見られます。"
+msgstr "The first time you download, you can choose whether to record the photographer's name in the photo metadata (EXIF). It is written only to the file you save locally — the photo on FurDrop is unchanged. Writing to the camera model field as well makes the name visible in Google Photos and the iPhone Photos app too."
 
 #: src/pages/send/UploadPage.tsx
 msgid "初めての方は<0>使い方を見る →</0>"
@@ -1276,8 +1282,8 @@ msgid "受け取る人が許可している場合のみ、次の埋め込みオ�
 msgstr "The embedding options below only appear if the receiver has allowed them."
 
 #: src/pages/GuidePage.tsx
-msgid "受け取る人の一覧に表示されるほか、EXIF埋め込みの内容と、透かしの初期テキストにも そのまま使われます。透かしの文字は編集ダイアログで自由に変更できます。"
-msgstr "It appears in the receiver's list, and it is also used as the EXIF embed value and as the watermark's initial text. You can freely change the watermark text in the edit dialog."
+msgid "受け取る人の一覧に表示されるほか、透かしの初期テキストにもそのまま使われます。 透かしの文字は編集ダイアログで自由に変更できます。"
+msgstr "It is shown in the recipient's list, and is also used as the default watermark text. You can freely change the watermark text in the edit dialog."
 
 #: src/pages/GuidePage.tsx
 msgid "受け取る人の手順を見る →"
@@ -1347,10 +1353,6 @@ msgstr "Only the methods the receiver allows are active"
 msgid "受信者に表示されます"
 msgstr "Shown to the recipient"
 
-#: src/pages/send/UploadPage.tsx
-msgid "受信者に表示されます。EXIF埋め込みにもこの名前が使われます"
-msgstr "Shown to the recipient. This name is also used for the EXIF embed"
-
 #: src/pages/GuidePage.tsx
 msgid "受信者のプロフィールと「写真を送る」ボタンが表示されます。"
 msgstr "The receiver's profile and a \"Send photos\" button appear."
@@ -1383,17 +1385,9 @@ msgstr "Receivers need no account"
 msgid "受信者向け手順"
 msgstr "Steps for receivers"
 
-#: src/pages/GuidePage.tsx
-msgid "各項目に <0>無効 / 任意 / 必須</0> の3段階があります。"
-msgstr "Each option has three levels: <0>Off / Optional / Required</0>."
-
 #: src/components/send/WatermarkDialog.tsx
 msgid "四角形"
 msgstr "Shape"
-
-#: src/pages/GuidePage.tsx
-msgid "埋め込みは迷ったら「任意」がおすすめ。送る人の判断にゆだねつつ、選択肢は提示できます。"
-msgstr "For embedding, \"Optional\" is a good default: senders get the choice without being forced."
 
 #: src/pages/send/UploadingPage.tsx
 msgid "変換失敗"
@@ -1448,6 +1442,10 @@ msgstr "Not found"
 #: src/pages/SettingsPage.tsx
 msgid "小文字英数字とアンダースコアのみ、3〜32文字"
 msgstr "Lowercase letters, numbers and underscores only, 3–32 characters"
+
+#: src/components/DownloadOptionsDialog.tsx
+msgid "届いたままのファイルを保存します"
+msgstr "Save the file exactly as it arrived"
 
 #: src/pages/GuidePage.tsx
 msgid "届いた写真を眺める・保存する"
@@ -1509,6 +1507,10 @@ msgstr "Actually get the photos taken of you.<0/>No personal details exchanged; 
 msgid "撮影者"
 msgstr "Photographer"
 
+#: src/components/DownloadOptionsDialog.tsx
+msgid "撮影者 (Artist) 欄に記録"
+msgstr "Write to the artist field"
+
 #: src/pages/LandingPage.tsx
 msgid "撮影者ごとに整理して見られる"
 msgstr "Browse organized by photographer"
@@ -1520,6 +1522,14 @@ msgstr "No per-photographer organization"
 #: src/pages/GalleryPage.tsx
 msgid "撮影者別"
 msgstr "By photographer"
+
+#: src/components/DownloadOptionsDialog.tsx
+msgid "撮影者名の記録"
+msgstr "Recording the photographer's name"
+
+#: src/pages/PhotoDetailPage.tsx
+msgid "撮影者名を記録できませんでした。写真はそのまま保存されています。"
+msgstr "Could not record the photographer's name. The photo was saved as-is."
 
 #: src/pages/LandingPage.tsx
 msgid "撮影者情報の埋込なし"
@@ -1658,6 +1668,10 @@ msgstr "Create account"
 msgid "白 / 黒"
 msgstr "White / black"
 
+#: src/pages/LandingPage.tsx
+msgid "目立たない透かしで、撮影者情報を写真ファイル自体に焼き込み可能。 匿名性と「誰が撮ったか」の追跡可能性を両立できます。"
+msgstr "A subtle watermark burns the photographer's details into the image file itself. Stay anonymous and still keep track of who shot what."
+
 #: src/pages/GuidePage.tsx
 msgid "相手のプロフィールが表示されたら、<0>「写真を送る」</0>ボタンをタップします。"
 msgstr "When their profile appears, tap the <0>\"Send photos\"</0> button."
@@ -1750,6 +1764,14 @@ msgstr "Kaisei Decol"
 #: src/components/ui/LocaleToggle.tsx
 msgid "言語"
 msgstr "Language"
+
+#: src/components/DownloadOptionsDialog.tsx
+msgid "記録されるのは「Photo by 撮影者名」の形式です。ダウンロードするファイルにだけ書き込まれ、 FurDrop に保存されている写真は変わりません。"
+msgstr "It is recorded as “Photo by” followed by the photographer’s name. Only the file you download is written to — the photo stored on FurDrop is unchanged."
+
+#: src/components/DownloadOptionsDialog.tsx
+msgid "記録しない"
+msgstr "Don't record"
 
 #: src/components/layout/AppLayout.tsx
 #: src/pages/SettingsPage.tsx
@@ -1874,8 +1896,8 @@ msgid "送信完了"
 msgstr "Upload complete"
 
 #: src/pages/LandingPage.tsx
-msgid "送信時に入力した撮影者情報を、EXIFや透かしで写真自体に埋込可能 (受信者の許可方式に従う)。"
-msgstr "The details entered when sending can be embedded in the photo itself via EXIF or a watermark (following whichever methods the receiver allows)."
+msgid "送信時に入力した撮影者情報を、透かしで写真自体に焼き込み可能 (受信者の許可方式に従う)。"
+msgstr "The name you enter when sending can be burned into the photo as a watermark (subject to what the receiver allows)."
 
 #: src/pages/GuidePage.tsx
 msgid "送信画面に項目を表示しない"
@@ -1893,13 +1915,13 @@ msgstr "Sender (anonymous)"
 msgid "送信者が"
 msgstr "Senders "
 
-#: src/pages/SettingsPage.tsx
-msgid "送信者がカメラモデル欄に名前を書き込みます（メタデータのみ、除去可能）"
-msgstr "Senders write their name into the camera model field (metadata only, removable)"
-
 #: src/pages/LandingPage.tsx
 msgid "送信者がメアドを開示する必要あり"
 msgstr "Senders have to reveal their email"
+
+#: src/pages/LandingPage.tsx
+msgid "送信者が位置を選べる透かしテキスト"
+msgstr "Watermark text senders can position freely"
 
 #: src/pages/GuidePage.tsx
 msgid "送信者が必要に応じて選択できる"
@@ -1908,10 +1930,6 @@ msgstr "Senders can turn it on if they want"
 #: src/pages/SettingsPage.tsx
 msgid "送信者が画像にクレジットテキストを描き込みます（不可逆）"
 msgstr "Senders draw credit text onto the image itself (cannot be undone)"
-
-#: src/pages/LandingPage.tsx
-msgid "送信者が選べる位置の透かしテキスト"
-msgstr "Watermark text the sender can position"
 
 #: src/pages/LandingPage.tsx
 msgid "送信者にアカウント不要"
@@ -1962,8 +1980,8 @@ msgid "送信者名が未入力です。このテキストには送信者名が�
 msgstr "You haven't entered your name yet. This text will use your name once you do"
 
 #: src/pages/GuidePage.tsx
-msgid "送信者名と埋め込みオプションのフォーム"
-msgstr "The name and embedding-options form"
+msgid "送信者名と透かしオプションのフォーム"
+msgstr "The name field and the watermark option"
 
 #: src/components/send/WatermarkDialog.tsx
 msgid "送信者名に連動中（編集すると解除）"
@@ -1993,6 +2011,10 @@ msgstr "Watermark"
 msgid "透かしにする文字"
 msgstr "Watermark text"
 
+#: src/pages/GuidePage.tsx
+msgid "透かしには <0>無効 / 任意 / 必須</0> の3段階があります。"
+msgstr "The watermark has three levels: <0>Off / Optional / Required</0>."
+
 #: src/pages/send/UploadPage.tsx
 msgid "透かしに表示できる文字がありません。「透かしを編集」から文字を入力してください。"
 msgstr "The watermark has no visible text. Open “Edit watermark” and enter some."
@@ -2004,6 +2026,10 @@ msgstr "Watermark preview. Drag elements to position them"
 #: src/components/send/WatermarkDialog.tsx
 msgid "透かしの設定"
 msgstr "Watermark settings"
+
+#: src/pages/GuidePage.tsx
+msgid "透かしは迷ったら「任意」がおすすめ。送る人の判断にゆだねつつ、選択肢は提示できます。"
+msgstr "If in doubt, “Optional” is a good default — you offer the choice while leaving the decision to the sender."
 
 #: src/pages/send/UploadPage.tsx
 msgid "透かしを入れる"
@@ -2034,9 +2060,13 @@ msgstr "Previews appear as soon as you choose photos."
 msgid "選択/DL"
 msgstr "Select"
 
-#: src/components/BatchDownloadModal.tsx
-msgid "選択した写真を1つの ZIP ファイルにまとめています。"
-msgstr "Bundling the photos you selected into a single ZIP file."
+#: src/lib/bulk-download.ts
+msgid "選択した写真が大きすぎます ({selected} / 1回の上限 {limit})。枚数を減らして何回かに分けてダウンロードしてください。"
+msgstr "Your selection is too large ({selected} of {limit} per download). Please select fewer photos and download in several batches."
+
+#: src/lib/bulk-download.ts
+msgid "選択した写真が見つかりませんでした。すでに削除されている可能性があります。一覧を再読み込みしてお試しください。"
+msgstr "The selected photos could not be found. They may have been deleted. Please reload the list and try again."
 
 #: src/pages/SettingsPage.tsx
 msgid "選択できる"
