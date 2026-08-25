@@ -807,9 +807,10 @@ attachment のダウンロード発火 → ページは残る**が Chromium で�
 
 ### 残っている未検証 (PR の Test plan に回す)
 
-- **iOS/iPadOS Safari での「クロスオリジン」フォーム POST。** spike のページは worker 自身が
-  配信していたので same-origin だった。本番は SPA と API が別ホストになる。
-  ナビゲーションに CORS は効かないので通る見込みだが、実機で 1 回確認したい
+- ~~iOS/iPadOS Safari での「クロスオリジン」フォーム POST~~ → **#99 のデプロイ後に実機で
+  確認済み (2026-08-26)。** spike のページは worker 自身が配信していて same-origin だったので
+  残していた差分。本番の SPA (Pages) → API (Workers) の別ホスト構成でフォーム POST が発火し、
+  ZIP も開けた (ナビゲーションに CORS は効かないという読みどおり)
 - 単体 DL の EXIF 差し替えはクライアントに残している (`frontend/src/lib/exif-credit.ts`)。
   1 枚なのでメモリの上界が問題にならず、「記録しない」を presigned URL の直リンクのまま
   保てるため。EXIF のロジックがサーバーとクライアントの 2 か所にある点は認識している
