@@ -48,6 +48,8 @@ paths:
 - fixtures は JPEG (`e2e/fixtures/*.jpg`) + HEIC (`sample.heic`)
 - Twitter OAuth は Auth Emulator 非対応のため、E2E では `signInWithEmailAndPassword` で代替 (本番フローは目視確認)
 - `playwright.config.ts` の `webServer` で workers (9000) + frontend (4000) を起動
+- `e2e/review-shots/` は**テストではない** (UI 変更の目視確認用スクショ)。`testDir` が別なので
+  CI では走らない。アサーションは撮影の同期待ちに必要な最小限に留める
 
 ## テストデータ
 - D1: 各テスト先頭で `workers/test/helpers/seed.ts` 経由で投入

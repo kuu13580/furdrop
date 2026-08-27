@@ -8,6 +8,7 @@
     "test:ui": "playwright test --ui",
     "install-browsers": "playwright install --with-deps chromium",
     "shots": "node scripts/capture-guide-shots.mjs",
+    "shots:review": "playwright test --config playwright.shots.config.ts",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
