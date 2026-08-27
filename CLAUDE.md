@@ -75,7 +75,8 @@ python3 frontend/scripts/generate-og.py
 pnpm shots
 
 # UI 変更の目視確認用スクショを撮る (実アプリ + seed データ。ガイド図版とは別物)
-# 出力は e2e/review-shots/out/ (gitignore)。撮る対象は e2e/review-shots/*.spec.ts に足す
+# 出力は既定で e2e/review-shots/out/ (gitignore)。SHOTS_OUT で変更できる
+# 撮る対象は e2e/review-shots/*.spec.ts に足す
 pnpm shots:review
 
 # i18n カタログ更新 (ユーザー向け文言を追加・変更したら実行)
