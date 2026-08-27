@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 // Workers API + /dev/images/upload プロキシ経由で 1 枚送って confirm まで通す。
 // 受信者ビュー (ギャラリー / 詳細) のテストに使う。
 // 製品コードと同じ経路を踏むので、専用の DB injection は不要。
@@ -50,10 +52,20 @@ function buildJpegBuffer(size: number): Uint8Array {
 export async function seedOnePhotoFor(
   handle: string,
   sendKey: string,
-  options: { fileSize?: number; thumbSize?: number; senderName?: string } = {},
+  options: {
+    fileSize?: number;
+    thumbSize?: number;
+    senderName?: string;
+    /**
+     * 実在する JPEG を原寸で上げる (スクショ用)。既定のダミーはデコードできないので
+     * ギャラリーが alt テキストだらけになる。指定時は fileSize / thumbSize を無視する。
+     */
+    imagePath?: string;
+  } = {},
 ): Promise<{ photoId: string }> {
-  const fileSize = options.fileSize ?? 2048;
-  const thumbSize = options.thumbSize ?? 256;
+  const image = options.imagePath ? new Uint8Array(readFileSync(options.imagePath)) : null;
+  const fileSize = image ? image.length : (options.fileSize ?? 2048);
+  const thumbSize = image ? image.length : (options.thumbSize ?? 256);
 
   const sessRes = await fetch(`${WORKERS}/send/${handle}/sessions`, {
     method: "POST",
@@ -84,11 +96,11 @@ export async function seedOnePhotoFor(
   // Uint8Array<ArrayBufferLike> の generic がぶつかるので as でキャスト。
   await fetch(`${WORKERS}${upload_url}`, {
     method: "PUT",
-    body: buildJpegBuffer(fileSize) as unknown as BodyInit,
+    body: (image ?? buildJpegBuffer(fileSize)) as unknown as BodyInit,
   });
   await fetch(`${WORKERS}${thumb_upload_url}`, {
     method: "PUT",
-    body: buildJpegBuffer(thumbSize) as unknown as BodyInit,
+    body: (image ?? buildJpegBuffer(thumbSize)) as unknown as BodyInit,
   });
 
   const confirmRes = await fetch(

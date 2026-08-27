@@ -74,6 +74,10 @@ python3 frontend/scripts/generate-og.py
 # `--locale en` / `--slug sender-step3` で絞れる
 pnpm shots
 
+# UI 変更の目視確認用スクショを撮る (実アプリ + seed データ。ガイド図版とは別物)
+# 出力は e2e/review-shots/out/ (gitignore)。撮る対象は e2e/review-shots/*.spec.ts に足す
+pnpm shots:review
+
 # i18n カタログ更新 (ユーザー向け文言を追加・変更したら実行)
 pnpm i18n:extract
 
@@ -101,7 +105,8 @@ pnpm test:e2e
 pnpm emulator
 
 # `:bare` 派生は emulator 起動を含まない (外側が `pnpm emulator` を立てている前提)。
-# `pnpm test` の内部で使われる。手動で叩く必要は基本ない。
+# `pnpm test` の内部で使われる。9099 が既に埋まっていて
+# 「Could not start Authentication Emulator, port taken」で落ちるときはこちらを使う。
 ```
 
 詳細なテスト規約は `.claude/rules/testing.md` を参照。

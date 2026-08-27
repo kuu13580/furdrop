@@ -45,3 +45,7 @@ tmp/
 
 # Local Claude notes
 CLAUDE.local.md
+
+# レビュー用スクショ (pnpm shots:review) の出力
+e2e/review-shots/out/
+e2e/review-shots/.playwright/
