@@ -23,22 +23,35 @@ export default function VerifyEmailPage() {
   const [params] = useSearchParams();
   const token = params.get("token") ?? "";
   const [state, setState] = useState<State>({ status: "verifying" });
-  // React 18 の StrictMode は effect を 2 回走らせる。トークンは使い捨てなので
-  // 2 回目が 404 になり「無効なリンク」と表示されてしまう
-  const started = useRef(false);
+  // React 18 の StrictMode は effect を 2 回走らせる。トークンは使い捨てなので、
+  // 素直に書くと 2 回目が 404 になり「無効なリンク」と表示されてしまう。
+  // **トークン単位**で抑止するのは、別のトークンで開き直したときに検証されなく
+  // なるのを避けるため (真偽値だとマウント中ずっと塞がる)
+  const startedToken = useRef<string | null>(null);
+  // 古いリクエストの結果を捨てる判定に使う。**cleanup でキャンセルしてはいけない** —
+  // StrictMode は effect を 実行→cleanup→実行 と回すので、cleanup で殺すと
+  // 1 回目のリクエストが無効化され、2 回目は上のガードで早期 return して
+  // 「確認しています…」のまま固まる
+  const latestToken = useRef(token);
+  latestToken.current = token;
 
   useEffect(() => {
-    if (started.current) return;
-    started.current = true;
+    if (startedToken.current === token) return;
+    startedToken.current = token;
 
     if (!token) {
       setState({ status: "invalid" });
       return;
     }
+
+    setState({ status: "verifying" });
     notificationApi
       .verifyEmail(token)
-      .then(({ email }) => setState({ status: "done", email }))
+      .then(({ email }) => {
+        if (latestToken.current === token) setState({ status: "done", email });
+      })
       .catch((err) => {
+        if (latestToken.current !== token) return;
         setState({ status: err instanceof ApiError && err.status === 410 ? "expired" : "invalid" });
       });
   }, [token]);

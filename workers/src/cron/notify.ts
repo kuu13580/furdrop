@@ -251,11 +251,15 @@ async function sendQuotaNotices(env: Env, targets: Target[]): Promise<void> {
     if (!t.notify_quota) continue;
     if (level <= t.quota_notice_level) continue;
 
-    await send(env, t, "quota", "quota", {
+    const sent = await send(env, t, "quota", "quota", {
       percent,
       used: formatBytes(t.storage_used),
       quota: formatBytes(t.storage_quota),
     });
+
+    // 送れていないのに「通知済み」にすると、使用量が下がるまで同じしきい値の警告を
+    // 二度と送れなくなる。ダイジェストの last_digest_at と同じ扱いにする
+    if (!sent) continue;
 
     await env.DB.prepare(
       "UPDATE notification_settings SET quota_notice_level = ?, updated_at = ? WHERE receiver_id = ?",
