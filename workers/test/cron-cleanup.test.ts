@@ -141,3 +141,57 @@ describe("runCleanup (Cron)", () => {
     // 省略 — 上記理由により miniflare 環境で再現不可
   });
 });
+
+describe("期限切れの通知先メールアドレス検証 (R09)", () => {
+  it("期限切れの pending は破棄し、検証済みの email には触らない (目的: 打ち間違え先の第三者のアドレスを持ち続けない)", async () => {
+    const now = Math.floor(Date.now() / 1000);
+    await seedUser({ uid: "u-prune", handle: "prune_a" });
+    await env.DB.prepare(
+      `INSERT INTO notification_settings
+         (receiver_id, email, pending_email, pending_token, pending_expires, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    )
+      .bind("u-prune", "kept@example.com", "typo@examp1e.com", "tok", now - 60, now, now)
+      .run();
+
+    await runCleanup(env);
+
+    const row = await env.DB.prepare(
+      "SELECT email, pending_email, pending_token, pending_expires FROM notification_settings WHERE receiver_id = ?",
+    )
+      .bind("u-prune")
+      .first<{
+        email: string | null;
+        pending_email: string | null;
+        pending_token: string | null;
+        pending_expires: number | null;
+      }>();
+
+    expect(row?.pending_email).toBeNull();
+    expect(row?.pending_token).toBeNull();
+    expect(row?.pending_expires).toBeNull();
+    // 検証済みのアドレスは残る (アドレス変更の検証が流れただけなので旧アドレスへの配信は続ける)
+    expect(row?.email).toBe("kept@example.com");
+  });
+
+  it("期限内の pending は残す", async () => {
+    const now = Math.floor(Date.now() / 1000);
+    await seedUser({ uid: "u-keep", handle: "prune_b" });
+    await env.DB.prepare(
+      `INSERT INTO notification_settings
+         (receiver_id, pending_email, pending_token, pending_expires, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+    )
+      .bind("u-keep", "fresh@example.com", "tok2", now + 3600, now, now)
+      .run();
+
+    await runCleanup(env);
+
+    const row = await env.DB.prepare(
+      "SELECT pending_email FROM notification_settings WHERE receiver_id = ?",
+    )
+      .bind("u-keep")
+      .first<{ pending_email: string | null }>();
+    expect(row?.pending_email).toBe("fresh@example.com");
+  });
+});

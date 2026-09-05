@@ -21,6 +21,7 @@ export async function runCleanup(env: Env): Promise<void> {
     ["cleanupExpiredPhotos", () => cleanupExpiredPhotos(env, now)],
     ["pruneOldSessionLogs", () => pruneOldSessionLogs(env, now)],
     ["cleanupOrphanedSessions", () => cleanupOrphanedSessions(env, now)],
+    ["pruneExpiredVerifications", () => pruneExpiredVerifications(env, now)],
   ];
 
   let failedSteps = 0;
@@ -146,5 +147,26 @@ async function cleanupOrphanedSessions(env: Env, now: number): Promise<void> {
          AND receiver_id NOT IN (SELECT id FROM users)`,
   )
     .bind(cutoff)
+    .run();
+}
+
+/**
+ * 期限切れの通知先メールアドレス検証を破棄する (R09)。
+ *
+ * `pending_email` は**検証される前の宛先**で、打ち間違いなら第三者のアドレスが入っている。
+ * トークンの有効期限 (24時間) を過ぎたら登録は成立しないので、そのまま持ち続ける理由がない。
+ * プライバシーポリシー第11項が「有効期限の経過後、速やかに削除します」と約束しているのは
+ * このステップのこと。
+ *
+ * 検証済みの `email` には触らない (アドレス変更の検証が流れただけなら、旧アドレスへの
+ * 配信は続ける)。
+ */
+async function pruneExpiredVerifications(env: Env, now: number): Promise<void> {
+  await env.DB.prepare(
+    `UPDATE notification_settings
+        SET pending_email = NULL, pending_token = NULL, pending_expires = NULL, updated_at = ?
+      WHERE pending_expires IS NOT NULL AND pending_expires < ?`,
+  )
+    .bind(now, now)
     .run();
 }
