@@ -1,6 +1,7 @@
 // R16 opt-out: 受信者がキーを外すと ?k= 無しの URL でも送信が成立する
-import { expect, test } from "@playwright/test";
+
 import { tinyJpeg } from "../fixtures/images";
+import { expect, test } from "../fixtures/test";
 import { createEmulatorUser, patchOptions, registerReceiver } from "../helpers/auth";
 
 test("opt-out した受信者には ?k= 無しの URL で送信できる", async ({ page }) => {

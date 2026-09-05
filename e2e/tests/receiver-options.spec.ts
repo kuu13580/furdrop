@@ -1,6 +1,7 @@
 // R14: 設定ページで受信オプションを変更 → 送信者 UI に反映される
-import { expect, test } from "@playwright/test";
+
 import { tinyJpeg } from "../fixtures/images";
+import { expect, test } from "../fixtures/test";
 import { createEmulatorUser, registerReceiver, signInOnPage } from "../helpers/auth";
 
 test("設定で透かしを必須に変更すると、送信者 UI に '必須' バッジが表示される", async ({

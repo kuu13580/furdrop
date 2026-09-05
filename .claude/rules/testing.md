@@ -44,6 +44,8 @@ paths:
 
 ## E2E (Playwright)
 - chromium のみ
+- spec は `@playwright/test` ではなく `e2e/fixtures/test.ts` から `test` / `expect` を import する
+  (計測ホストを context ごと遮断するため。GA へ本番プロパティを汚す事故の再発防止)
 - HEIC は `heic-to` (WASM) で Chromium ヘッドレスでも動く → `e2e/fixtures/sample.heic` を投入する spec を 1 本入れる。動かなければ `frontend/test/lib/heic.test.ts` (Node + heic-to 直接呼び出し) にフォールバック
 - fixtures は JPEG (`e2e/fixtures/*.jpg`) + HEIC (`sample.heic`)
 - Twitter OAuth は Auth Emulator 非対応のため、E2E では `signInWithEmailAndPassword` で代替 (本番フローは目視確認)

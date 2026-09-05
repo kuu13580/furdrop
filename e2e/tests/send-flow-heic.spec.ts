@@ -1,7 +1,8 @@
 // HEIC 経路 (iOS 写真): heic-to の WASM デコードが Chromium ヘッドレスで動くかを検証
 // `e2e/fixtures/sample.heic` がリポジトリにない場合は skip 扱い (実 HEIC fixture が必要)
-import { expect, test } from "@playwright/test";
+
 import { readHeicIfExists } from "../fixtures/images";
+import { expect, test } from "../fixtures/test";
 import { createEmulatorUser, registerReceiver } from "../helpers/auth";
 
 test("HEIC ファイルを投入しても heic-to 経由で JPEG に変換されて完了画面まで到達する", async ({

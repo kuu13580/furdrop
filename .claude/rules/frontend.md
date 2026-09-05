@@ -46,6 +46,13 @@ paths:
 - Firebase設定値は公開可（ドメイン制限で保護）
 - `.env.local` に保存する (gitignore対象)
 
+## アクセス解析 (GA4)
+
+- **計測タグを `index.html` に直書きしない**。gtag.js のロードは `src/lib/analytics.ts` が担当し、本番ビルド (`import.meta.env.PROD`) かつ本番ホストのときだけ読み込む
+- 理由: 直書きすると `vite dev` 経由の E2E / `pnpm shots` / ローカル開発のアクセスが本番 GA プロパティに計上される。Playwright は test ごとに新しい context = 新しい `_ga` を作るため、CI 1 回でテスト数ぶんの「新規ユーザー」が積み上がる
+- GA4 にはホスト名ベースのデータフィルタが無く、混入したデータは後から消せない
+- E2E 側でも `e2e/fixtures/test.ts` が計測ホストを遮断している (二重の防御)
+
 ## 多言語化 (i18n)
 
 - ユーザーに見える文言は必ず Lingui のマクロで包む。JSX は `<Trans>`、文字列が要る箇所 (`aria-label` / `placeholder` / `title` / props) は `useLingui()` が返す `t` (タグ付きテンプレート)

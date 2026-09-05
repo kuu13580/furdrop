@@ -1,7 +1,7 @@
 // R17: 受信者が DL するときに送信者名を EXIF に記録する
 // 初回 DL でダイアログが出て選択が永続化されること、選んだ内容がファイルに書き込まれることを見る。
 import { readFile } from "node:fs/promises";
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../fixtures/test";
 import { createEmulatorUser, registerReceiver, signInOnPage } from "../helpers/auth";
 import { seedOnePhotoFor } from "../helpers/seed-photo";
 

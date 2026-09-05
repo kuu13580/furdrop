@@ -1,11 +1,12 @@
 import { useAtom, useSetAtom } from "jotai";
 import { lazy, Suspense, useEffect } from "react";
-import { BrowserRouter, Route, Routes, useSearchParams } from "react-router";
+import { BrowserRouter, Route, Routes, useLocation, useSearchParams } from "react-router";
 import AuthGuard from "./components/AuthGuard";
 import AppLayout from "./components/layout/AppLayout";
 import SenderLayout from "./components/layout/SenderLayout";
 import LoadingSpinner from "./components/ui/LoadingSpinner";
 import { useAuthInit } from "./hooks/useAuthInit";
+import { trackPageView } from "./lib/analytics";
 import { setDebugEnabled } from "./lib/debug-log";
 import { LOCALE_QUERY_PARAM } from "./lib/i18n";
 import DashboardPage from "./pages/DashboardPage";
@@ -88,6 +89,15 @@ function LocaleUrlSync() {
   return null;
 }
 
+/** SPA の画面遷移を GA4 に送る (GA4 側の拡張計測は使わない。理由は lib/analytics.ts)。 */
+function PageViewTracker() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    trackPageView(pathname);
+  }, [pathname]);
+  return null;
+}
+
 export default function App() {
   useAuthInit();
 
@@ -95,6 +105,7 @@ export default function App() {
     <BrowserRouter>
       <DebugUrlSync />
       <LocaleUrlSync />
+      <PageViewTracker />
       <Routes>
         {/* 送信者フロー（認証不要） */}
         <Route element={<SenderLayout />}>

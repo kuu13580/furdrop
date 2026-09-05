@@ -2,7 +2,7 @@
 // 「フォーム POST が実際にダウンロードを発火させ、開ける ZIP が保存されること」を見る。
 // (EXIF バイト列の正しさは workers の統合テストで担保している)
 import { readFile } from "node:fs/promises";
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../fixtures/test";
 import { createEmulatorUser, registerReceiver, signInOnPage } from "../helpers/auth";
 import { seedOnePhotoFor } from "../helpers/seed-photo";
 

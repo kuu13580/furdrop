@@ -1,16 +1,14 @@
 /**
- * クライアント側エラーの GA4 計測ヘルパー。
- *
- * API(Workers)ログには現れないブラウザ内エラー(画像の R2 GET 失敗、
- * 画像処理パイプラインの失敗、presigned PUT 失敗、未捕捉例外など)を、
- * 既に `index.html` に導入済みの GA4(gtag.js / `window.gtag`)へ
- * `client_error` イベントとして送り、実機で何が多発しているかを集計できるようにする。
+ * GA4 (gtag.js) のロードと、`page_view` / `client_error` の送信をまとめる。
  *
  * ## 送信の原則
- * - 送るイベントは **`client_error` の 1 種のみ**。分類は `error_kind` パラメータで行う。
- * - **本番(`import.meta.env.PROD`)でのみ実送信**。開発では GA プロパティを汚さないよう
- *   {@link debugLog} に出すだけ(`?debug=true` で実機確認できる)。
- * - `window.gtag` が未定義(広告ブロッカー等)なら no-op。
+ * - **gtag.js のロードは本番ビルドかつ本番ホストのときだけ** ({@link shouldLoadGaTag})。
+ *   index.html に直書きすると `vite dev` を使う E2E / `pnpm shots` / ローカル開発の
+ *   アクセスが本番 GA プロパティに計上される (Playwright は test ごとに `_ga` が変わる)。
+ * - `page_location` にはクエリを載せない。送信URLのアクセスキー (R16) が GA に残るため。
+ *   SPA の画面遷移も {@link trackPageView} で自前に送る (拡張計測は使わない)。
+ * - エラーイベントは **`client_error` の 1 種のみ**。分類は `error_kind` パラメータで行う。
+ * - `window.gtag` が未定義(開発 / 広告ブロッカー)なら no-op で {@link debugLog} のみ。
  * - 同一エラーの連投を防ぐため、キー単位で 1 タブあたり {@link DEDUP_LIMIT} 回まで送信。
  * - 個人情報・署名付き URL を送らないよう、message/path をサニタイズする。
  */
@@ -125,8 +123,22 @@ export function extractError(
 // ---- 送信 ----
 
 /**
- * client_error イベントを送る。本番のみ GA へ実送信し、常に debugLog にミラーする。
- * `page_path` は呼び出し側が渡さなくてよい(内部で現在パスから補完)。
+ * SPA のルート変化ごとに page_view を送る。
+ *
+ * `page_location` は `origin + サニタイズ済み pathname` にする。クエリを落とすことで
+ * 送信URLのアクセスキー (R16) を GA に残さず、handle / photoId もマスクされる。
+ * `set` で既定値を更新するので、以降の client_error も同じ値を持つ。
+ */
+export function trackPageView(pathname: string): void {
+  const page_location = window.location.origin + sanitizePath(pathname);
+  alog.log("page_view", page_location);
+  if (typeof window.gtag !== "function") return;
+  window.gtag("set", { page_location });
+  window.gtag("event", "page_view");
+}
+
+/**
+ * client_error イベントを送る。`page_path` は内部で現在パスから補完する。
  */
 export function trackClientError(input: ClientErrorInput): void {
   const params: ClientErrorParams = {
@@ -183,11 +195,60 @@ function isChunkLoadError(reason: unknown): boolean {
   return /dynamically imported module|Importing a module script failed|ChunkLoadError/i.test(msg);
 }
 
+// ---- gtag.js のロード ----
+
+/**
+ * GA4 の測定 ID。秘密情報ではない (計測タグとして誰でも閲覧できる) ため定数で持つ。
+ * dotenvx 管理の `.env` に置いても公開ビルドに素で焼かれる値なので、env 変数にはしない。
+ */
+const GA_MEASUREMENT_ID = "G-BE16TKNVZ5";
+
+/** ローカルで動かしているホストか (E2E / vite dev / vite preview / LAN 実機確認)。 */
+function isLocalHost(): boolean {
+  const h = window.location.hostname;
+  return (
+    h === "localhost" ||
+    h === "127.0.0.1" ||
+    h === "[::1]" ||
+    h.endsWith(".local") ||
+    /^(10|127)\.|^192\.168\.|^172\.(1[6-9]|2\d|3[01])\./.test(h)
+  );
+}
+
+/** `import.meta.env.PROD` だけだと dist のローカル配信で漏れるのでホスト名でも弾く。 */
+function shouldLoadGaTag(): boolean {
+  return import.meta.env.PROD && !isLocalHost();
+}
+
+/**
+ * gtag.js を読み込み `window.gtag` を用意する。
+ * 初回の page_view は送らせず、{@link trackPageView} に一本化する。
+ */
+function loadGaTag(): void {
+  window.dataLayer = window.dataLayer ?? [];
+  function gtagCommand(): void {
+    // biome-ignore lint/complexity/noArguments: gtag.js は dataLayer の要素が Arguments かどうかでコマンドを識別する (rest 引数だと配列になり無視される)
+    window.dataLayer?.push(arguments);
+  }
+  window.gtag = gtagCommand;
+
+  window.gtag("js", new Date());
+  window.gtag("config", GA_MEASUREMENT_ID, { send_page_view: false });
+
+  const script = document.createElement("script");
+  script.async = true;
+  script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;
+  document.head.appendChild(script);
+}
+
 /**
  * グローバルエラーハンドラを登録する。App の外側(React 非依存)で 1 回だけ呼ぶ。
  * リソースロードエラー(<img> 等)は個別 onError で扱うためここでは拾わない。
  */
 export function initAnalytics(): void {
+  if (shouldLoadGaTag()) loadGaTag();
+  else alog.log("gtag.js skipped (dev build or local host)");
+
   window.addEventListener("error", (event) => {
     // ErrorEvent 以外(リソースエラー)は個別 onError 側の担当
     if (!(event instanceof ErrorEvent)) return;
