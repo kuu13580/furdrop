@@ -1,0 +1,8 @@
+Subject: {{count}} new {{plural count|photo|photos}}
+
+New photos have arrived on FurDrop.
+
+> {{count}} {{plural count|photo|photos}} from {{senders}}
+
+  Open the gallery
+  {{gallery_url}}

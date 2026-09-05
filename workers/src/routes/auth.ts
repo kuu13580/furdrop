@@ -1,6 +1,15 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { asBool } from "../lib/d1";
+import { resolveLocale } from "../lib/email-templates";
 import { logError } from "../lib/logger";
+import {
+  cancelPendingEmail,
+  clearEmail,
+  loadSettings,
+  type NotificationSettings,
+  startEmailVerification,
+  updateNotifyFlags,
+} from "../lib/notification";
 import { defaultHook, ErrorSchema } from "../lib/schema";
 import { generateSendKey } from "../lib/send-key";
 import { requireAuth } from "../middleware/auth";
@@ -21,15 +30,51 @@ const UserSchema = z.object({
   watermark_mode: EmbedModeSchema,
   require_sender_name: z.boolean(),
   require_send_key: z.boolean(),
+  // R09 通知設定。notification_settings の行が無いユーザーは未設定の既定値が返る
+  notification_email: z.string().nullable(),
+  pending_email: z.string().nullable(),
+  notify_digest: z.boolean(),
+  notify_expiry: z.boolean(),
+  notify_quota: z.boolean(),
+  locale: z.enum(["ja", "en"]).nullable(),
 });
 
 const USER_COLUMNS =
-  "id, handle, display_name, storage_used, storage_quota, is_active, watermark_mode, require_sender_name, require_send_key";
+  "id, handle, display_name, storage_used, storage_quota, is_active, watermark_mode, require_sender_name, require_send_key, locale";
 
 type EmbedMode = z.infer<typeof EmbedModeSchema>;
 
 function asMode(v: unknown): EmbedMode {
   return v === "required" || v === "optional" ? v : "disabled";
+}
+
+/**
+ * D1 の users 行 + 通知設定を API のユーザー表現にまとめる。
+ * register / me / options の 3 経路が同じ形を返す必要があるので 1 箇所に寄せている。
+ */
+function toUserResponse(
+  row: Record<string, unknown>,
+  receiveUrl: string,
+  notify: NotificationSettings,
+) {
+  return {
+    id: row.id as string,
+    handle: row.handle as string,
+    display_name: row.display_name as string,
+    storage_used: row.storage_used as number,
+    storage_quota: row.storage_quota as number,
+    receive_url: receiveUrl,
+    is_active: asBool(row.is_active),
+    watermark_mode: asMode(row.watermark_mode),
+    require_sender_name: asBool(row.require_sender_name),
+    require_send_key: asBool(row.require_send_key),
+    notification_email: notify.email,
+    pending_email: notify.pending_email,
+    notify_digest: notify.notify_digest,
+    notify_expiry: notify.notify_expiry,
+    notify_quota: notify.notify_quota,
+    locale: row.locale === "en" || row.locale === "ja" ? (row.locale as "ja" | "en") : null,
+  };
 }
 
 /**
@@ -111,20 +156,7 @@ auth.openapi(registerRoute, async (c) => {
       asBool(existing.require_send_key),
     );
     return c.json(
-      {
-        user: {
-          id: existing.id as string,
-          handle: existing.handle as string,
-          display_name: existing.display_name as string,
-          storage_used: existing.storage_used as number,
-          storage_quota: existing.storage_quota as number,
-          receive_url: receiveUrl,
-          is_active: asBool(existing.is_active),
-          watermark_mode: asMode(existing.watermark_mode),
-          require_sender_name: asBool(existing.require_sender_name),
-          require_send_key: asBool(existing.require_send_key),
-        },
-      },
+      { user: toUserResponse(existing, receiveUrl, await loadSettings(c.env, uid)) },
       201,
     );
   }
@@ -174,18 +206,23 @@ auth.openapi(registerRoute, async (c) => {
 
   return c.json(
     {
-      user: {
-        id: uid,
-        handle,
-        display_name,
-        storage_used: 0,
-        storage_quota: 10737418240,
-        receive_url: `/send/${handle}?k=${keyValue}`,
-        is_active: true,
-        watermark_mode: watermarkMode,
-        require_sender_name: requireSenderName,
-        require_send_key: true,
-      },
+      user: toUserResponse(
+        {
+          id: uid,
+          handle,
+          display_name,
+          storage_used: 0,
+          storage_quota: 10737418240,
+          is_active: 1,
+          watermark_mode: watermarkMode,
+          require_sender_name: requireSenderName ? 1 : 0,
+          require_send_key: 1,
+          locale: null,
+        },
+        `/send/${handle}?k=${keyValue}`,
+        // 登録直後は通知設定の行がまだ無い (アドレス登録時に遅延生成される)
+        await loadSettings(c.env, uid),
+      ),
     },
     201,
   );
@@ -228,23 +265,7 @@ auth.openapi(meRoute, async (c) => {
     asBool(user.require_send_key),
   );
 
-  return c.json(
-    {
-      user: {
-        id: user.id as string,
-        handle: user.handle as string,
-        display_name: user.display_name as string,
-        storage_used: user.storage_used as number,
-        storage_quota: user.storage_quota as number,
-        receive_url: receiveUrl,
-        is_active: asBool(user.is_active),
-        watermark_mode: asMode(user.watermark_mode),
-        require_sender_name: asBool(user.require_sender_name),
-        require_send_key: asBool(user.require_send_key),
-      },
-    },
-    200,
-  );
+  return c.json({ user: toUserResponse(user, receiveUrl, await loadSettings(c.env, uid)) }, 200);
 });
 
 // ========== PATCH /auth/options ==========
@@ -263,6 +284,13 @@ const updateOptionsRoute = createRoute({
             require_sender_name: z.boolean().optional(),
             is_active: z.boolean().optional(),
             require_send_key: z.boolean().optional(),
+            // R09。null / 空文字で通知先を解除する
+            notification_email: z.string().email().nullable().optional(),
+            notify_digest: z.boolean().optional(),
+            notify_expiry: z.boolean().optional(),
+            notify_quota: z.boolean().optional(),
+            // 表示言語。言語トグルを押すたびにフロントが投げる (メールの言語判定に使う)
+            locale: z.enum(["ja", "en"]).optional(),
           }),
         },
       },
@@ -276,6 +304,10 @@ const updateOptionsRoute = createRoute({
     404: {
       content: { "application/json": { schema: ErrorSchema } },
       description: "未登録ユーザー",
+    },
+    429: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "確認メールのレート制限",
     },
   },
 });
@@ -297,6 +329,7 @@ auth.openapi(updateOptionsRoute, async (c) => {
          require_sender_name = COALESCE(?, require_sender_name),
          is_active           = COALESCE(?, is_active),
          require_send_key    = COALESCE(?, require_send_key),
+         locale              = COALESCE(?, locale),
          updated_at          = ?
        WHERE id = ?`,
     )
@@ -305,18 +338,72 @@ auth.openapi(updateOptionsRoute, async (c) => {
         asFlag(body.require_sender_name),
         asFlag(body.is_active),
         asFlag(body.require_send_key),
+        body.locale ?? null,
         now,
         uid,
       )
       .run();
   }
 
+  // ユーザーの存在確認は通知設定を触る前に済ませる。notification_settings は
+  // users を参照する FK を持つので、未登録 UID で先に書きに行くと FK 違反の 500 になり、
+  // 本来の 404 (登録画面へ誘導する自然なリカバリ) が壊れる
   const user = await c.env.DB.prepare(`SELECT ${USER_COLUMNS} FROM users WHERE id = ?`)
     .bind(uid)
     .first();
 
   if (!user) {
     return c.json({ error: { code: "NOT_FOUND", message: "User not registered" } }, 404);
+  }
+
+  // --- R09 通知設定 ---
+
+  if (
+    body.notify_digest !== undefined ||
+    body.notify_expiry !== undefined ||
+    body.notify_quota !== undefined
+  ) {
+    await updateNotifyFlags(c.env, uid, {
+      digest: body.notify_digest,
+      expiry: body.notify_expiry,
+      quota: body.notify_quota,
+    });
+  }
+
+  if (body.notification_email !== undefined) {
+    const next = body.notification_email?.trim() || null;
+    const current = await loadSettings(c.env, uid);
+
+    if (next === null) {
+      await clearEmail(c.env, uid);
+    } else if (next === current.email) {
+      // 検証済みのアドレスに戻す操作。確認メールは要らないが、**検証待ちは消す** —
+      // 残すと打ち間違え先の第三者が 24 時間トークンを踏めてしまう
+      if (current.pending_email !== null) await cancelPendingEmail(c.env, uid);
+    } else {
+      // 認証済みユーザーが任意のアドレスへ確認メールを撃てる = メール中継になりうるので
+      // 分単位 (バインディング) と日単位 (DB のカウンタ) の両方で絞る
+      const { success } = await c.env.RATE_LIMITER_VERIFY.limit({ key: uid });
+      if (!success) {
+        c.header("Retry-After", "60");
+        return c.json(
+          { error: { code: "RATE_LIMITED", message: "Too many verification emails" } },
+          429,
+        );
+      }
+      const sent = await startEmailVerification(
+        c.env,
+        uid,
+        next,
+        resolveLocale(body.locale ?? (user.locale as string | null)),
+      );
+      if (!sent.ok) {
+        return c.json(
+          { error: { code: "RATE_LIMITED", message: "Daily verification email limit reached" } },
+          429,
+        );
+      }
+    }
   }
 
   const receiveUrl = await buildReceiveUrl(
@@ -326,23 +413,7 @@ auth.openapi(updateOptionsRoute, async (c) => {
     asBool(user.require_send_key),
   );
 
-  return c.json(
-    {
-      user: {
-        id: user.id as string,
-        handle: user.handle as string,
-        display_name: user.display_name as string,
-        storage_used: user.storage_used as number,
-        storage_quota: user.storage_quota as number,
-        receive_url: receiveUrl,
-        is_active: asBool(user.is_active),
-        watermark_mode: asMode(user.watermark_mode),
-        require_sender_name: asBool(user.require_sender_name),
-        require_send_key: asBool(user.require_send_key),
-      },
-    },
-    200,
-  );
+  return c.json({ user: toUserResponse(user, receiveUrl, await loadSettings(c.env, uid)) }, 200);
 });
 
 // ========== DELETE /auth/account ==========
@@ -413,6 +484,7 @@ auth.openapi(deleteAccountRoute, async (c) => {
   await c.env.DB.batch([
     c.env.DB.prepare("DELETE FROM photos WHERE receiver_id = ?").bind(uid),
     c.env.DB.prepare("DELETE FROM send_keys WHERE receiver_id = ?").bind(uid),
+    c.env.DB.prepare("DELETE FROM notification_settings WHERE receiver_id = ?").bind(uid),
     c.env.DB.prepare("DELETE FROM upload_sessions WHERE receiver_id = ? AND created_at < ?").bind(
       uid,
       sessionRetentionThreshold,

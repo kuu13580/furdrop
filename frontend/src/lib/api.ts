@@ -1,3 +1,4 @@
+import type { UserProfile } from "../stores/user";
 import { ApiError } from "./api-error";
 import { auth } from "./firebase";
 import { getTzOffsetMin } from "./timezone";
@@ -128,6 +129,9 @@ export const senderApi = {
 
 // ========== 認証 API ==========
 
+/** `/auth/*` の 3 経路 (register / me / options) が返すユーザー表現。サーバーの UserSchema と対応 */
+type UserResponse = { user: UserProfile };
+
 export const authApi = {
   register: (body: {
     handle: string;
@@ -135,60 +139,51 @@ export const authApi = {
     watermark_mode?: EmbedMode;
     require_sender_name?: boolean;
   }) =>
-    request<{
-      user: {
-        id: string;
-        handle: string;
-        display_name: string;
-        storage_used: number;
-        storage_quota: number;
-        receive_url: string;
-        is_active: boolean;
-        watermark_mode: EmbedMode;
-        require_sender_name: boolean;
-        require_send_key: boolean;
-      };
-    }>("/auth/register", { method: "POST", body: JSON.stringify(body) }, true),
+    request<UserResponse>("/auth/register", { method: "POST", body: JSON.stringify(body) }, true),
 
-  getMe: () =>
-    request<{
-      user: {
-        id: string;
-        handle: string;
-        display_name: string;
-        storage_used: number;
-        storage_quota: number;
-        receive_url: string;
-        is_active: boolean;
-        watermark_mode: EmbedMode;
-        require_sender_name: boolean;
-        require_send_key: boolean;
-      };
-    }>("/auth/me", {}, true),
+  getMe: () => request<UserResponse>("/auth/me", {}, true),
 
   updateOptions: (body: {
     watermark_mode?: EmbedMode;
     require_sender_name?: boolean;
     is_active?: boolean;
     require_send_key?: boolean;
+    /** R09。null で通知先ごと解除。新しい値を渡すと確認メールが飛ぶ */
+    notification_email?: string | null;
+    notify_digest?: boolean;
+    notify_expiry?: boolean;
+    notify_quota?: boolean;
+    locale?: "ja" | "en";
   }) =>
-    request<{
-      user: {
-        id: string;
-        handle: string;
-        display_name: string;
-        storage_used: number;
-        storage_quota: number;
-        receive_url: string;
-        is_active: boolean;
-        watermark_mode: EmbedMode;
-        require_sender_name: boolean;
-        require_send_key: boolean;
-      };
-    }>("/auth/options", { method: "PATCH", body: JSON.stringify(body) }, true),
+    request<UserResponse>("/auth/options", { method: "PATCH", body: JSON.stringify(body) }, true),
 
   deleteAccount: (body: { confirm_handle: string }) =>
     request<void>("/auth/account", { method: "DELETE", body: JSON.stringify(body) }, true),
+};
+
+/**
+ * 通知メールのリンクから叩く経路 (R09)。**いずれも認証しない。**
+ * メールアプリから踏む人はログインしていないので、トークンの知識が認可になる。
+ */
+export const notificationApi = {
+  verifyEmail: (token: string) =>
+    request<{ email: string }>("/notifications/verify-email", {
+      method: "POST",
+      body: JSON.stringify({ token }),
+    }),
+
+  /**
+   * 人間向けの解除。ボタンを押させてから呼ぶ
+   * (メールセキュリティスキャナのリンク自動巡回で勝手に解除されないように)。
+   *
+   * このエンドポイントは RFC 8058 のメールクライアント向けなので応答が text/plain。
+   * `request()` は JSON を前提にしているので通さない。
+   */
+  unsubscribe: async (token: string, kind: string): Promise<void> => {
+    const q = `t=${encodeURIComponent(token)}&k=${encodeURIComponent(kind)}`;
+    const res = await fetch(`${BASE_URL}/notifications/unsubscribe?${q}`, { method: "POST" });
+    if (!res.ok) throw new ApiError(res.status, "UNKNOWN", res.statusText);
+  },
 };
 
 // ========== 受信者 API ==========

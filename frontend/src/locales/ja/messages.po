@@ -532,12 +532,21 @@ msgid "このアカウントは無効化されています"
 msgstr "このアカウントは無効化されています"
 
 #: src/pages/SettingsPage.tsx
+msgid "このアドレスは確認待ちです。メール内のリンクを開いてください。"
+msgstr "このアドレスは確認待ちです。メール内のリンクを開いてください。"
+
+#: src/pages/SettingsPage.tsx
 msgid "このハンドルは既に使われています"
 msgstr "このハンドルは既に使われています"
 
 #: src/lib/api-error.ts
 msgid "このハンドルは既に使われています。別のハンドルを試してください"
 msgstr "このハンドルは既に使われています。別のハンドルを試してください"
+
+#: src/pages/UnsubscribePage.tsx
+#: src/pages/VerifyEmailPage.tsx
+msgid "このリンクは使用できません"
+msgstr "このリンクは使用できません"
 
 #: src/pages/PhotoDetailPage.tsx
 msgid "この写真を削除しますか？"
@@ -583,9 +592,17 @@ msgstr "コピー"
 msgid "コピーしました!"
 msgstr "コピーしました!"
 
+#: src/pages/VerifyEmailPage.tsx
+msgid "これから、このアドレスに通知が届きます。"
+msgstr "これから、このアドレスに通知が届きます。"
+
 #: src/pages/LandingPage.tsx
 msgid "こんな経験<0/>ありませんか？"
 msgstr "こんな経験<0/>ありませんか？"
+
+#: src/pages/SettingsPage.tsx
+msgid "ご登録のアドレスは通知の配信にのみ利用します。詳しくは<0>プライバシーポリシー</0>をご覧ください。"
+msgstr "ご登録のアドレスは通知の配信にのみ利用します。詳しくは<0>プライバシーポリシー</0>をご覧ください。"
 
 #: src/lib/api-error.ts
 msgid "サーバーでエラーが発生しました。時間をおいてもう一度お試しください"
@@ -619,6 +636,10 @@ msgstr "しっぽり明朝"
 #: src/lib/watermark.ts
 msgid "スカイ"
 msgstr "スカイ"
+
+#: src/pages/VerifyEmailPage.tsx
+msgid "すでに確認が済んでいるか、リンクが正しくありません。設定画面で現在の状態を確認してください。"
+msgstr "すでに確認が済んでいるか、リンクが正しくありません。設定画面で現在の状態を確認してください。"
 
 #: src/components/ui/StorageQuotaBar.tsx
 #: src/pages/DashboardPage.tsx
@@ -840,6 +861,10 @@ msgstr "ページが見つかりません"
 msgid "ページを閉じないでください"
 msgstr "ページを閉じないでください"
 
+#: src/pages/UnsubscribePage.tsx
+msgid "ほかの種類の通知は、これまでどおり届きます。"
+msgstr "ほかの種類の通知は、これまでどおり届きます。"
+
 #: src/lib/watermark.ts
 msgid "ポッタ"
 msgstr "ポッタ"
@@ -873,9 +898,17 @@ msgstr "まもなく削除されます。"
 msgid "メール"
 msgstr "メール"
 
+#: src/pages/VerifyEmailPage.tsx
+msgid "メールアドレスの確認"
+msgstr "メールアドレスの確認"
+
 #: src/pages/GuidePage.tsx
 msgid "メールアドレスは公開されません。送る人にもあなたのメアドは伝わりません。"
 msgstr "メールアドレスは公開されません。送る人にもあなたのメアドは伝わりません。"
+
+#: src/pages/VerifyEmailPage.tsx
+msgid "メールアドレスを確認しました"
+msgstr "メールアドレスを確認しました"
 
 #: src/pages/LandingPage.tsx
 msgid "メアド・氏名が共有相手に見える"
@@ -920,6 +953,10 @@ msgstr "よもぎ"
 #: src/lib/watermark.ts
 msgid "ランパート"
 msgstr "ランパート"
+
+#: src/pages/VerifyEmailPage.tsx
+msgid "リンクの有効期限が切れています"
+msgstr "リンクの有効期限が切れています"
 
 #: src/lib/watermark.ts
 msgid "レゲエ"
@@ -973,6 +1010,10 @@ msgstr "ロックンロール"
 msgid "一度に送れるのは{MAX_PHOTOS_PER_SESSION}枚までです"
 msgstr "一度に送れるのは{MAX_PHOTOS_PER_SESSION}枚までです"
 
+#: src/pages/SettingsPage.tsx
+msgid "上限に近づいて写真を受け取れなくなる前にお知らせします"
+msgstr "上限に近づいて写真を受け取れなくなる前にお知らせします"
+
 #: src/pages/DashboardPage.tsx
 msgid "上限に達すると新しい写真を受け取れなくなります。"
 msgstr "上限に達すると新しい写真を受け取れなくなります。"
@@ -1022,6 +1063,10 @@ msgstr "使い方"
 msgid "保存"
 msgstr "保存"
 
+#: src/pages/SettingsPage.tsx
+msgid "保存して確認メールを送る"
+msgstr "保存して確認メールを送る"
+
 #: src/lib/api-error.ts
 #: src/pages/DashboardPage.tsx
 msgid "保存容量がいっぱいです"
@@ -1030,6 +1075,15 @@ msgstr "保存容量がいっぱいです"
 #: src/pages/DashboardPage.tsx
 msgid "保存容量の残りが少なくなっています"
 msgstr "保存容量の残りが少なくなっています"
+
+#: src/pages/SettingsPage.tsx
+#: src/pages/UnsubscribePage.tsx
+msgid "保存容量の警告"
+msgstr "保存容量の警告"
+
+#: src/pages/SettingsPage.tsx
+msgid "保存期限の14日前と3日前にお知らせします"
+msgstr "保存期限の14日前と3日前にお知らせします"
 
 #: src/pages/LandingPage.tsx
 msgid "個人情報の交換なしで<0/><1>撮影者情報は残せる</1><2/>写真の受け取り"
@@ -1042,6 +1096,10 @@ msgstr "個人情報は<0/>交換しない"
 #: src/pages/LandingPage.tsx
 msgid "個別到達で探す手間なし"
 msgstr "個別到達で探す手間なし"
+
+#: src/pages/UnsubscribePage.tsx
+msgid "停止できませんでした。時間をおいて試してください。"
+msgstr "停止できませんでした。時間をおいて試してください。"
 
 #: src/pages/SettingsPage.tsx
 msgid "元に戻すと、いまと同じ受信URLがそのまま使えます"
@@ -1113,6 +1171,14 @@ msgstr "最重要"
 msgid "写真"
 msgstr "写真"
 
+#: src/pages/SettingsPage.tsx
+msgid "写真が届いたときや、保存期限・保存容量が近づいたときにメールでお知らせします。"
+msgstr "写真が届いたときや、保存期限・保存容量が近づいたときにメールでお知らせします。"
+
+#: src/pages/SettingsPage.tsx
+msgid "写真が届いた日に、1日1回まとめてお知らせします"
+msgstr "写真が届いた日に、1日1回まとめてお知らせします"
+
 #: src/pages/LandingPage.tsx
 msgid "写真が届く"
 msgstr "写真が届く"
@@ -1120,6 +1186,11 @@ msgstr "写真が届く"
 #: src/pages/PhotoDetailPage.tsx
 msgid "写真が見つかりません"
 msgstr "写真が見つかりません"
+
+#: src/pages/SettingsPage.tsx
+#: src/pages/UnsubscribePage.tsx
+msgid "写真の削除予告"
+msgstr "写真の削除予告"
 
 #: src/pages/LandingPage.tsx
 msgid "写真の受け取りに特化"
@@ -1559,6 +1630,11 @@ msgstr "文字を入力"
 msgid "新しい写真を受け取れません。不要な写真を削除して空きを作ってください。"
 msgstr "新しい写真を受け取れません。不要な写真を削除して空きを作ってください。"
 
+#: src/pages/SettingsPage.tsx
+#: src/pages/UnsubscribePage.tsx
+msgid "新着写真のお知らせ"
+msgstr "新着写真のお知らせ"
+
 #: src/pages/GalleryPage.tsx
 msgid "新着順"
 msgstr "新着順"
@@ -1582,6 +1658,10 @@ msgstr "機能"
 #: src/pages/PhotoDetailPage.tsx
 msgid "次の写真"
 msgstr "次の写真"
+
+#: src/pages/UnsubscribePage.tsx
+msgid "次の通知の配信を停止します。"
+msgstr "次の通知の配信を停止します。"
 
 #: src/pages/PhotoDetailPage.tsx
 msgid "次へ"
@@ -1679,6 +1759,26 @@ msgstr "相手のプロフィールが表示されたら、<0>「写真を送る
 #: src/lib/api-error.ts
 msgid "短時間に多くのリクエストが集中したため、不正利用（bot 等）対策により一時的に送信を制限しています。1〜2分ほど時間をおいてからもう一度お試しください。"
 msgstr "短時間に多くのリクエストが集中したため、不正利用（bot 等）対策により一時的に送信を制限しています。1〜2分ほど時間をおいてからもう一度お試しください。"
+
+#: src/pages/SettingsPage.tsx
+msgid "確認が済むまでは、これまでのアドレスに届きます。"
+msgstr "確認が済むまでは、これまでのアドレスに届きます。"
+
+#: src/pages/VerifyEmailPage.tsx
+msgid "確認しています…"
+msgstr "確認しています…"
+
+#: src/pages/SettingsPage.tsx
+msgid "確認メールを送りました。メール内のリンクを開くと、このアドレスへの通知が有効になります。"
+msgstr "確認メールを送りました。メール内のリンクを開くと、このアドレスへの通知が有効になります。"
+
+#: src/pages/VerifyEmailPage.tsx
+msgid "確認リンクは発行から24時間で無効になります。設定画面からもう一度アドレスを保存すると、新しい確認メールが届きます。"
+msgstr "確認リンクは発行から24時間で無効になります。設定画面からもう一度アドレスを保存すると、新しい確認メールが届きます。"
+
+#: src/pages/SettingsPage.tsx
+msgid "確認を取り消す"
+msgstr "確認を取り消す"
 
 #: src/pages/SettingsPage.tsx
 msgid "確認用ハンドル"
@@ -1785,6 +1885,10 @@ msgstr "設定で続きから"
 #: src/pages/GuidePage.tsx
 msgid "設定ページの<0>「写真の受付」</0>で、いつ・誰から受け取るかを切り替えられます。"
 msgstr "設定ページの<0>「写真の受付」</0>で、いつ・誰から受け取るかを切り替えられます。"
+
+#: src/pages/UnsubscribePage.tsx
+msgid "設定画面から通知のオン/オフを変更できます。"
+msgstr "設定画面から通知のオン/オフを変更できます。"
 
 #: src/pages/LandingPage.tsx
 msgid "詳しい使い方を見る"
@@ -2044,6 +2148,27 @@ msgstr "透かしを編集"
 msgid "透明度 ({0}%)"
 msgstr "透明度 ({0}%)"
 
+#: src/pages/SettingsPage.tsx
+msgid "通知"
+msgstr "通知"
+
+#: src/pages/UnsubscribePage.tsx
+#: src/pages/VerifyEmailPage.tsx
+msgid "通知の設定を開く →"
+msgstr "通知の設定を開く →"
+
+#: src/pages/UnsubscribePage.tsx
+msgid "通知の配信停止"
+msgstr "通知の配信停止"
+
+#: src/pages/SettingsPage.tsx
+msgid "通知を解除する"
+msgstr "通知を解除する"
+
+#: src/pages/SettingsPage.tsx
+msgid "通知先メールアドレス"
+msgstr "通知先メールアドレス"
+
 #: src/pages/GuidePage.tsx
 msgid "進行中はファイルごとの状態（待機 / 送信中 / 完了）が表示されます"
 msgstr "進行中はファイルごとの状態（待機 / 送信中 / 完了）が表示されます"
@@ -2075,6 +2200,14 @@ msgstr "選択できる"
 #: src/pages/GalleryPage.tsx
 msgid "選択済み"
 msgstr "選択済み"
+
+#: src/pages/UnsubscribePage.tsx
+msgid "配信を停止しました"
+msgstr "配信を停止しました"
+
+#: src/pages/UnsubscribePage.tsx
+msgid "配信を停止する"
+msgstr "配信を停止する"
 
 #: src/components/ui/Dialog.tsx
 msgid "閉じる"
