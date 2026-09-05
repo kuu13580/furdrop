@@ -239,6 +239,77 @@ describe("通知先メールアドレスの登録と検証", () => {
     expect(takeSentMails()).toHaveLength(0);
   });
 
+  it("空文字でも通知先を解除できる (目的: zod の .email() に弾かれて解除分岐に届かない状態を防ぐ)", async () => {
+    const { idToken, uid } = await createEmulatorUser();
+    await seedUser({ uid, handle: "notif_empty" });
+    await apiJson("/auth/options", {
+      method: "PATCH",
+      headers: authHeader(idToken),
+      body: { notification_email: "e@example.com" },
+    });
+    await apiJson("/notifications/verify-email", {
+      method: "POST",
+      body: { token: await pendingToken(uid) },
+    });
+
+    const res = await apiJson<UserBody>("/auth/options", {
+      method: "PATCH",
+      headers: authHeader(idToken),
+      body: { notification_email: "" },
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.user.notification_email).toBeNull();
+  });
+
+  it("同時に投げても確認メールの日次上限を超えない (目的: SELECT→UPDATE の競合)", async () => {
+    const { idToken, uid } = await createEmulatorUser();
+    await seedUser({ uid, handle: "notif_race" });
+
+    // 分単位の制限はテスト設定で実質無制限なので、日次上限だけが効く
+    const results = await Promise.all(
+      Array.from({ length: 8 }, (_, i) =>
+        apiJson("/auth/options", {
+          method: "PATCH",
+          headers: authHeader(idToken),
+          body: { notification_email: `race${i}@example.com` },
+        }),
+      ),
+    );
+
+    const ok = results.filter((r) => r.status === 200).length;
+    expect(ok).toBeLessThanOrEqual(5);
+    expect(takeSentMails().length).toBeLessThanOrEqual(5);
+  });
+
+  it("古いトークンでは新しい検証待ちアドレスを有効化できない (目的: UPDATE の WHERE にトークンを含める)", async () => {
+    const { idToken, uid } = await createEmulatorUser();
+    await seedUser({ uid, handle: "notif_stale" });
+
+    await apiJson("/auth/options", {
+      method: "PATCH",
+      headers: authHeader(idToken),
+      body: { notification_email: "first@example.com" },
+    });
+    const staleToken = await pendingToken(uid);
+
+    // 別のアドレスで上書き (pending_token も入れ替わる)
+    await apiJson("/auth/options", {
+      method: "PATCH",
+      headers: authHeader(idToken),
+      body: { notification_email: "second@example.com" },
+    });
+
+    const res = await apiJson("/notifications/verify-email", {
+      method: "POST",
+      body: { token: staleToken },
+    });
+    expect(res.status).toBe(404);
+
+    const me = await apiJson<UserBody>("/auth/me", { headers: authHeader(idToken) });
+    expect(me.body.user.notification_email).toBeNull();
+    expect(me.body.user.pending_email).toBe("second@example.com");
+  });
+
   it("未登録ユーザーの通知設定 PATCH は 404 (目的: FK 違反の 500 にしない)", async () => {
     // users に行を作らない = Firebase 認証は通るが未登録
     const { idToken } = await createEmulatorUser();

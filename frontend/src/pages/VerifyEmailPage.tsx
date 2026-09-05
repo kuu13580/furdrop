@@ -33,7 +33,11 @@ export default function VerifyEmailPage() {
   // 1 回目のリクエストが無効化され、2 回目は上のガードで早期 return して
   // 「確認しています…」のまま固まる
   const latestToken = useRef(token);
-  latestToken.current = token;
+  // render 中に書かず commit 後に同期する。検証を走らせる effect より前に置いて、
+  // 同じ commit ではこちらが先に反映されるようにする
+  useEffect(() => {
+    latestToken.current = token;
+  }, [token]);
 
   useEffect(() => {
     if (startedToken.current === token) return;

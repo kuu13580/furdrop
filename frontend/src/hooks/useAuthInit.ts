@@ -13,9 +13,13 @@ export function useAuthInit() {
   const setUser = useSetAtom(userAtom);
   const locale = useAtomValue(localeAtom);
   // effect の依存に locale を入れると、言語を切り替えるたびに onAuthStateChanged の
-  // 購読を張り直して getMe が走ってしまう。参照だけ最新に保って中から読む
+  // 購読を張り直して getMe が走ってしまう。参照だけ最新に保って中から読む。
+  // **render 中に ref を書かない** — concurrent render では破棄された render の値が
+  // 残りうるので、commit 後の effect で同期する
   const localeRef = useRef(locale);
-  localeRef.current = locale;
+  useEffect(() => {
+    localeRef.current = locale;
+  }, [locale]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {

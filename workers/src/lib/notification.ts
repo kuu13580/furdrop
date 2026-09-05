@@ -107,49 +107,62 @@ export async function updateNotifyFlags(
  * **検証が済むまで `email` は書き換えない。** アドレス変更中も旧アドレスに送り続ける
  * (変更したら通知が黙って止まる、のほうが事故) 。
  */
+export type StartVerificationResult =
+  | { ok: true }
+  | { ok: false; reason: "rate_limited" | "send_failed" };
+
 export async function startEmailVerification(
   env: Env,
   uid: string,
   email: string,
   locale: EmailLocale,
-): Promise<{ ok: boolean }> {
+): Promise<StartVerificationResult> {
   const now = Math.floor(Date.now() / 1000);
   await ensureRow(env, uid, now);
 
-  const counter = await env.DB.prepare(
-    "SELECT verify_window_start, verify_sent_count FROM notification_settings WHERE receiver_id = ?",
-  )
-    .bind(uid)
-    .first<{ verify_window_start: number | null; verify_sent_count: number }>();
-
-  const windowStart = counter?.verify_window_start ?? 0;
-  const expired = now - windowStart >= VERIFY_WINDOW_SECONDS;
-  const sentInWindow = expired ? 0 : (counter?.verify_sent_count ?? 0);
-  if (sentInWindow >= VERIFY_DAILY_LIMIT) return { ok: false };
-
   const token = generateSendKey(TOKEN_LENGTH);
-  await env.DB.prepare(
+
+  // 上限判定・カウンタ更新・トークン発行を**1 本の UPDATE**にまとめる。
+  // SELECT してから UPDATE すると、同時リクエストが同じカウンタを読んで同じ値を書き戻し、
+  // 分単位の制限 (3/60秒) の範囲内で日次上限を超えられてしまう。
+  // 窓が切れていればカウンタを 1 に巻き戻し、切れていなければ +1 する。
+  const result = await env.DB.prepare(
     `UPDATE notification_settings SET
-       pending_email = ?, pending_token = ?, pending_expires = ?,
-       verify_window_start = ?, verify_sent_count = ?, updated_at = ?
-     WHERE receiver_id = ?`,
+       pending_email   = ?1,
+       pending_token   = ?2,
+       pending_expires = ?3,
+       verify_window_start =
+         CASE WHEN ?4 - COALESCE(verify_window_start, 0) >= ?5 THEN ?4 ELSE verify_window_start END,
+       verify_sent_count =
+         CASE WHEN ?4 - COALESCE(verify_window_start, 0) >= ?5 THEN 1 ELSE verify_sent_count + 1 END,
+       updated_at = ?4
+     WHERE receiver_id = ?6
+       AND (?4 - COALESCE(verify_window_start, 0) >= ?5 OR verify_sent_count < ?7)`,
   )
     .bind(
       email,
       token,
       now + VERIFY_TTL_SECONDS,
-      expired ? now : windowStart,
-      sentInWindow + 1,
       now,
+      VERIFY_WINDOW_SECONDS,
       uid,
+      VERIFY_DAILY_LIMIT,
     )
     .run();
+
+  if ((result.meta.changes ?? 0) === 0) return { ok: false, reason: "rate_limited" };
 
   const mail = renderEmail("verify", locale, {
     email,
     verify_url: `${env.APP_ORIGIN}/verify-email?token=${encodeURIComponent(token)}`,
   });
-  await sendMail(env, { to: email, ...mail });
+
+  // 送れなかったことを握り潰さない。握り潰すと画面が「確認メールを送りました」と
+  // 表示したまま何も届かず、ユーザーは日次上限を消費しながら再試行することになる。
+  // pending は残す (同じアドレスで再送すれば新しいトークンで上書きされる)
+  if (!(await sendMail(env, { to: email, ...mail }, uid))) {
+    return { ok: false, reason: "send_failed" };
+  }
   return { ok: true };
 }
 
@@ -205,17 +218,25 @@ export async function verifyEmailToken(env: Env, token: string): Promise<VerifyR
 
   // last_digest_at をここで打つ。打たないと、検証直後の初回ダイジェストが
   // 「これまでに受け取った写真すべて」になってしまう
-  await env.DB.prepare(
+  // WHERE にトークンと期限を含める。receiver_id だけで UPDATE すると、SELECT との間に
+  // 別のリクエストが新しい pending_email を入れた場合、**古いトークンで新しいアドレスが
+  // 検証されてしまう**
+  const result = await env.DB.prepare(
     `UPDATE notification_settings SET
        email = pending_email,
        pending_email = NULL, pending_token = NULL, pending_expires = NULL,
        unsubscribe_token = COALESCE(unsubscribe_token, ?),
        last_digest_at = ?,
        updated_at = ?
-     WHERE receiver_id = ?`,
+     WHERE receiver_id = ?
+       AND pending_token = ?
+       AND pending_email IS NOT NULL
+       AND pending_expires >= ?`,
   )
-    .bind(generateSendKey(TOKEN_LENGTH), now, now, row.receiver_id)
+    .bind(generateSendKey(TOKEN_LENGTH), now, now, row.receiver_id, token, now)
     .run();
+
+  if ((result.meta.changes ?? 0) === 0) return { ok: false, reason: "invalid" };
 
   return { ok: true, email: row.pending_email };
 }

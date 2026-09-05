@@ -131,6 +131,6 @@ export function renderEmail(
   return {
     subject: renderedSubject,
     text,
-    html: wrapHtml(renderedBody, footer),
+    html: wrapHtml(renderedBody, footer, locale),
   };
 }

@@ -117,7 +117,7 @@ function renderFooterLine(line: string): string {
  * ロゴは画像ではなくテキスト — 画像をブロックするクライアントで差出人が分からなくなるのと、
  * 外部ドメインの画像が電気通信事業法 27 条の 12 (外部送信規律) をグレーにするため。
  */
-export function wrapHtml(body: string, footer: string | null): string {
+export function wrapHtml(body: string, footer: string | null, locale: "ja" | "en" = "ja"): string {
   const blocks = parseBlocks(body).map(renderBlock).join("\n");
   const footerHtml = footer
     ? `<tr><td style="padding:24px 32px 28px;border-top:1px solid ${BORDER};">` +
@@ -134,7 +134,7 @@ export function wrapHtml(body: string, footer: string | null): string {
     : "";
 
   return `<!doctype html>
-<html lang="ja">
+<html lang="${locale}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">

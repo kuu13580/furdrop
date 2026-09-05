@@ -29,7 +29,12 @@ export interface OutgoingMail {
  * 通知は「届かなくても写真は失われない」種類の処理なので、1 通の失敗で日次バッチ全体を
  * 止めない。呼び出し側は成否を集計してログに残すだけでよい。
  */
-export async function sendMail(env: Env, mail: OutgoingMail): Promise<boolean> {
+export async function sendMail(
+  env: Env,
+  mail: OutgoingMail,
+  /** ログに残す識別子。宛先そのものは残さない (下記) */
+  receiverId?: string,
+): Promise<boolean> {
   if (env.ENVIRONMENT !== "production") {
     // ローカル開発で本物のメールを飛ばさない。内容は /dev/emails で確認できる
     console.log(`[mail] to=${mail.to} subject=${mail.subject}\n${mail.text}`);
@@ -48,7 +53,10 @@ export async function sendMail(env: Env, mail: OutgoingMail): Promise<boolean> {
     });
     return true;
   } catch (err) {
-    logError("mail-send", err, { to: mail.to, subject: mail.subject });
+    // **宛先そのものはログに残さない。** Workers Logs は「通知メールの送達記録」
+    // (プライバシーポリシー第11項・90日) とは別の保存先で、保持期間も別管理になる。
+    // どの受信者かは receiver_id から DB を引けば分かる
+    logError("mail-send", err, { receiverId, subject: mail.subject });
     return false;
   }
 }

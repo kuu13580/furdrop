@@ -96,7 +96,7 @@ async function send(
 ): Promise<boolean> {
   const links = notificationLinks(env, target.unsubscribe_token, kind);
   const mail = renderEmail(type, resolveLocale(target.locale), { ...links.vars, ...vars });
-  return sendMail(env, { to: target.email, ...mail, headers: links.headers });
+  return sendMail(env, { to: target.email, ...mail, headers: links.headers }, target.receiver_id);
 }
 
 // ========== 新着ダイジェスト ==========

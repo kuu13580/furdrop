@@ -93,6 +93,11 @@ describe("通知メールのテンプレート", () => {
     expect(html).toContain(">このメールの配信を停止する</a>");
   });
 
+  it("HTML の lang 属性がロケールに追従する (目的: 英語メールを読み上げソフトが日本語として読まない)", () => {
+    expect(renderEmail("digest", "ja", varsFor("digest")).html).toContain('<html lang="ja">');
+    expect(renderEmail("digest", "en", varsFor("digest")).html).toContain('<html lang="en">');
+  });
+
   it("テンプレート由来の文字列を HTML エスケープする (目的: 送信者名経由の HTML 混入を防ぐ)", () => {
     const html = renderEmail("digest", "ja", {
       ...varsFor("digest"),

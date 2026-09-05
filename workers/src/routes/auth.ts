@@ -284,8 +284,9 @@ const updateOptionsRoute = createRoute({
             require_sender_name: z.boolean().optional(),
             is_active: z.boolean().optional(),
             require_send_key: z.boolean().optional(),
-            // R09。null / 空文字で通知先を解除する
-            notification_email: z.string().email().nullable().optional(),
+            // R09。null または空文字で通知先ごと解除する。
+            // z.string().email() だけだと空文字が先に弾かれ、解除の分岐に到達しない
+            notification_email: z.union([z.string().email(), z.literal(""), z.null()]).optional(),
             notify_digest: z.boolean().optional(),
             notify_expiry: z.boolean().optional(),
             notify_quota: z.boolean().optional(),
@@ -308,6 +309,10 @@ const updateOptionsRoute = createRoute({
     429: {
       content: { "application/json": { schema: ErrorSchema } },
       description: "確認メールのレート制限",
+    },
+    502: {
+      content: { "application/json": { schema: ErrorSchema } },
+      description: "確認メールの送信に失敗",
     },
   },
 });
@@ -398,9 +403,17 @@ auth.openapi(updateOptionsRoute, async (c) => {
         resolveLocale(body.locale ?? (user.locale as string | null)),
       );
       if (!sent.ok) {
+        if (sent.reason === "rate_limited") {
+          return c.json(
+            { error: { code: "RATE_LIMITED", message: "Daily verification email limit reached" } },
+            429,
+          );
+        }
+        // 送信そのものが失敗したときに 200 を返すと、画面が「確認メールを送りました」と
+        // 出したまま何も届かない。レート制限とは別のエラーとして返す
         return c.json(
-          { error: { code: "RATE_LIMITED", message: "Daily verification email limit reached" } },
-          429,
+          { error: { code: "MAIL_SEND_FAILED", message: "Failed to send verification email" } },
+          502,
         );
       }
     }
