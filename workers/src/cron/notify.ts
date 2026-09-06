@@ -110,30 +110,40 @@ async function send(
  * 入らなくなる**。`photos.updated_at` を書くのは confirm (→completed) と
  * cleanup (→failed) の 2 箇所だけなので、completed 写真の `updated_at` = confirm 時刻。
  *
- * 窓は **`(since, now]` の半開区間**にする。上限を置かずに `last_digest_at = now` へ
- * 進めると、集計クエリを流したあと同じ秒のうちに confirm された写真が、今回の集計には
- * 入らないのに次回の `updated_at > now` からも外れて**永久に落ちる**。上限を `now` で
- * 締めておけば、その写真は次回 (`since = now` なので `updated_at > now`) で拾われる。
+ * 窓は **`(since, cutoff]` の半開区間**で、`cutoff = now - 1`。送信できたら
+ * `last_digest_at` は `now` ではなく **`cutoff`** へ進める。
+ *
+ * 上限が `now` だと穴が残る。集計クエリが走るのはジョブ開始と同じ秒 (実時刻 >= now) なので、
+ * `updated_at = now` の写真は**窓の定義には入るのにクエリには映らない**ことがある。
+ * それで `last_digest_at = now` にすると、次回の `updated_at > now` からも外れて永久に落ちる。
+ *
+ * `cutoff` をクエリが走る時刻より必ず手前 (秒精度なので `now - 1`) に置けば、
+ * その写真は今回の窓の外 → 次回 (`since = now - 1`) で `updated_at > now - 1` となり必ず拾われる。
+ * 逆に窓の中の写真は次回 `updated_at > cutoff` から外れるので、**ちょうど 1 回**送られる。
  */
 const DIGEST_WHERE = `receiver_id = ? AND upload_status = 'completed' AND updated_at > ? AND updated_at <= ?`;
 const DIGEST_COUNT_SQL = `SELECT COUNT(*) AS count FROM photos WHERE ${DIGEST_WHERE}`;
 
 async function sendDigests(env: Env, targets: Target[], now: number): Promise<void> {
+  // ジョブ開始時に 1 回だけ決める。集計・送信者名・透かしの更新すべてで同じ値を使う
+  const cutoff = now - 1;
+
   for (const t of targets) {
     if (!t.notify_digest) continue;
 
     // last_digest_at は検証成立時に打たれる。NULL は理屈上ありえないが、
     // 万一 NULL なら「過去すべて」ではなく直近 1 日に閉じる
     const since = Math.max(t.last_digest_at ?? now - DAY, now - DIGEST_MAX_LOOKBACK);
+    if (since >= cutoff) continue;
 
     const row = await env.DB.prepare(DIGEST_COUNT_SQL)
-      .bind(t.receiver_id, since, now)
+      .bind(t.receiver_id, since, cutoff)
       .first<{ count: number }>();
 
     const count = row?.count ?? 0;
     if (count === 0) continue;
 
-    const senders = await senderPhrase(env, t, since, now);
+    const senders = await senderPhrase(env, t, since, cutoff);
     const sent = await send(env, t, "digest", "digest", { count, senders });
 
     // 送れなかった日は窓を進めない (翌日にまとめて送る)。際限なく積み上がらないよう
@@ -143,7 +153,7 @@ async function sendDigests(env: Env, targets: Target[], now: number): Promise<vo
     await env.DB.prepare(
       "UPDATE notification_settings SET last_digest_at = ?, updated_at = ? WHERE receiver_id = ?",
     )
-      .bind(now, now, t.receiver_id)
+      .bind(cutoff, now, t.receiver_id)
       .run();
   }
 }

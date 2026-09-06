@@ -8,6 +8,14 @@ import { seedPhoto, seedUser } from "./helpers/seed";
 const DAY = 24 * 3600;
 
 /**
+ * ダイジェストの窓は `(since, now - 1]`。`seedPhoto` の既定は `updated_at = 今この秒`で、
+ * それは意図どおり窓の外 (次回の実行で拾われる) になる。窓の中に置きたいときはこれを使う。
+ */
+function pastSecond(offset = 60): number {
+  return Math.floor(Date.now() / 1000) - offset;
+}
+
+/**
  * 検証済みの通知先を持つ受信者を作る。
  * API 経由の登録・検証は auth-notification.test.ts が見ているので、ここは直接入れる。
  */
@@ -63,8 +71,18 @@ beforeEach(() => {
 describe("新着ダイジェスト", () => {
   it("前回以降に届いた写真があれば 1 通送り、送信者名と枚数を載せる", async () => {
     await seedNotifiable("u-digest", "dig_a");
-    await seedPhoto({ receiverId: "u-digest", handle: "dig_a", senderName: "@hanako" });
-    await seedPhoto({ receiverId: "u-digest", handle: "dig_a", senderName: "@taro" });
+    await seedPhoto({
+      receiverId: "u-digest",
+      handle: "dig_a",
+      senderName: "@hanako",
+      createdAt: pastSecond(),
+    });
+    await seedPhoto({
+      receiverId: "u-digest",
+      handle: "dig_a",
+      senderName: "@taro",
+      createdAt: pastSecond(),
+    });
 
     await runDailyNotifications(env);
 
@@ -81,7 +99,12 @@ describe("新着ダイジェスト", () => {
 
   it("2 回続けて走らせても 2 通目は送らない (目的: 冪等性 — last_digest_at で窓が進むこと)", async () => {
     await seedNotifiable("u-idem", "dig_b");
-    await seedPhoto({ receiverId: "u-idem", handle: "dig_b", senderName: "@a" });
+    await seedPhoto({
+      receiverId: "u-idem",
+      handle: "dig_b",
+      senderName: "@a",
+      createdAt: pastSecond(),
+    });
 
     await runDailyNotifications(env);
     expect(takeSentMails()).toHaveLength(1);
@@ -98,7 +121,12 @@ describe("新着ダイジェスト", () => {
 
   it("notify_digest が 0 なら送らない (解除済み)", async () => {
     await seedNotifiable("u-off", "dig_d", { digest: 0 });
-    await seedPhoto({ receiverId: "u-off", handle: "dig_d", senderName: "@a" });
+    await seedPhoto({
+      receiverId: "u-off",
+      handle: "dig_d",
+      senderName: "@a",
+      createdAt: pastSecond(),
+    });
     await runDailyNotifications(env);
     expect(takeSentMails()).toHaveLength(0);
   });
@@ -109,7 +137,12 @@ describe("新着ダイジェスト", () => {
     for (const [i, name] of ["@a", "@b", "@c", "@d", "@e"].entries()) {
       const times = i === 0 ? 8 : 1;
       for (let n = 0; n < times; n++) {
-        await seedPhoto({ receiverId: "u-many", handle: "dig_many", senderName: name });
+        await seedPhoto({
+          receiverId: "u-many",
+          handle: "dig_many",
+          senderName: name,
+          createdAt: pastSecond(),
+        });
       }
     }
 
@@ -123,7 +156,12 @@ describe("新着ダイジェスト", () => {
 
   it("匿名だけの送信でも文言が成立する (目的: sender_name が NULL の写真で崩れないこと)", async () => {
     await seedNotifiable("u-anon", "dig_e");
-    await seedPhoto({ receiverId: "u-anon", handle: "dig_e", senderName: null });
+    await seedPhoto({
+      receiverId: "u-anon",
+      handle: "dig_e",
+      senderName: null,
+      createdAt: pastSecond(),
+    });
     await runDailyNotifications(env);
 
     const mails = takeSentMails();
@@ -155,7 +193,12 @@ describe("新着ダイジェスト", () => {
     await seedNotifiable("u-boundary", "dig_bd", { lastDigestAt: now - 100 });
 
     // 1 枚目は窓の中。これがないとそもそもダイジェストが送られない
-    const a = await seedPhoto({ receiverId: "u-boundary", handle: "dig_bd", senderName: "@a" });
+    const a = await seedPhoto({
+      receiverId: "u-boundary",
+      handle: "dig_bd",
+      senderName: "@a",
+      createdAt: pastSecond(),
+    });
     await env.DB.prepare("UPDATE photos SET updated_at = ? WHERE id = ?")
       .bind(now - 10, a.photoId)
       .run();
@@ -163,7 +206,12 @@ describe("新着ダイジェスト", () => {
     // 2 枚目は Cron 開始時刻より後に confirm された扱い (updated_at > now)。
     // 上限 (updated_at <= now) が無いと今回の集計に入り、last_digest_at = now で
     // 次回の `> now` からも外れて永久に落ちる
-    const b = await seedPhoto({ receiverId: "u-boundary", handle: "dig_bd", senderName: "@b" });
+    const b = await seedPhoto({
+      receiverId: "u-boundary",
+      handle: "dig_bd",
+      senderName: "@b",
+      createdAt: pastSecond(),
+    });
     await env.DB.prepare("UPDATE photos SET updated_at = ? WHERE id = ?")
       .bind(now + 5, b.photoId)
       .run();
@@ -175,20 +223,72 @@ describe("新着ダイジェスト", () => {
     expect(first[0].text).toContain("1枚");
     expect(first[0].text).not.toContain("@b");
 
-    // **落ちていないこと**を透かしで確認する。last_digest_at が 2 枚目の updated_at より
-    // 手前で止まっていれば、次に now がそこを追い越した実行で必ず拾われる。
-    // 上限を締めていないと last_digest_at が updated_at を追い越し、永久に落ちる
+    // **落ちていないこと**を透かしで確認する。
+    //
+    // 肝は「透かしが、集計クエリが走った時刻より必ず手前にある」こと。同じ秒に confirm された
+    // 写真は窓の外に落ちるが、透かしもそこまで進まないので次回で必ず拾われる。
+    // 実行後に観測した時刻より透かしが厳密に手前なら、この性質が成り立っている
+    // (透かし = now - 1、観測時刻 >= now)。
+    const after = Math.floor(Date.now() / 1000);
     const row = await env.DB.prepare(
       "SELECT last_digest_at FROM notification_settings WHERE receiver_id = ?",
     )
       .bind("u-boundary")
       .first<{ last_digest_at: number }>();
+    expect(row?.last_digest_at).toBeLessThan(after);
     expect(row?.last_digest_at).toBeLessThan(now + 5);
+  });
+
+  it("ジョブ開始と同じ秒に confirm された写真は、数えられるか透かしの先に残るかのどちらかになる (目的: 決して落ちない)", async () => {
+    const now = Math.floor(Date.now() / 1000);
+    await seedNotifiable("u-samesec", "dig_ss", { lastDigestAt: now - 100 });
+
+    // 窓の中に 1 枚 (これがないとダイジェスト自体が送られない)
+    const base = await seedPhoto({
+      receiverId: "u-samesec",
+      handle: "dig_ss",
+      senderName: "@base",
+      createdAt: pastSecond(),
+    });
+    expect(base.photoId).toBeTruthy();
+
+    // ジョブ開始と同じ秒 (誤差 1 秒) に confirm された写真
+    const edge = await seedPhoto({
+      receiverId: "u-samesec",
+      handle: "dig_ss",
+      senderName: "@edge",
+      createdAt: now,
+    });
+    await env.DB.prepare("UPDATE photos SET updated_at = ? WHERE id = ?")
+      .bind(now, edge.photoId)
+      .run();
+
+    await runDailyNotifications(env);
+    const mails = takeSentMails();
+    expect(mails).toHaveLength(1);
+
+    const row = await env.DB.prepare(
+      "SELECT last_digest_at FROM notification_settings WHERE receiver_id = ?",
+    )
+      .bind("u-samesec")
+      .first<{ last_digest_at: number }>();
+    const watermark = row?.last_digest_at ?? 0;
+
+    // ジョブの now が実行タイミングで 1 秒ずれうるので、どちらの分岐になるかは決まらない。
+    // どちらでも成り立つべき不変条件は「数えられた or 透かしの先に残っている」。
+    // 透かしが updated_at を追い越したうえで数えられていない = 永久に落ちた状態
+    const counted = mails[0].text.includes("@edge");
+    expect(counted || watermark < now).toBe(true);
   });
 
   it("送信に失敗した日は窓を進めない (目的: その日のぶんを翌日に送り直せること)", async () => {
     await seedNotifiable("u-fail", "dig_fail");
-    await seedPhoto({ receiverId: "u-fail", handle: "dig_fail", senderName: "@a" });
+    await seedPhoto({
+      receiverId: "u-fail",
+      handle: "dig_fail",
+      senderName: "@a",
+      createdAt: pastSecond(),
+    });
 
     await runDailyNotifications(env);
     expect(takeSentMails()).toHaveLength(1);
@@ -204,7 +304,12 @@ describe("新着ダイジェスト", () => {
 
   it("locale=en なら英語で送る", async () => {
     await seedNotifiable("u-en", "dig_f", { locale: "en" });
-    await seedPhoto({ receiverId: "u-en", handle: "dig_f", senderName: "@a" });
+    await seedPhoto({
+      receiverId: "u-en",
+      handle: "dig_f",
+      senderName: "@a",
+      createdAt: pastSecond(),
+    });
     await runDailyNotifications(env);
 
     const mails = takeSentMails();
@@ -219,7 +324,12 @@ describe("新着ダイジェスト", () => {
     )
       .bind("u-unverified", "pending@example.com", 0, 0)
       .run();
-    await seedPhoto({ receiverId: "u-unverified", handle: "dig_g", senderName: "@a" });
+    await seedPhoto({
+      receiverId: "u-unverified",
+      handle: "dig_g",
+      senderName: "@a",
+      createdAt: pastSecond(),
+    });
 
     await runDailyNotifications(env);
     expect(takeSentMails()).toHaveLength(0);
