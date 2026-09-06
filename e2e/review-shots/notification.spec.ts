@@ -1,5 +1,5 @@
 // 通知設定 (R09) の画面をレビュー用に撮る。テストではないので CI では走らない。
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../fixtures/test";
 import { prepareReceiver, setLocale, shot, VIEWPORTS } from "../helpers/shots";
 
 test("受信者: 通知設定カードの 3 状態", async ({ page }) => {

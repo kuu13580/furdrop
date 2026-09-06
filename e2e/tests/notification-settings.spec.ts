@@ -1,5 +1,5 @@
 // R09: 通知先メールアドレスの登録 → 検証待ち → 取り消し、と配信停止ページ
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../fixtures/test";
 import { createEmulatorUser, registerReceiver, signInOnPage } from "../helpers/auth";
 
 test("通知先アドレスを保存すると検証待ちになり、取り消せる (R09 double opt-in)", async ({
