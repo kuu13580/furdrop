@@ -150,6 +150,42 @@ describe("新着ダイジェスト", () => {
     expect(takeSentMails()).toHaveLength(1);
   });
 
+  it("集計後に同じ秒で confirm された写真は次回のダイジェストで拾われる (目的: 上限を締めないと永久に落ちる)", async () => {
+    const now = Math.floor(Date.now() / 1000);
+    await seedNotifiable("u-boundary", "dig_bd", { lastDigestAt: now - 100 });
+
+    // 1 枚目は窓の中。これがないとそもそもダイジェストが送られない
+    const a = await seedPhoto({ receiverId: "u-boundary", handle: "dig_bd", senderName: "@a" });
+    await env.DB.prepare("UPDATE photos SET updated_at = ? WHERE id = ?")
+      .bind(now - 10, a.photoId)
+      .run();
+
+    // 2 枚目は Cron 開始時刻より後に confirm された扱い (updated_at > now)。
+    // 上限 (updated_at <= now) が無いと今回の集計に入り、last_digest_at = now で
+    // 次回の `> now` からも外れて永久に落ちる
+    const b = await seedPhoto({ receiverId: "u-boundary", handle: "dig_bd", senderName: "@b" });
+    await env.DB.prepare("UPDATE photos SET updated_at = ? WHERE id = ?")
+      .bind(now + 5, b.photoId)
+      .run();
+
+    await runDailyNotifications(env);
+    const first = takeSentMails();
+    expect(first).toHaveLength(1);
+    // 2 枚目は今回の窓 (since, now] の外なので入らない
+    expect(first[0].text).toContain("1枚");
+    expect(first[0].text).not.toContain("@b");
+
+    // **落ちていないこと**を透かしで確認する。last_digest_at が 2 枚目の updated_at より
+    // 手前で止まっていれば、次に now がそこを追い越した実行で必ず拾われる。
+    // 上限を締めていないと last_digest_at が updated_at を追い越し、永久に落ちる
+    const row = await env.DB.prepare(
+      "SELECT last_digest_at FROM notification_settings WHERE receiver_id = ?",
+    )
+      .bind("u-boundary")
+      .first<{ last_digest_at: number }>();
+    expect(row?.last_digest_at).toBeLessThan(now + 5);
+  });
+
   it("送信に失敗した日は窓を進めない (目的: その日のぶんを翌日に送り直せること)", async () => {
     await seedNotifiable("u-fail", "dig_fail");
     await seedPhoto({ receiverId: "u-fail", handle: "dig_fail", senderName: "@a" });

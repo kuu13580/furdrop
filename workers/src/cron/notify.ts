@@ -109,8 +109,13 @@ async function send(
  * 「前回の窓より古いが、前回の実行時点ではまだ pending」となり、**永久にどのダイジェストにも
  * 入らなくなる**。`photos.updated_at` を書くのは confirm (→completed) と
  * cleanup (→failed) の 2 箇所だけなので、completed 写真の `updated_at` = confirm 時刻。
+ *
+ * 窓は **`(since, now]` の半開区間**にする。上限を置かずに `last_digest_at = now` へ
+ * 進めると、集計クエリを流したあと同じ秒のうちに confirm された写真が、今回の集計には
+ * 入らないのに次回の `updated_at > now` からも外れて**永久に落ちる**。上限を `now` で
+ * 締めておけば、その写真は次回 (`since = now` なので `updated_at > now`) で拾われる。
  */
-const DIGEST_WHERE = `receiver_id = ? AND upload_status = 'completed' AND updated_at > ?`;
+const DIGEST_WHERE = `receiver_id = ? AND upload_status = 'completed' AND updated_at > ? AND updated_at <= ?`;
 const DIGEST_COUNT_SQL = `SELECT COUNT(*) AS count FROM photos WHERE ${DIGEST_WHERE}`;
 
 async function sendDigests(env: Env, targets: Target[], now: number): Promise<void> {
@@ -122,13 +127,13 @@ async function sendDigests(env: Env, targets: Target[], now: number): Promise<vo
     const since = Math.max(t.last_digest_at ?? now - DAY, now - DIGEST_MAX_LOOKBACK);
 
     const row = await env.DB.prepare(DIGEST_COUNT_SQL)
-      .bind(t.receiver_id, since)
+      .bind(t.receiver_id, since, now)
       .first<{ count: number }>();
 
     const count = row?.count ?? 0;
     if (count === 0) continue;
 
-    const senders = await senderPhrase(env, t, since);
+    const senders = await senderPhrase(env, t, since, now);
     const sent = await send(env, t, "digest", "digest", { count, senders });
 
     // 送れなかった日は窓を進めない (翌日にまとめて送る)。際限なく積み上がらないよう
@@ -150,12 +155,17 @@ async function sendDigests(env: Env, targets: Target[], now: number): Promise<vo
  * 改行が残ると email-layout の段落分割にかかってリード行が割れる
  * (HTML エスケープは別途かかるので、崩れるのは体裁だけ)。
  */
-async function senderPhrase(env: Env, target: Target, since: number): Promise<string> {
+async function senderPhrase(
+  env: Env,
+  target: Target,
+  since: number,
+  until: number,
+): Promise<string> {
   const named = `${DIGEST_WHERE} AND sender_name IS NOT NULL AND sender_name <> ''`;
   const { results } = await env.DB.prepare(
     `SELECT DISTINCT sender_name FROM photos WHERE ${named} ORDER BY sender_name LIMIT ?`,
   )
-    .bind(target.receiver_id, since, MAX_SENDER_NAMES + 1)
+    .bind(target.receiver_id, since, until, MAX_SENDER_NAMES + 1)
     .all<{ sender_name: string }>();
 
   const ja = resolveLocale(target.locale) === "ja";
@@ -171,7 +181,7 @@ async function senderPhrase(env: Env, target: Target, since: number): Promise<st
   const row = await env.DB.prepare(
     `SELECT COUNT(DISTINCT sender_name) AS count FROM photos WHERE ${named}`,
   )
-    .bind(target.receiver_id, since)
+    .bind(target.receiver_id, since, until)
     .first<{ count: number }>();
 
   const shown = names.slice(0, MAX_SENDER_NAMES);
