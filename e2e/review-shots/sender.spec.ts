@@ -1,5 +1,5 @@
 // 送信者側の画面をレビュー用に撮る。
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../fixtures/test";
 import { patchOptions } from "../helpers/auth";
 import { prepareReceiver, SAMPLE_JPEG, shot, VIEWPORTS } from "../helpers/shots";
 

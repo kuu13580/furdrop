@@ -1,6 +1,6 @@
 // 受信者フロー S05→S06→S07→S08 (R03/R05)
 // Auth Emulator でログイン後、ダッシュボード → ギャラリー → 詳細 → DL の動線が成立すること。
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../fixtures/test";
 import { createEmulatorUser, registerReceiver, signInOnPage } from "../helpers/auth";
 import { seedOnePhotoFor } from "../helpers/seed-photo";
 

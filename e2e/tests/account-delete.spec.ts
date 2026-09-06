@@ -1,5 +1,5 @@
 // R15: アカウント削除の確認フロー (設定 → ハンドル再入力 → 削除 → /login へリダイレクト)
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../fixtures/test";
 import { createEmulatorUser, registerReceiver, signInOnPage } from "../helpers/auth";
 
 test("設定ページから自身のハンドルを再入力して削除すると /login に戻る (R15 の誤操作防止 + 削除動線)", async ({

@@ -1,6 +1,6 @@
 // 受信者側の画面をレビュー用に撮る。テストではないので CI では走らない
 // (playwright.shots.config.ts の testDir にだけ入っている)。
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../fixtures/test";
 import { prepareReceiver, setDownloadOptions, setLocale, shot, VIEWPORTS } from "../helpers/shots";
 
 test("受信者: ダッシュボード / ギャラリー / 詳細 / 設定", async ({ page }) => {

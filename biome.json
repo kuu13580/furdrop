@@ -38,5 +38,24 @@
         "organizeImports": "on"
       }
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["e2e/tests/**", "e2e/review-shots/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "@playwright/test": "spec は e2e/fixtures/test.ts から test / expect を import する (計測ホストの遮断を効かせるため)"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
 }

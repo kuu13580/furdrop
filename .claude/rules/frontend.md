@@ -46,6 +46,20 @@ paths:
 - Firebase設定値は公開可（ドメイン制限で保護）
 - `.env.local` に保存する (gitignore対象)
 
+## アクセス解析 (GA4)
+
+- **計測タグを `index.html` に直書きしない**。gtag.js のロードは `src/lib/analytics.ts` が担当し、本番ビルド (`import.meta.env.PROD`) かつ本番ホストのときだけ読み込む
+- 理由: 直書きすると `vite dev` 経由の E2E / `pnpm shots` / ローカル開発のアクセスが本番 GA プロパティに計上される。Playwright は test ごとに新しい context = 新しい `_ga` を作るため、CI 1 回でテスト数ぶんの「新規ユーザー」が積み上がる
+- GA4 にはホスト名ベースのデータフィルタが無く、混入したデータは後から消せない
+- **GA4 側の拡張計測「ブラウザの履歴イベントに基づくページの変更」はオフのままにする**。オンにすると
+  GA が `location.href` をそのまま `page_location` に載せるため、送信URLのアクセスキー (`?k=`, R16) が
+  GA に残る。SPA の画面遷移は `App.tsx` の `PageViewTracker` が自前で送っている
+- **新しいルートを足したら `analytics.ts` の `KNOWN_PATH_SEGMENTS` にもセグメントを足す**。許可リスト方式なので、
+  足し忘れても値は漏れないが GA 上で `/*` に潰れて集計できなくなる
+- 本番ホストの判定は `VITE_PUBLIC_HOST` との一致。Pages のプレビュー URL や実機確認用トンネルからは送信しない
+- E2E 側でも `e2e/fixtures/test.ts` が計測ホストを遮断している (二重の防御)。spec からの
+  `@playwright/test` 直 import は `biome.json` の `noRestrictedImports` で落ちる
+
 ## 多言語化 (i18n)
 
 - ユーザーに見える文言は必ず Lingui のマクロで包む。JSX は `<Trans>`、文字列が要る箇所 (`aria-label` / `placeholder` / `title` / props) は `useLingui()` が返す `t` (タグ付きテンプレート)

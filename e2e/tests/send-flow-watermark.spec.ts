@@ -1,8 +1,9 @@
 // 送信者フローの透かし設定 (S05 WatermarkDialog) — R14 watermark_mode / S02 アップロード画面。
 // 受信者が watermark_mode を optional/required にした場合に、送信者 UI で透かしを有効化し、
 // プレビューダイアログ (候補セレクタ・ズーム) を操作して送信完了できることを確認する。
-import { expect, test } from "@playwright/test";
+
 import { tinyJpeg } from "../fixtures/images";
+import { expect, test } from "../fixtures/test";
 import { createEmulatorUser, registerReceiver } from "../helpers/auth";
 
 /** ファイル投入 → 送信者名入力 → 透かし有効化 → 「透かしを編集」でダイアログを開くまでの共通手順 */

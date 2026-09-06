@@ -1,6 +1,7 @@
 // R16: 不正な ?k= でセッション開始しようとすると 403 INVALID_KEY → UI でエラー表示
-import { expect, test } from "@playwright/test";
+
 import { tinyJpeg } from "../fixtures/images";
+import { expect, test } from "../fixtures/test";
 import { createEmulatorUser, registerReceiver } from "../helpers/auth";
 
 test("不正な ?k= では送信開始時にエラー画面 (Uploading でエラーアラート) になる", async ({

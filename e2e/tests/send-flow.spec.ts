@@ -1,7 +1,8 @@
 // 送信者フロー S01→S02→S03→S04 (R02/R16/X02/X03)
 // 未認証ユーザーが ?k=KEY 付き URL から JPEG を 1 枚送って完了画面に到達するまで。
-import { expect, test } from "@playwright/test";
+
 import { tinyJpeg } from "../fixtures/images";
+import { expect, test } from "../fixtures/test";
 import { createEmulatorUser, registerReceiver } from "../helpers/auth";
 
 test("ランディング → アップロード → 送信完了までの送信者フロー全体が成立する", async ({ page }) => {
