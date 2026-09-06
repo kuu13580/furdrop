@@ -96,16 +96,34 @@ function sanitizeMessage(msg: string | undefined): string | undefined {
 }
 
 /**
- * location.pathname を計測用に正規化する。
- * handle / photoId を含むパスは `*` にマスクして個別識別子を送らない。
+ * URL に現れてよいリテラルのパスセグメント。**ここに無いセグメントは `*` に潰す。**
+ *
+ * 除外リストにすると、識別子やトークンを含む新しいルートを足したときに素通しになる。
+ * 許可リストなら足し忘れても値は漏れず、GA 上で `/*` に見えるだけで済む。
+ * 新しいルートを足したらここにも足すこと。
  */
-function sanitizePath(pathname: string): string {
-  if (pathname.startsWith("/send/")) {
-    const sub = pathname.slice("/send/".length).split("/").slice(1).join("/");
-    return sub ? `/send/*/${sub}` : "/send/*";
-  }
-  if (pathname.startsWith("/gallery/")) return "/gallery/*";
-  return pathname;
+const KNOWN_PATH_SEGMENTS = new Set([
+  "send",
+  "upload",
+  "uploading",
+  "done",
+  "login",
+  "dashboard",
+  "gallery",
+  "settings",
+  "terms",
+  "privacy",
+  "guide",
+  "design-preview",
+]);
+
+/** location.pathname を計測用に正規化する。handle / photoId 等は `*` になる。 */
+export function sanitizePath(pathname: string): string {
+  const masked = pathname
+    .split("/")
+    .map((seg) => (seg === "" || KNOWN_PATH_SEGMENTS.has(seg) ? seg : "*"))
+    .join("/");
+  return masked || "/";
 }
 
 /** 任意の throw 値から error_name / error_message を安全に取り出す。 */
@@ -203,21 +221,34 @@ function isChunkLoadError(reason: unknown): boolean {
  */
 const GA_MEASUREMENT_ID = "G-BE16TKNVZ5";
 
-/** ローカルで動かしているホストか (E2E / vite dev / vite preview / LAN 実機確認)。 */
-function isLocalHost(): boolean {
-  const h = window.location.hostname;
-  return (
-    h === "localhost" ||
-    h === "127.0.0.1" ||
-    h === "[::1]" ||
-    h.endsWith(".local") ||
-    /^(10|127)\.|^192\.168\.|^172\.(1[6-9]|2\d|3[01])\./.test(h)
+/**
+ * 本番ホストか。**除外リストではなく許可リストで判定する。**
+ *
+ * 「ローカルだけ弾く」方式だと、Pages のプレビュー URL (`*.pages.dev`)・実機確認用の
+ * トンネル・将来の staging が黙って本番プロパティに混ざる。
+ */
+function isProductionHost(): boolean {
+  // VITE_PUBLIC_HOST の書式は enforce されていない (E2E はスキーム付きで渡す) ので、
+  // スキーム・ポート・パスを落としてホスト名だけで比べる。
+  const expected = import.meta.env.VITE_PUBLIC_HOST?.replace(/^https?:\/\//, "").replace(
+    /[:/].*$/,
+    "",
   );
+  return !!expected && window.location.hostname === expected;
 }
 
-/** `import.meta.env.PROD` だけだと dist のローカル配信で漏れるのでホスト名でも弾く。 */
+/**
+ * gtag.js を読み込んでよいか。
+ * 本番ビルドなのにホストが合わない場合は、env の設定ミスで計測が無言で止まるのを
+ * 避けるため console に出す (許可リスト方式が抱える唯一のリスク)。
+ */
 function shouldLoadGaTag(): boolean {
-  return import.meta.env.PROD && !isLocalHost();
+  if (!import.meta.env.PROD) return false;
+  if (isProductionHost()) return true;
+  console.warn(
+    `[analytics] gtag.js not loaded: host "${window.location.host}" != VITE_PUBLIC_HOST "${import.meta.env.VITE_PUBLIC_HOST ?? ""}"`,
+  );
+  return false;
 }
 
 /**
@@ -247,7 +278,7 @@ function loadGaTag(): void {
  */
 export function initAnalytics(): void {
   if (shouldLoadGaTag()) loadGaTag();
-  else alog.log("gtag.js skipped (dev build or local host)");
+  else alog.log("gtag.js skipped (not a production build/host)");
 
   window.addEventListener("error", (event) => {
     // ErrorEvent 以外(リソースエラー)は個別 onError 側の担当
