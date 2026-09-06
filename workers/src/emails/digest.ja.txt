@@ -1,0 +1,8 @@
+Subject: 写真が{{count}}枚届いています
+
+FurDrop に新しい写真が届きました。
+
+> {{count}}枚 / {{senders}}から
+
+  ギャラリーで見る
+  {{gallery_url}}

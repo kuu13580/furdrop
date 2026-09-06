@@ -11,7 +11,17 @@ describe("sanitizePath", () => {
   });
 
   it("既知の静的パスはそのまま残す (レポートが読めなくならない)", () => {
-    for (const p of ["/", "/login", "/dashboard", "/gallery", "/settings", "/terms"]) {
+    for (const p of [
+      "/",
+      "/login",
+      "/dashboard",
+      "/gallery",
+      "/settings",
+      "/terms",
+      // R09。トークンはクエリなので pathname には出ない
+      "/verify-email",
+      "/unsubscribe",
+    ]) {
       expect(sanitizePath(p)).toBe(p);
     }
   });

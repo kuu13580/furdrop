@@ -1,0 +1,2 @@
+このメールの配信を停止する: {{unsubscribe_url}}
+通知設定を変更する: {{settings_url}}

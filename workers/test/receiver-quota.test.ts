@@ -19,19 +19,19 @@ describe("GET /receiver/quota", () => {
     expect(body.error.code).toBe("UNAUTHORIZED");
   });
 
-  // 予告バナー (60日窓) の母数。窓のすぐ内 (59日) とすぐ外 (61日) を置くことで、
+  // 予告バナー (30日窓) の母数。窓のすぐ内 (29日) とすぐ外 (31日) を置くことで、
   // EXPIRY_WARNING_SECONDS の取り違えを検出できるようにする。
-  // 60日ちょうどは seed 〜 リクエスト間で now が進み判定が揺れるため境界値には使わない
-  // (実装は `< now + 60日` の厳密不等号)。
-  it("60日以内に期限を迎える写真だけが expiring_soon に数えられ、最も早い期限が返る (R13)", async () => {
+  // 30日ちょうどは seed 〜 リクエスト間で now が進み判定が揺れるため境界値には使わない
+  // (実装は `< now + 30日` の厳密不等号)。
+  it("30日以内に期限を迎える写真だけが expiring_soon に数えられ、最も早い期限が返る (R13)", async () => {
     const { idToken, uid } = await createEmulatorUser();
     await seedUser({ uid, handle: "rcv_quota" });
     const now = Math.floor(Date.now() / 1000);
     const soon = now + 10 * ONE_DAY;
 
     await seedPhoto({ receiverId: uid, handle: "rcv_quota", expiresAt: soon });
-    await seedPhoto({ receiverId: uid, handle: "rcv_quota", expiresAt: now + 59 * ONE_DAY });
-    await seedPhoto({ receiverId: uid, handle: "rcv_quota", expiresAt: now + 61 * ONE_DAY });
+    await seedPhoto({ receiverId: uid, handle: "rcv_quota", expiresAt: now + 29 * ONE_DAY });
+    await seedPhoto({ receiverId: uid, handle: "rcv_quota", expiresAt: now + 31 * ONE_DAY });
 
     const { status, body } = await apiJson<QuotaBody>("/receiver/quota", {
       headers: authHeader(idToken),

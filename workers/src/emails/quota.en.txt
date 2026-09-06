@@ -1,0 +1,10 @@
+Subject: Your storage is running low ({{percent}}%)
+
+Your storage is now {{percent}}% full.
+
+> {{used}} / {{quota}}
+
+Once you reach the limit, you will not be able to receive new photos. Delete photos you no longer need to free up space.
+
+  Tidy up the gallery
+  {{gallery_url}}

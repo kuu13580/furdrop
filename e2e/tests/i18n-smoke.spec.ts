@@ -39,6 +39,9 @@ const TRANSLATED: Target[] = [
   { name: "ダッシュボード", path: "/dashboard", auth: true },
   { name: "ギャラリー", path: "/gallery", auth: true },
   { name: "設定", path: "/settings", auth: true },
+  // 通知メールのリンク先 (R09)。認証不要 — メールアプリから踏まれる前提の画面
+  { name: "メールアドレスの確認", path: "/verify-email?token=i18n-smoke" },
+  { name: "通知の配信停止", path: "/unsubscribe?t=i18n-smoke&k=digest" },
 ];
 
 const JAPANESE = /[぀-ヿ一-鿿]/;

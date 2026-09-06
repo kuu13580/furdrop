@@ -50,6 +50,12 @@ type = "ratelimit"
 namespace_id = "9004"
 simple = { limit = 10000, period = 60 }
 
+[[unsafe.bindings]]
+name = "RATE_LIMITER_VERIFY"
+type = "ratelimit"
+namespace_id = "9005"
+simple = { limit = 10000, period = 60 }
+
 [vars]
 # ENVIRONMENT=development にすることで dev/* ルートが有効化され、
 # R2 PUT を /dev/images/upload/... プロキシで本物の R2 (miniflare) に投入できる。
@@ -65,3 +71,8 @@ R2_BUCKET_THUMBS = "furdrop-thumbs-test"
 R2_ACCESS_KEY_ID = "test"
 R2_SECRET_ACCESS_KEY = "test"
 R2_ENDPOINT = "http://localhost:1"
+# 通知メール (R09) のリンク組み立て用。EMAIL バインディングは宣言しない —
+# miniflare が send_email を再現せず、mailer は ENVIRONMENT=development では
+# 実送信せずログ + 控えに落とすので、テストからは触れない
+APP_ORIGIN = "http://localhost:4000"
+API_ORIGIN = "http://localhost:9000"

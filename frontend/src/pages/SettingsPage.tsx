@@ -15,6 +15,7 @@ import { ApiError, authApi, type EmbedMode } from "../lib/api";
 import { resolveApiError } from "../lib/api-error";
 import { auth } from "../lib/firebase";
 import { authAtom } from "../stores/auth";
+import { localeAtom } from "../stores/locale";
 import { suggestedHandleAtom } from "../stores/signup";
 import { type UserProfile, userAtom } from "../stores/user";
 
@@ -637,6 +638,175 @@ function AccountDeletionCard({ user }: { user: UserProfile }) {
   );
 }
 
+/**
+ * 通知設定 (R09)。
+ *
+ * アドレスは**検証してから**使う。保存すると確認メールが飛び、リンクを開くまで
+ * `notification_email` には入らない (打ち間違えたアドレスの持ち主に通知が届くのを防ぐ)。
+ * 検証待ちのあいだも、既に検証済みのアドレスがあればそちらに届き続ける。
+ */
+function NotificationCard({
+  user,
+  setUser,
+}: {
+  user: UserProfile;
+  setUser: (u: UserProfile) => void;
+}) {
+  const { t } = useLingui();
+  const locale = useAtomValue(localeAtom);
+  const [input, setInput] = useState(user.notification_email ?? user.pending_email ?? "");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [sentTo, setSentTo] = useState<string | null>(null);
+
+  const patch = useCallback(
+    async (body: Parameters<typeof authApi.updateOptions>[0]) => {
+      setSaving(true);
+      setError(null);
+      try {
+        const { user: updated } = await authApi.updateOptions(body);
+        setUser(updated);
+        return updated;
+      } catch (err) {
+        setError(resolveApiError(err, "updateOptions"));
+        return null;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [setUser],
+  );
+
+  const save = useCallback(
+    async (e: SyntheticEvent) => {
+      e.preventDefault();
+      const next = input.trim();
+      // 表示言語も一緒に送る。サーバーはこれでメールの言語を決める
+      const updated = await patch({ notification_email: next || null, locale });
+      if (updated) setSentTo(updated.pending_email);
+    },
+    [input, locale, patch],
+  );
+
+  const cancelPending = useCallback(async () => {
+    // 検証済みアドレスがあればそこへ戻す。無ければ通知先ごと解除する
+    const updated = await patch({ notification_email: user.notification_email });
+    if (updated) {
+      setSentTo(null);
+      setInput(updated.notification_email ?? "");
+    }
+  }, [patch, user.notification_email]);
+
+  // 現在の宛先 (検証済み) とも検証待ちとも違うときだけ保存できる。
+  // 検証待ちと同じ値で押せてしまうと、確認メールを無駄に 1 通消費する
+  const trimmed = input.trim();
+  const dirty = trimmed !== (user.notification_email ?? "") && trimmed !== user.pending_email;
+  // 宛先が 1 つも無いうちは種類を選ばせても意味がないが、検証待ちの間は先に選ばせてよい
+  const hasTarget = !!(user.notification_email || user.pending_email);
+  // 空欄での送信は「解除」。まだ何も登録していない人にその文言を出しても意味がない
+  const clearing = !trimmed && hasTarget;
+
+  return (
+    <Card title={t`通知`}>
+      <p className="mb-4 text-[13px] text-ink-soft">
+        <Trans>
+          写真が届いたときや、保存期限・保存容量が近づいたときにメールでお知らせします。
+        </Trans>
+      </p>
+      {error && (
+        <Alert variant="error" className="mb-4">
+          {error}
+        </Alert>
+      )}
+      <form onSubmit={save} className="space-y-3">
+        <FormField
+          id="settings-notification-email"
+          type="email"
+          label={t`通知先メールアドレス`}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="you@example.com"
+          autoComplete="email"
+          disabled={saving}
+        />
+        {/* 個情法21条2項: フォームでの直接取得は利用目的の「明示」が要る (公表では足りない)。
+            送信ボタンを押す前に目に留まる位置に置く */}
+        <p className="text-[12px] leading-[1.5] text-ink-muted">
+          <Trans>
+            ご登録のアドレスは通知の配信にのみ利用します。詳しくは
+            <Link to="/privacy" className="underline underline-offset-2">
+              プライバシーポリシー
+            </Link>
+            をご覧ください。
+          </Trans>
+        </p>
+        <Button type="submit" size="sm" disabled={saving || !dirty} loading={saving}>
+          {clearing ? <Trans>通知を解除する</Trans> : <Trans>保存して確認メールを送る</Trans>}
+        </Button>
+      </form>
+
+      {user.pending_email && (
+        <Alert variant="warn" className="mt-4">
+          <p className="text-[13px]">
+            {sentTo ? (
+              <Trans>
+                確認メールを送りました。メール内のリンクを開くと、このアドレスへの通知が有効になります。
+              </Trans>
+            ) : (
+              <Trans>このアドレスは確認待ちです。メール内のリンクを開いてください。</Trans>
+            )}
+          </p>
+          <p className="mt-1 text-[13px] font-medium">{user.pending_email}</p>
+          {user.notification_email && (
+            <p className="mt-1 text-[12px]">
+              <Trans>確認が済むまでは、これまでのアドレスに届きます。</Trans>
+            </p>
+          )}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="mt-2 -ml-3"
+            onClick={cancelPending}
+            disabled={saving}
+          >
+            <Trans>確認を取り消す</Trans>
+          </Button>
+        </Alert>
+      )}
+
+      {/* 種類ごとに分ける。ワンクリック解除が倒すスイッチを「うるささの単位」と一致させないと、
+          「ダイジェストがうるさい」で解除した人が削除予告まで失う */}
+      <div className="mt-5 space-y-4">
+        <CheckboxField
+          name="settings-notify-digest"
+          checked={user.notify_digest}
+          onChange={(v) => patch({ notify_digest: v })}
+          disabled={saving || !hasTarget}
+          title={<Trans>新着写真のお知らせ</Trans>}
+          description={<Trans>写真が届いた日に、1日1回まとめてお知らせします</Trans>}
+        />
+        <CheckboxField
+          name="settings-notify-expiry"
+          checked={user.notify_expiry}
+          onChange={(v) => patch({ notify_expiry: v })}
+          disabled={saving || !hasTarget}
+          title={<Trans>写真の削除予告</Trans>}
+          description={<Trans>保存期限の14日前と3日前にお知らせします</Trans>}
+        />
+        <CheckboxField
+          name="settings-notify-quota"
+          checked={user.notify_quota}
+          onChange={(v) => patch({ notify_quota: v })}
+          disabled={saving || !hasTarget}
+          title={<Trans>保存容量の警告</Trans>}
+          description={<Trans>上限に近づいて写真を受け取れなくなる前にお知らせします</Trans>}
+        />
+      </div>
+    </Card>
+  );
+}
+
 function ProfileSettings() {
   const { t } = useLingui();
   const [user, setUser] = useAtom(userAtom);
@@ -666,6 +836,7 @@ function ProfileSettings() {
       </Card>
       <AcceptanceCard user={user} setUser={setUser} />
       <ReceiveOptionsCard user={user} setUser={setUser} />
+      <NotificationCard user={user} setUser={setUser} />
       <Card title={t`ストレージ`}>
         <StorageQuotaBar used={user.storage_used} quota={user.storage_quota} />
         <p className="mt-3 text-[12px] leading-[1.5] text-ink-muted">

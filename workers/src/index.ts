@@ -3,14 +3,19 @@ import { OpenAPIHono } from "@hono/zod-openapi";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import { runCleanup } from "./cron/cleanup";
+import { runDailyNotifications } from "./cron/notify";
 import { logError } from "./lib/logger";
 import { defaultHook } from "./lib/schema";
 import auth from "./routes/auth";
 import dev from "./routes/dev";
 import download from "./routes/download";
+import notify, { handleUnsubscribe } from "./routes/notify";
 import receiver from "./routes/receiver";
 import sender from "./routes/sender";
 import type { Env } from "./types";
+
+/** 日次のメール通知 (R09)。UTC 0:00 = JST 9:00。wrangler.toml の crons と一致させること */
+const DAILY_NOTIFY_CRON = "0 0 * * *";
 
 const app = new OpenAPIHono<{ Bindings: Env }>({ defaultHook });
 
@@ -47,6 +52,12 @@ app.get("/health", (c) => {
 app.route("/send", sender);
 app.route("/auth", auth);
 app.route("/receiver", receiver);
+// 通知メールのリンクから叩かれる経路 (R09)。認証不要 — トークンの知識が認可になる。
+// /auth に相乗りさせない: auth ルータは `use("*", requireAuth)` を張っているので 401 になる
+app.route("/notifications", notify);
+// RFC 8058 のワンクリック解除。メールクライアントが multipart のボディを POST してくるので
+// zod を通さず素のハンドラで受ける (判断材料はクエリのトークンだけ)
+app.post("/notifications/unsubscribe", (c) => handleUnsubscribe(c.env, new URL(c.req.url)));
 // 一括 DL (R08)。ブラウザの DL は Authorization ヘッダを送れないので
 // トークンをボディで受ける専用の経路 (routes/download.ts の冒頭参照)
 app.route("/download", download);
@@ -75,14 +86,21 @@ app.get("/docs", swaggerUI({ url: "/openapi.json" }));
 
 export default {
   fetch: app.fetch,
-  async scheduled(_event: ScheduledEvent, env: Env, _ctx: ExecutionContext) {
+  async scheduled(event: ScheduledEvent, env: Env, _ctx: ExecutionContext) {
+    // crons は wrangler.toml で 2 本宣言している。UTC 0:00 には両方が別 invocation として
+    // 発火するので、日次メールを走らせてもクリーンアップは毎時のまま欠けない
+    const job = event.cron === DAILY_NOTIFY_CRON ? "notify" : "cleanup";
     try {
-      await runCleanup(env);
+      if (job === "notify") {
+        await runDailyNotifications(env);
+      } else {
+        await runCleanup(env);
+      }
     } catch (err) {
-      // runCleanup は各ステップを個別に握って続行するので、ここに来るのは
+      // どちらのジョブも各ステップを個別に握って続行するので、ここに来るのは
       // 「1 つ以上のステップが失敗した」集約シグナル。再 throw で cron invocation を
       // 失敗として Workers Logs に残す。
-      logError("cron", err);
+      logError("cron", err, { job });
       throw err;
     }
   },
