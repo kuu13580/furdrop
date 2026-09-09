@@ -532,12 +532,21 @@ msgid "このアカウントは無効化されています"
 msgstr "This account has been disabled"
 
 #: src/pages/SettingsPage.tsx
+msgid "このアドレスは確認待ちです。メール内のリンクを開いてください。"
+msgstr "This address is awaiting confirmation. Open the link in the email we sent."
+
+#: src/pages/SettingsPage.tsx
 msgid "このハンドルは既に使われています"
 msgstr "That handle is already taken"
 
 #: src/lib/api-error.ts
 msgid "このハンドルは既に使われています。別のハンドルを試してください"
 msgstr "That handle is already taken. Please try another one"
+
+#: src/pages/UnsubscribePage.tsx
+#: src/pages/VerifyEmailPage.tsx
+msgid "このリンクは使用できません"
+msgstr "This link cannot be used"
 
 #: src/pages/PhotoDetailPage.tsx
 msgid "この写真を削除しますか？"
@@ -583,9 +592,17 @@ msgstr "Copy"
 msgid "コピーしました!"
 msgstr "Copied!"
 
+#: src/pages/VerifyEmailPage.tsx
+msgid "これから、このアドレスに通知が届きます。"
+msgstr "Notifications will now be sent to this address."
+
 #: src/pages/LandingPage.tsx
 msgid "こんな経験<0/>ありませんか？"
 msgstr "Sound<0/>familiar?"
+
+#: src/pages/SettingsPage.tsx
+msgid "ご登録のアドレスは通知の配信にのみ利用します。詳しくは<0>プライバシーポリシー</0>をご覧ください。"
+msgstr "We use the address you register only to deliver notifications. See our <0>Privacy Policy</0> for details."
 
 #: src/lib/api-error.ts
 msgid "サーバーでエラーが発生しました。時間をおいてもう一度お試しください"
@@ -619,6 +636,10 @@ msgstr "Shippori Mincho"
 #: src/lib/watermark.ts
 msgid "スカイ"
 msgstr "Sky"
+
+#: src/pages/VerifyEmailPage.tsx
+msgid "すでに確認が済んでいるか、リンクが正しくありません。設定画面で現在の状態を確認してください。"
+msgstr "Either the address is already confirmed, or the link is not valid. Check the current status in your settings."
 
 #: src/components/ui/StorageQuotaBar.tsx
 #: src/pages/DashboardPage.tsx
@@ -840,6 +861,10 @@ msgstr "Page not found"
 msgid "ページを閉じないでください"
 msgstr "Please don't close this page"
 
+#: src/pages/UnsubscribePage.tsx
+msgid "ほかの種類の通知は、これまでどおり届きます。"
+msgstr "Other kinds of notifications will keep arriving as before."
+
 #: src/lib/watermark.ts
 msgid "ポッタ"
 msgstr "Potta One"
@@ -873,9 +898,17 @@ msgstr "They will be deleted soon."
 msgid "メール"
 msgstr "Email"
 
+#: src/pages/VerifyEmailPage.tsx
+msgid "メールアドレスの確認"
+msgstr "Confirm your email address"
+
 #: src/pages/GuidePage.tsx
 msgid "メールアドレスは公開されません。送る人にもあなたのメアドは伝わりません。"
 msgstr "Your email address is never published. Senders never see it either."
+
+#: src/pages/VerifyEmailPage.tsx
+msgid "メールアドレスを確認しました"
+msgstr "Email address confirmed"
 
 #: src/pages/LandingPage.tsx
 msgid "メアド・氏名が共有相手に見える"
@@ -920,6 +953,10 @@ msgstr "Yomogi"
 #: src/lib/watermark.ts
 msgid "ランパート"
 msgstr "Rampart One"
+
+#: src/pages/VerifyEmailPage.tsx
+msgid "リンクの有効期限が切れています"
+msgstr "This link has expired"
 
 #: src/lib/watermark.ts
 msgid "レゲエ"
@@ -973,6 +1010,10 @@ msgstr "RocknRoll One"
 msgid "一度に送れるのは{MAX_PHOTOS_PER_SESSION}枚までです"
 msgstr "You can send up to {MAX_PHOTOS_PER_SESSION} photos at a time"
 
+#: src/pages/SettingsPage.tsx
+msgid "上限に近づいて写真を受け取れなくなる前にお知らせします"
+msgstr "Tells you before you hit the limit and stop being able to receive photos"
+
 #: src/pages/DashboardPage.tsx
 msgid "上限に達すると新しい写真を受け取れなくなります。"
 msgstr "Once you reach the limit you can no longer receive photos."
@@ -1022,6 +1063,10 @@ msgstr "How it works"
 msgid "保存"
 msgstr "Save"
 
+#: src/pages/SettingsPage.tsx
+msgid "保存して確認メールを送る"
+msgstr "Save and send a confirmation email"
+
 #: src/lib/api-error.ts
 #: src/pages/DashboardPage.tsx
 msgid "保存容量がいっぱいです"
@@ -1030,6 +1075,15 @@ msgstr "Storage is full"
 #: src/pages/DashboardPage.tsx
 msgid "保存容量の残りが少なくなっています"
 msgstr "You are running low on storage"
+
+#: src/pages/SettingsPage.tsx
+#: src/pages/UnsubscribePage.tsx
+msgid "保存容量の警告"
+msgstr "Storage warnings"
+
+#: src/pages/SettingsPage.tsx
+msgid "保存期限の14日前と3日前にお知らせします"
+msgstr "Sent 14 days and 3 days before the retention limit"
 
 #: src/pages/LandingPage.tsx
 msgid "個人情報の交換なしで<0/><1>撮影者情報は残せる</1><2/>写真の受け取り"
@@ -1042,6 +1096,10 @@ msgstr "No personal details<0/>exchanged"
 #: src/pages/LandingPage.tsx
 msgid "個別到達で探す手間なし"
 msgstr "Arrives individually, nothing to search"
+
+#: src/pages/UnsubscribePage.tsx
+msgid "停止できませんでした。時間をおいて試してください。"
+msgstr "We could not stop the delivery. Please try again later."
 
 #: src/pages/SettingsPage.tsx
 msgid "元に戻すと、いまと同じ受信URLがそのまま使えます"
@@ -1113,6 +1171,14 @@ msgstr "Key step"
 msgid "写真"
 msgstr "Photo"
 
+#: src/pages/SettingsPage.tsx
+msgid "写真が届いたときや、保存期限・保存容量が近づいたときにメールでお知らせします。"
+msgstr "We will email you when photos arrive, and when a retention limit or your storage limit is approaching."
+
+#: src/pages/SettingsPage.tsx
+msgid "写真が届いた日に、1日1回まとめてお知らせします"
+msgstr "One summary a day, only on days photos arrived"
+
 #: src/pages/LandingPage.tsx
 msgid "写真が届く"
 msgstr "Photos arrive"
@@ -1120,6 +1186,11 @@ msgstr "Photos arrive"
 #: src/pages/PhotoDetailPage.tsx
 msgid "写真が見つかりません"
 msgstr "Photo not found"
+
+#: src/pages/SettingsPage.tsx
+#: src/pages/UnsubscribePage.tsx
+msgid "写真の削除予告"
+msgstr "Photo deletion notices"
 
 #: src/pages/LandingPage.tsx
 msgid "写真の受け取りに特化"
@@ -1559,6 +1630,11 @@ msgstr "Enter text"
 msgid "新しい写真を受け取れません。不要な写真を削除して空きを作ってください。"
 msgstr "You cannot receive new photos. Delete what you no longer need to free up space."
 
+#: src/pages/SettingsPage.tsx
+#: src/pages/UnsubscribePage.tsx
+msgid "新着写真のお知らせ"
+msgstr "New photo notifications"
+
 #: src/pages/GalleryPage.tsx
 msgid "新着順"
 msgstr "Newest"
@@ -1582,6 +1658,10 @@ msgstr "Features"
 #: src/pages/PhotoDetailPage.tsx
 msgid "次の写真"
 msgstr "Next photo"
+
+#: src/pages/UnsubscribePage.tsx
+msgid "次の通知の配信を停止します。"
+msgstr "You are about to stop the following notifications."
 
 #: src/pages/PhotoDetailPage.tsx
 msgid "次へ"
@@ -1679,6 +1759,26 @@ msgstr "When their profile appears, tap the <0>\"Send photos\"</0> button."
 #: src/lib/api-error.ts
 msgid "短時間に多くのリクエストが集中したため、不正利用（bot 等）対策により一時的に送信を制限しています。1〜2分ほど時間をおいてからもう一度お試しください。"
 msgstr "Too many requests came in at once, so uploads are temporarily limited to guard against abuse (bots and the like). Please wait a minute or two and try again."
+
+#: src/pages/SettingsPage.tsx
+msgid "確認が済むまでは、これまでのアドレスに届きます。"
+msgstr "Until it is confirmed, notifications keep going to your current address."
+
+#: src/pages/VerifyEmailPage.tsx
+msgid "確認しています…"
+msgstr "Confirming…"
+
+#: src/pages/SettingsPage.tsx
+msgid "確認メールを送りました。メール内のリンクを開くと、このアドレスへの通知が有効になります。"
+msgstr "We sent a confirmation email. Open the link in it to start receiving notifications at this address."
+
+#: src/pages/VerifyEmailPage.tsx
+msgid "確認リンクは発行から24時間で無効になります。設定画面からもう一度アドレスを保存すると、新しい確認メールが届きます。"
+msgstr "Confirmation links expire 24 hours after they are issued. Save the address again in your settings to get a new confirmation email."
+
+#: src/pages/SettingsPage.tsx
+msgid "確認を取り消す"
+msgstr "Cancel confirmation"
 
 #: src/pages/SettingsPage.tsx
 msgid "確認用ハンドル"
@@ -1785,6 +1885,10 @@ msgstr "Finish setting up"
 #: src/pages/GuidePage.tsx
 msgid "設定ページの<0>「写真の受付」</0>で、いつ・誰から受け取るかを切り替えられます。"
 msgstr "Use <0>Accepting photos</0> on the settings page to control when and from whom you receive."
+
+#: src/pages/UnsubscribePage.tsx
+msgid "設定画面から通知のオン/オフを変更できます。"
+msgstr "You can turn notifications on and off in your settings."
 
 #: src/pages/LandingPage.tsx
 msgid "詳しい使い方を見る"
@@ -2044,6 +2148,27 @@ msgstr "Edit watermark"
 msgid "透明度 ({0}%)"
 msgstr "Opacity ({0}%)"
 
+#: src/pages/SettingsPage.tsx
+msgid "通知"
+msgstr "Notifications"
+
+#: src/pages/UnsubscribePage.tsx
+#: src/pages/VerifyEmailPage.tsx
+msgid "通知の設定を開く →"
+msgstr "Open notification settings →"
+
+#: src/pages/UnsubscribePage.tsx
+msgid "通知の配信停止"
+msgstr "Unsubscribe from notifications"
+
+#: src/pages/SettingsPage.tsx
+msgid "通知を解除する"
+msgstr "Turn off notifications"
+
+#: src/pages/SettingsPage.tsx
+msgid "通知先メールアドレス"
+msgstr "Notification email address"
+
 #: src/pages/GuidePage.tsx
 msgid "進行中はファイルごとの状態（待機 / 送信中 / 完了）が表示されます"
 msgstr "You'll see each file's status while it runs (waiting / sending / done)"
@@ -2075,6 +2200,14 @@ msgstr "can choose"
 #: src/pages/GalleryPage.tsx
 msgid "選択済み"
 msgstr "Selected"
+
+#: src/pages/UnsubscribePage.tsx
+msgid "配信を停止しました"
+msgstr "Delivery stopped"
+
+#: src/pages/UnsubscribePage.tsx
+msgid "配信を停止する"
+msgstr "Stop delivery"
 
 #: src/components/ui/Dialog.tsx
 msgid "閉じる"

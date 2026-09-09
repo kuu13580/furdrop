@@ -1,0 +1,2 @@
+Unsubscribe from these emails: {{unsubscribe_url}}
+Notification settings: {{settings_url}}

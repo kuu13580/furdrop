@@ -28,6 +28,7 @@ graph TD
 | 多言語化 | Lingui | 原文がそのままメッセージ ID になり、既存の日本語リテラルをキー命名なしで移行できる。マクロはビルド時に展開されランタイムに残らない |
 | E2Eテスト | Playwright | 主要フローの動作検証 |
 | PWA | vite-plugin-pwa (Workbox)（**Phase 2**） | Service Worker 自動生成。MVP では未導入 |
+| メール通知 | Cloudflare Email Service (**public beta**) | Workers Paid に月3,000通が内包され、バインディング方式で API キーを持たない。furdrop.app が Cloudflare DNS 上にあるため DKIM/SPF/DMARC が自動構成される。beta のリスクは `lib/mailer.ts` への隔離で受ける (差し替え先は Resend) |
 | プッシュ通知 | Firebase Cloud Messaging (FCM)（**Phase 2**） | Firebase Auth と統合、PWA対応。MVP では未導入 |
 | インフラ管理 | wrangler.toml + CLI | この規模ではIaC(Terraform等)不要 |
 
@@ -57,7 +58,11 @@ CREATE TABLE users (
     require_sender_name INTEGER NOT NULL DEFAULT 0,      -- 送信者名の入力を必須にする (0=任意, 1=必須)
     -- R16 opt-out: 0 のとき送信URLのアクセスキーを検証しない (handle だけで送信できる)
     require_send_key  INTEGER NOT NULL DEFAULT 1,
-    -- プッシュ通知 (R09): Phase 2 で導入予定。MVP の DB スキーマには含めない
+    -- 表示言語 ('ja' | 'en')。通知メール (R09) の言語判定に使う。
+    -- 通知の設定ではなく素のユーザー属性なので notification_settings ではなくここに置く
+    -- (言語トグルは通知未設定の人も押すため、あちらに置くと空の設定行ができてしまう)
+    locale            TEXT,
+    -- プッシュ通知 (FCM): Phase 2 で導入予定。MVP の DB スキーマには含めない
     -- fcm_token         TEXT,
     -- push_enabled      INTEGER NOT NULL DEFAULT 1,
     created_at        INTEGER NOT NULL,            -- UNIX秒
@@ -93,7 +98,53 @@ CREATE INDEX idx_send_keys_receiver ON send_keys(receiver_id);
 - **opt-out**: `users.require_send_key = 0` の受信者にはキー検証を行わない。send_keys のレコードは残すので、再びオンにすれば同じ受信URLが復活する。opt-out 中の `receive_url` は `?k=` を落とした素の `/send/:handle`
 - **アカウント削除**: `DELETE /auth/account` の batch で同期削除 (`DELETE FROM send_keys WHERE receiver_id = ?`)。upload_sessions のような「孤児」になるケースはないため専用 Cron 不要
 
-### 2.3 upload_sessions テーブル
+### 2.3 notification_settings テーブル (R09)
+
+受信者向けメール通知の宛先・設定・状態。1 受信者 : 0..1 行で、**行は遅延生成する** (通知を設定した人にだけ作られる)。
+
+```sql
+CREATE TABLE notification_settings (
+    receiver_id        TEXT PRIMARY KEY REFERENCES users(id),  -- 1:1 を PK で強制
+
+    -- 宛先と検証
+    email              TEXT,     -- 検証済み。NULL なら送らない
+    pending_email      TEXT,     -- 検証待ち
+    pending_token      TEXT,
+    pending_expires    INTEGER,  -- UNIX秒 (発行から24時間)
+    unsubscribe_token  TEXT,     -- 検証成立時に発行。RFC 8058 のワンクリック解除で使う
+
+    -- 設定 (ユーザーが書く)
+    notify_digest      INTEGER NOT NULL DEFAULT 1,
+    notify_expiry      INTEGER NOT NULL DEFAULT 1,
+    notify_quota       INTEGER NOT NULL DEFAULT 1,
+
+    -- 確認メールの送信量 (日次上限のカウンタ)
+    verify_window_start INTEGER,
+    verify_sent_count   INTEGER NOT NULL DEFAULT 0,
+
+    -- 状態 (Cron が書く)
+    last_digest_at     INTEGER,
+    quota_notice_level INTEGER NOT NULL DEFAULT 0,  -- 0 / 80 / 95
+
+    created_at         INTEGER NOT NULL,
+    updated_at         INTEGER NOT NULL
+);
+
+CREATE UNIQUE INDEX idx_notif_pending_token ON notification_settings(pending_token);
+CREATE UNIQUE INDEX idx_notif_unsub_token ON notification_settings(unsubscribe_token);
+```
+
+- **なぜ `users` に足さないか**: 認証由来の `users.email` (登録時のスナップショット、Twitter OAuth ではほぼ空) と役割が違うのと、トークンと有効期限を持つ「検証の状態機械」を `users` に混ぜると `SELECT * FROM users` が読めなくなるため。`send_keys` と同じ判断
+- **行が無い = 未設定**。日次 Cron はこのテーブルを読むこと自体が絞り込みになる
+- **`email` と `pending_email` を分ける理由**: アドレス変更中も検証済みの旧アドレスへ送り続ける。変更したら通知が黙って止まる、のほうが事故
+- **設定と状態を別カラムにする理由**: 同じカラムに畳むと、通知をオフにした時点で「どこまで通知したか」が消え、オンに戻した瞬間に同じ警告がもう一度飛ぶ
+- **「配信停止」と「登録解除」は別の操作**。配信停止は `notify_*` を 0 にするだけで `email` は残り、登録解除は `email` ごと消す (`clearEmail`)。規約第3条6項とプライバシーポリシー第3項・第11項がこの区別に依存しているので、片方だけ変えない
+- **検証トークンは使い捨て**、有効期限24時間。`unsubscribe_token` は検証成立時に 1 回だけ発行し、以降は再生成しない (配布済みメールの解除リンクを壊さないため)
+- **アカウント削除**: `DELETE /auth/account` の batch で同期削除する
+- **インデックスは 2 本だけ**。日次 Cron の全件走査は 100 行規模なので不要で、トークン引きにだけ張る
+- **確認メールの日次カウンタ**: 分単位のレート制限 (`RATE_LIMITER_VERIFY` 3/60秒) だけだと、OAuth アカウントを 1 つ作った攻撃者が任意の宛先へ 1日 4,000 通以上を撃てる。furdrop.app のレピュテーションが焼けるうえ、Email Service の内包枠 (月3,000通) が半日で枯れて通知全体が止まる。受信者 1 人あたり **5通/24時間**で頭打ちにする
+
+### 2.4 upload_sessions テーブル
 
 複数枚アップロードを1セッションにまとめる。
 
@@ -119,7 +170,7 @@ CREATE INDEX idx_sessions_receiver ON upload_sessions(receiver_id);
 CREATE INDEX idx_sessions_expires ON upload_sessions(expires_at);
 ```
 
-### 2.4 photos テーブル
+### 2.5 photos テーブル
 
 ```sql
 CREATE TABLE photos (
@@ -165,7 +216,7 @@ CREATE INDEX idx_photos_status ON photos(receiver_id, upload_status);
 CREATE INDEX idx_photos_expires ON photos(expires_at);
 ```
 
-### 2.5 クォータ管理
+### 2.6 クォータ管理
 
 アトミックなUPDATEでクォータ超過を防止:
 
@@ -267,6 +318,8 @@ Content-Type: application/json
 | `POST /send/:handle/sessions/:id/photos` | 30 / 60秒 / IP | 429 + `Retry-After: 60` |
 | `GET /send/:handle` (handle 不在時のみ) | 60 / 60秒 / IP | 429 + `Retry-After: 60` |
 | `POST /download/zip` (`dry_run` は除く) | 6 / 60秒 / 受信者UID | 429 + HTML のエラーページ |
+| `PATCH /auth/options` (通知先アドレスの変更時のみ) | 3 / 60秒 / 受信者UID | 429 + `Retry-After: 60` |
+| 同上 (日次) | 5 / 24時間 / 受信者UID (D1 のカウンタ) | 429 RATE_LIMITED |
 | その他 GET 系 | 制限なし | — |
 
 `GET /send/:handle` の制限は handle 列挙の速度を落とすためのもの (R16 opt-out した受信者は
@@ -275,7 +328,11 @@ handle さえ当たれば送信されうる)。**空振り (404) のときだけ
 影響を受けない。Rate Limiting binding のカウンタは Cloudflare のロケーションごとにローカルで、
 分散した送信元には効きが落ちる。本質的な守りは R11 の受付停止であり、これは補助的な措置。
 
-キーは `CF-Connecting-IP` を使用。Cloudflare Rate Limiting binding は 10秒/60秒窓のみ対応のため、原案の「30/h・300/h」は 60秒窓に圧縮して実装。
+通知先アドレスの制限 (`RATE_LIMITER_VERIFY`) だけは**認証済み UID** をキーにする。認証済みユーザーが
+任意のアドレスへ確認メールを撃てる = FurDrop をメール中継として使えてしまうため。既に検証済みの
+アドレスと同じ値を送った場合は何もしない (=カウントもしない) ので、通常操作では当たらない。
+
+送信者向けの制限のキーは `CF-Connecting-IP` を使用。Cloudflare Rate Limiting binding は 10秒/60秒窓のみ対応のため、原案の「30/h・300/h」は 60秒窓に圧縮して実装。
 
 ### 4.2 エラーコード
 
@@ -292,6 +349,7 @@ handle さえ当たれば送信されうる)。**空振り (404) のときだけ
 | 415 | INVALID_FORMAT | 画像フォーマット不正（X10: マジックバイト検証失敗） |
 | 429 | RATE_LIMITED | レート制限 |
 | 500 | INTERNAL | 未捕捉例外 (app.onError が構造化して返却・Workers Logs に記録) |
+| 502 | MAIL_SEND_FAILED | 確認メール (R09) の送信に失敗。レート制限とは区別する — 200 を返すと画面が「送りました」と出したまま何も届かない |
 | 507 | QUOTA_EXCEEDED | ストレージクォータ超過 |
 
 ### 4.3 受信者向けエンドポイント（認証必須）
@@ -344,12 +402,30 @@ Request (すべて任意):
   "watermark_mode": "disabled",    // R14
   "require_sender_name": false,    // R14
   "is_active": true,               // R11 受付停止/再開
-  "require_send_key": true         // R16 opt-out
+  "require_send_key": true,        // R16 opt-out
+  "notification_email": "me@example.com",  // R09。null で通知先ごと解除
+  "notify_digest": true,           // R09
+  "notify_expiry": true,           // R09
+  "notify_quota": true,            // R09
+  "locale": "ja"                   // 表示言語。メールの言語判定に使う
 }
 
 Response: 200
 { "user": { ... } }   // GET /auth/me と同じ形式
 ```
+
+`notification_email` に**現在の検証済みアドレスと違う値**が来ると、`pending_email` に入れて確認メールを送る。
+**`notification_email` はこの時点では書き換えない** — 検証が済むまで旧アドレスへ送り続ける
+(アドレス変更で通知が黙って止まるほうが事故)。
+
+`notification_email` は **`null` または空文字で通知先ごと解除**する。
+
+確認メールの送信は **UID 単位でレート制限する (3/60秒、`RATE_LIMITER_VERIFY`)**。
+日次上限 (5通/24時間) は **1 本の条件付き `UPDATE`** で判定・カウントする。SELECT してから
+UPDATE すると、同時リクエストが同じカウンタを読んで書き戻し、分単位の制限の範囲内で
+日次上限を超えられてしまう。
+認証済みユーザーが任意のアドレスへメールを撃てる = メール中継として使えてしまうため。
+超過時は `429 RATE_LIMITED` + `Retry-After: 60`。
 
 #### DELETE /auth/account
 
@@ -468,11 +544,58 @@ Response: 200
 { "deleted_count": 2 }
 ```
 
-### 4.3.1 一括ダウンロード (認証はボディのトークン)
+### 4.3.1 通知メールのリンクから叩かれるエンドポイント (R09・認証不要)
+
+いずれも `Authorization` ヘッダを要求しない。**メールアプリからリンクを踏む人はログインしていない**し、
+ワンクリック解除に至ってはメールクライアント自身が POST してくる。どちらもトークンの知識が認可になる。
+
+`/auth/*` に置いていないのは、`routes/auth.ts` が `use("*", requireAuth)` を張っているため
+(相乗りさせると 401 になる)。
+
+#### POST /notifications/verify-email
+
+確認メールのリンクから呼ばれる。トークンは**使い捨て**で、有効期限は発行から24時間。
+
+```
+Request: { "token": "..." }
+Response: 200 { "email": "me@example.com" }
+
+エラー:
+- 404 NOT_FOUND: トークンが無効 (使用済みを含む)
+- 410:           有効期限切れ
+```
+
+`UPDATE` の `WHERE` には **`pending_token` と `pending_expires` を含める**。`receiver_id` だけで
+更新すると、トークンを引いてから更新するまでの間に別のリクエストが新しい `pending_email` を
+入れた場合、**古いトークンで新しいアドレスが検証されてしまう**。
+
+検証が成立すると `pending_email` を `email` に移し、`unsubscribe_token` を発行し、
+**`last_digest_at` に現在時刻を打つ**。打たないと初回ダイジェストが「これまでに受け取った写真すべて」になる。
+
+#### POST /notifications/unsubscribe?t=TOKEN&k=digest|expiry|quota
+
+RFC 8058 のワンクリック解除。メールクライアントが `List-Unsubscribe=One-Click` をボディに入れて
+POST してくるので、**ボディは読まずクエリのトークンだけで判定する** (zod のスキーマ検証を通さない
+素のハンドラ)。応答は `text/plain`。
+
+**該当する種類だけを止める。** 全部止めると意図より広く効く — 「ダイジェストがうるさい」で
+解除した人が削除予告まで失うのを避ける。
+
+**トークンが見つからなくても 200 を返す。** 404 と出し分けると応答からトークンの有効性が分かるのと、
+メールクライアントにエラーを表示させないため。
+
+> **人間向けの解除リンクは別 URL。** メール本文のフッターはフロントの `/unsubscribe?t=…&k=…` を指し、
+> そちらは**確認ボタンを押させてから**解除する。企業のメールセキュリティスキャナがリンクを自動巡回
+> するので、開いた瞬間に解除すると勝手に解除されてしまう。RFC 8058 の POST 経路はスキャナが
+> 叩かないので即時解除でよい。
+
+---
+
+### 4.3.2 一括ダウンロード (認証はボディのトークン)
 
 #### POST /download/zip
 
-R08 の一括ダウンロード。選択した写真を Workers が ZIP に固めて **1 本のストリーミング
+R08 の一括ダウンロード (§4.3.2)。選択した写真を Workers が ZIP に固めて **1 本のストリーミング
 レスポンス**で返す。
 
 **なぜ `/receiver/*` ではないのか**: ブラウザのダウンロードは `Authorization` ヘッダを
@@ -527,9 +650,12 @@ Response: 200
 
 #### GET /receiver/quota
 
-`expiring_soon` は「60日以内に DL 期限を迎える completed 写真」の件数と、その中で最も早い期限
-(件数 0 のときは null)。受信者への予告チャネルがログイン時の画面しかない (R09 プッシュ通知は Phase 2) ため、
-窓を広めに取ってダッシュボードのバナーに使う。
+`expiring_soon` は「30日以内に DL 期限を迎える completed 写真」の件数と、その中で最も早い期限
+(件数 0 のときは null)。ダッシュボードのバナーに使う。
+
+窓はかつて 60日だった。予告のチャネルが画面しかなかったため広く取っていたが、メール通知 (R09) が
+14日 / 3日で押しに行くようになったので 30日に狭めた。イベント型の使い方では 1 バーストが 60 日間
+バナーを出しっぱなしにして壁紙になる。
 
 ```
 Response: 200
@@ -771,6 +897,8 @@ flowchart TD
 | GET /receiver/* | Firebase必須 | receiver_id == 認証UID |
 | DELETE /receiver/* | Firebase必須 | receiver_id == 認証UID |
 | POST /download/zip | **ボディの Firebase トークン** | receiver_id == トークンの UID (ヘッダを送れないため) |
+| POST /notifications/verify-email | **不要** | 使い捨ての検証トークン (24時間) の知識 |
+| POST /notifications/unsubscribe | **不要** | 解除トークンの知識。メールクライアントが POST するのでヘッダを送れない |
 
 ---
 
@@ -820,14 +948,22 @@ Presigned URLのバイパスによる巨大ファイルアップロードを防�
 
 ---
 
-## 7. クリーンアップジョブ (Cron Trigger)
+## 7. Cron Trigger
 
-`wrangler.toml` で毎時0分に実行:
+`wrangler.toml` で 2 本宣言する:
 
 ```toml
-[[triggers]]
-crons = ["0 * * * *"]
+[triggers]
+crons = ["0 * * * *", "0 0 * * *"]
 ```
+
+- `"0 * * * *"` — クリーンアップ (毎時0分)
+- `"0 0 * * *"` — 日次のメール通知 (R09)。UTC 0:00 = JST 9:00
+
+**UTC 0:00 には両方が別 invocation として発火する**ので、日次メールを走らせてもクリーンアップは
+毎時のまま欠けない。振り分けは `src/index.ts` の `scheduled()` が `event.cron` で行う。
+
+### 7.1 クリーンアップ (毎時)
 
 処理内容:
 1. `upload_status = 'pending'` かつ `created_at < now - 1hour` → `'failed'` に更新
@@ -836,6 +972,40 @@ crons = ["0 * * * *"]
 4. **DL期限切れ写真の自動削除 (X11/R13)**: `COALESCE(expires_at, created_at + 365日) < now` の `completed` 写真 → R2オブジェクト削除 + D1レコード削除 + `storage_used` 減算。`expires_at` は受信時に焼き込まれるので、COALESCE は 0009 以前の旧データ用のフォールバック
 5. **送信者通信記録の保存期間制限**: `created_at < now - 100日` の `upload_sessions` について `sender_ip` / `sender_ua` を NULL に更新（利用規約・プライバシーポリシーで「最低3か月」を保証するため、暦上最短の3か月=89日を確実に上回る100日を採用。プライバシーポリシー第11項参照）
 6. **孤児セッションの物理削除**: `created_at < now - 100日` かつ `receiver_id` が `users` に存在しない `upload_sessions` を削除（R15 アカウント削除時に保存期間中の sender_ip/ua を保護するために残された孤児セッションを、保存期間経過後に回収する）
+7. **期限切れの通知先アドレス検証の破棄 (R09)**: `pending_expires < now` の `notification_settings` について `pending_email` / `pending_token` / `pending_expires` を NULL に更新。`pending_email` は**検証前の宛先**で、打ち間違いなら第三者のアドレスが入っている。24時間で登録は成立しなくなるので持ち続ける理由がない。プライバシーポリシー第11項の「有効期限の経過後、速やかに削除します」はこのステップを指す。検証済みの `email` には触らない（アドレス変更の検証が流れただけなら旧アドレスへの配信は続ける）
+
+### 7.2 メール通知 (日次・JST 9:00)
+
+`src/cron/notify.ts`。対象は `notification_settings` に**検証済みアドレスがある行だけ**なので、
+テーブルを読むこと自体が絞り込みになる。クリーンアップと同じく各ステップを個別に握って続行し、
+失敗があれば最後に集約 throw する (1 通の失敗で全体を止めない — 届かなくても写真は失われない)。
+
+| ステップ | 対象 | 冪等性の担保 |
+|---|---|---|
+| `sendDigests` | `last_digest_at` 以降に confirm された `completed` 写真がある人 | 送信できたときだけ `last_digest_at` を進める |
+| `sendExpiryNotices` | `EFFECTIVE_EXPIRES_AT` が `[now+(d-1)日, now+d日)` の帯に入る写真 (d = 14, 3) | 帯判定。日次実行なので各写真はちょうど 1 回だけ入る |
+| `sendQuotaNotices` | 80% / 95% を**跨いだ**人 | `quota_notice_level` (0/80/95)。下回ったら戻す |
+
+- **ダイジェストの窓は `created_at` ではなく `updated_at` で切る**。`photos.created_at` は
+  presigned URL の発行時刻で、`completed` になるのは最大 15 分後の confirm 時。`created_at` で
+  切ると、Cron の実行時刻 (JST 9:00) を跨いだアップロードが「前回の窓より古いが、前回の実行
+  時点ではまだ pending」となり、**永久にどのダイジェストにも入らなくなる**。`photos.updated_at`
+  を書くのは confirm (→completed) と cleanup (→failed) だけなので、completed 写真の
+  `updated_at` は confirm 時刻に等しい
+- **窓は `(since, cutoff]` で `cutoff = now - 1`。透かし (`last_digest_at`) も `cutoff` へ進める。**
+  上限を `now` にすると穴が残る — 集計クエリが走るのはジョブ開始と同じ秒 (実時刻 >= `now`) なので、
+  `updated_at = now` の写真は**窓の定義には入るのにクエリには映らない**ことがあり、それで
+  `last_digest_at = now` にすると次回の `> now` からも外れて永久に落ちる。`cutoff` を
+  クエリの実行時刻より必ず手前に置けば、その写真は次回で拾われ、窓の中の写真は
+  次回の `> cutoff` から外れるので**ちょうど 1 回**送られる
+- **送信に失敗した日は窓を進めない** (翌日にまとめて送る)。ただし宛先が恒久的に落ちている場合に
+  件数が際限なく積み上がらないよう、遡りは **7日**で頭打ちにする
+- **削除予告に写真ごとの送信済みフラグを持たない理由**: 帯判定で冪等性が出るため。引き換えに
+  Cron が 1 回飛ぶとその日のぶんは送られないが、14日と3日の 2 回に加えて画面のバナー (30日) も
+  あるので気づく機会は 3 つある
+- **既知の天井**: 受信者 1 人あたり最大 3 通 + クエリ 3〜5 本。Workers Paid の 1 invocation
+  あたり 1000 サブリクエストなので、**受信者 150〜250 人あたりで頭打ち**になる。
+  超える規模になったら分割が必要
 
 ---
 
@@ -870,12 +1040,26 @@ furdrop/
         receiver.ts           # GET/DELETE /receiver/*
         sender.ts             # GET/POST /send/:handle/*
         download.ts           # POST /download/zip (R08 一括DL。認証はボディのトークン)
+        notify.ts             # POST /notifications/* (R09 検証・解除。認証不要)
       lib/
         firebase-auth.ts      # Firebase IDトークン検証
         r2.ts                 # Presigned URL生成
         quota.ts              # クォータチェック・更新
         zip-stream.ts         # R08: ストリーミング ZIP + DL 時の EXIF 差し替え
         exif-credit.ts        # R17: APP1 差し替え (frontend 版から移植)
+        notification.ts       # R09: 通知設定の読み書き・アドレス検証・解除
+        mailer.ts             # R09: 送信の隔離層 (Cloudflare Email Service / 差し替え点)
+        email-templates.ts    # R09: emails/*.txt の読み込みと {{}} 展開
+        email-layout.ts       # R09: テキスト → HTML (ブランドシェル)
+      emails/                 # R09: メール文言。運用者が直接編集する (README.md 参照)
+        digest.{ja,en}.txt
+        expiry.{ja,en}.txt
+        quota.{ja,en}.txt
+        verify.{ja,en}.txt
+        footer.{ja,en}.txt
+      cron/
+        cleanup.ts            # 毎時のクリーンアップ
+        notify.ts             # R09: 日次のメール通知
       middleware/
         auth.ts               # 認証ミドルウェア
       types.ts                # Env, Bindings型定義
@@ -961,6 +1145,8 @@ R2クレデンシャル (`R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_ENDPOIN
 | `R2_SECRET_ACCESS_KEY` | R2 Presigned URL署名 | dotenvx → .dev.vars / wrangler secret |
 | `R2_ENDPOINT` | R2 S3互換APIエンドポイント | dotenvx → .dev.vars / wrangler secret |
 | `FIREBASE_PROJECT_ID` | IDトークン検証 | wrangler.toml [vars]（非秘密） |
+| `APP_ORIGIN` | 通知メール内の人間向けリンク (フロントのオリジン) | wrangler.toml [vars]（非秘密） |
+| `API_ORIGIN` | 通知メールの `List-Unsubscribe` (Workers 自身のオリジン)。RFC 8058 はメールクライアントが POST するので静的な Pages では受けられず、Cron には Request が無いので導出できない | wrangler.toml [vars]（非秘密） |
 
 **`[limits] cpu_ms` について**: 一括DL (R08) のために既定の 30秒から **120,000ms (2分)** に
 上げている。これは Cloudflare が用意している唯一の支出コントロールで、denial-of-wallet の

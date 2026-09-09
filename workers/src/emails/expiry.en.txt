@@ -1,0 +1,10 @@
+Subject: {{count}} {{plural count|photo|photos}} will be deleted in {{days}} days
+
+Some of your photos are approaching their retention limit.
+
+> {{count}} {{plural count|photo|photos}} / {{days}} days left
+
+Photos are deleted automatically once the limit passes. If you have not saved them yet, download them soon.
+
+  Open the gallery
+  {{gallery_url}}

@@ -1,4 +1,12 @@
 import { Hono } from "hono";
+import {
+  EMAIL_LOCALES,
+  EMAIL_TYPES,
+  type EmailLocale,
+  type EmailType,
+  renderEmail,
+  type TemplateVars,
+} from "../lib/email-templates";
 import type { Env } from "../types";
 
 /**
@@ -54,6 +62,62 @@ dev.put("/images/upload/thumbs/:key{.+}", async (c) => {
     httpMetadata: { contentType: "image/jpeg" },
   });
   return c.body(null, 200);
+});
+
+// --- 通知メールのプレビュー (R09) ---
+//
+// 文言を編集した結果をブラウザで確認するための窓。本番ではマウントされない。
+// Cloudflare の Activity log は本文を約7日保持するため本番では preview を切って運用する
+// (ダイジェストに送信者名が載る)。その代わりの確認手段でもある。
+
+/** プレビュー用のダミー値。実運用の見え方に寄せる */
+const PREVIEW_VARS: Record<EmailType, TemplateVars> = {
+  digest: { count: 12, senders: "@hanako_photo、@taro、ほか1名", gallery_url: "" },
+  expiry: { count: 34, days: 14, gallery_url: "" },
+  quota: { percent: 82, used: "8.2 GB", quota: "10 GB", gallery_url: "" },
+  verify: { email: "taro@example.com", verify_url: "" },
+};
+
+const PREVIEW_EN_VARS: Partial<Record<EmailType, TemplateVars>> = {
+  digest: { count: 12, senders: "@hanako_photo, @taro and 1 other", gallery_url: "" },
+};
+
+dev.get("/emails", (c) => {
+  const rows = EMAIL_TYPES.flatMap((type) =>
+    EMAIL_LOCALES.map(
+      (locale) =>
+        `<li><a href="/dev/emails/${type}/${locale}">${type}.${locale}</a> ` +
+        `(<a href="/dev/emails/${type}/${locale}?text=1">text</a>)</li>`,
+    ),
+  ).join("");
+  return c.html(`<h1>Email previews</h1><ul>${rows}</ul>`);
+});
+
+dev.get("/emails/:type/:locale", (c) => {
+  const type = c.req.param("type") as EmailType;
+  const locale = c.req.param("locale") as EmailLocale;
+  if (!EMAIL_TYPES.includes(type) || !EMAIL_LOCALES.includes(locale)) return c.notFound();
+
+  const origin = c.env.APP_ORIGIN || new URL(c.req.url).origin;
+  const base = { ...PREVIEW_VARS[type], ...(locale === "en" ? PREVIEW_EN_VARS[type] : {}) };
+  const vars: TemplateVars = {
+    ...base,
+    gallery_url: `${origin}/gallery`,
+    verify_url: `${origin}/verify-email?token=preview`,
+    ...(type === "verify"
+      ? {}
+      : {
+          unsubscribe_url: `${origin}/unsubscribe?t=preview&k=${type}`,
+          settings_url: `${origin}/settings`,
+        }),
+  };
+
+  const mail = renderEmail(type, locale, vars);
+  if (c.req.query("text")) {
+    c.header("Content-Type", "text/plain; charset=utf-8");
+    return c.body(`Subject: ${mail.subject}\n\n${mail.text}`);
+  }
+  return c.html(mail.html);
 });
 
 export default dev;

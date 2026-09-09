@@ -43,6 +43,14 @@ type = "ratelimit"
 namespace_id = "1003"
 simple = { limit = 60, period = 60 }
 
+# 確認メール (R09) は認証済みユーザーが任意のアドレスへ送らせられる = メール中継になりうる。
+# UID 単位で絞って濫用を防ぐ
+[[unsafe.bindings]]
+name = "RATE_LIMITER_VERIFY"
+type = "ratelimit"
+namespace_id = "1005"
+simple = { limit = 3, period = 60 }
+
 # 一括 DL (R08) は 1 リクエストで最大 3.5GB を ZIP に固める。認証済み UID 単位で絞り、
 # denial-of-wallet の回数を抑える (1 発の被害額は [limits] cpu_ms で決まる)
 [[unsafe.bindings]]
@@ -57,6 +65,11 @@ simple = { limit = 6, period = 60 }
 # denial-of-wallet の 1 発あたりの被害額を決める (120 CPU 秒 = 約 $0.0024)。
 # 実測 27 CPU-ms/MiB なので約 4.6GB が上限になり、routes/download.ts の
 # MAX_ZIP_BYTES (3.5GB) が余裕を持ってその下に入る
+# R09: 通知メールの送信。Cloudflare Email Service (Workers Paid に月3,000通内包)。
+# バインディング方式なので API キーを持たない (wrangler secret / deploy-secrets.mjs は無関係)。
+[[send_email]]
+name = "EMAIL"
+
 [limits]
 cpu_ms = 120000
 
@@ -66,13 +79,23 @@ FIREBASE_PROJECT_ID = "furdrop"
 PUBLIC_JWK_CACHE_KEY = "firebase-public-jwk"
 R2_BUCKET_ORIGINALS = "furdrop-originals"
 R2_BUCKET_THUMBS = "furdrop-thumbs"
+# 通知メール (R09) 内のリンクを組み立てるためのオリジン。
+# APP_ORIGIN はフロント (人間が踏むリンク)、API_ORIGIN は Workers 自身。
+# RFC 8058 のワンクリック解除はメールクライアントが POST するので、静的な Pages では
+# 受けられず API 側を指す必要がある。Cron には Request が無いので導出できず、変数で持つ。
+APP_ORIGIN = "{{APP_ORIGIN}}"
+API_ORIGIN = "{{API_ORIGIN}}"
 
 # R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_ENDPOINT は
 # wrangler secret put または .dev.vars で設定
 
-# Cronトリガー（クリーンアップジョブ: 毎時0分）
+# Cronトリガー
+#   "0 * * * *" クリーンアップ (毎時0分)
+#   "0 0 * * *" 日次のメール通知 (R09)。UTC 0:00 = JST 9:00
+# UTC 0:00 には両方が別 invocation として発火するので、クリーンアップは毎時のまま欠けない。
+# 振り分けは src/index.ts の scheduled() が event.cron で行う。
 [triggers]
-crons = ["0 * * * *"]
+crons = ["0 * * * *", "0 0 * * *"]
 
 # Workers Logs (Cloudflare Dashboard で閲覧)
 [observability]

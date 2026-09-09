@@ -115,6 +115,10 @@ const KNOWN_PATH_SEGMENTS = new Set([
   "privacy",
   "guide",
   "design-preview",
+  // R09 通知メールのリンク先。トークンはクエリなので pathname には出ないが、
+  // 許可リストに入れないとパス自体が `*` に潰れて計測から消える
+  "verify-email",
+  "unsubscribe",
 ]);
 
 /** location.pathname を計測用に正規化する。handle / photoId 等は `*` になる。 */

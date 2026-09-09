@@ -22,6 +22,8 @@ import DonePage from "./pages/send/DonePage";
 import SendLandingPage from "./pages/send/LandingPage";
 import UploadingPage from "./pages/send/UploadingPage";
 import UploadPage from "./pages/send/UploadPage";
+import UnsubscribePage from "./pages/UnsubscribePage";
+import VerifyEmailPage from "./pages/VerifyEmailPage";
 import { debugAtom } from "./stores/debug";
 import { setLocaleAtom } from "./stores/locale";
 
@@ -135,6 +137,11 @@ export default function App() {
             </Suspense>
           }
         />
+
+        {/* 通知メールのリンク先 (R09)。**認証不要** — メールアプリから踏まれる前提で、
+            トークンの知識だけで動く */}
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
+        <Route path="/unsubscribe" element={<UnsubscribePage />} />
 
         {/* 受信者フロー（認証必須） */}
         <Route element={<AuthGuard />}>

@@ -1,0 +1,10 @@
+Subject: Confirm your email address
+
+{{email}} was entered as the notification address for a FurDrop account.
+
+Open the button below to start receiving notifications at this address. The link expires in 24 hours.
+
+  Confirm this address
+  {{verify_url}}
+
+If this was not you, simply discard this email. No notifications will be sent to this address unless the link is opened.
