@@ -3,6 +3,7 @@ import { useAtomValue, useSetAtom } from "jotai";
 import QRCode from "qrcode";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
+import EmailNoticeBanner from "../components/EmailNoticeBanner";
 import Alert from "../components/ui/Alert";
 import Card from "../components/ui/Card";
 import LoadingSpinner from "../components/ui/LoadingSpinner";
@@ -306,6 +307,7 @@ export default function DashboardPage() {
           earliestExpiresAt={expiringSoon.earliest_expires_at}
         />
       )}
+      <EmailNoticeBanner />
       <PublicUrlCard
         receiveUrl={`${window.location.origin}${user.receive_url}`}
         isAccepting={user.is_active}

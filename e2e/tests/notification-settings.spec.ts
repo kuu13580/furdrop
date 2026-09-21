@@ -48,3 +48,23 @@ test("確認リンクが無効なら理由を表示する (認証なしで開け
   await page.goto("/verify-email?token=e2e-invalid-token");
   await expect(page.getByText("このリンクは使用できません")).toBeVisible();
 });
+
+test("写真が0枚でもダッシュボードに通知の告知が出て、閉じると戻らない (R09)", async ({ page }) => {
+  const user = await createEmulatorUser();
+  await registerReceiver(user, `e2e_notice_${Date.now()}`);
+
+  await page.goto("/login");
+  await signInOnPage(page, user);
+  await page.goto("/dashboard");
+
+  const notice = page.getByText("写真が届いたらメールでお知らせできるようになりました");
+  await expect(notice).toBeVisible();
+
+  await page.getByRole("button", { name: "お知らせを閉じる" }).click();
+  await expect(notice).toBeHidden();
+
+  // 閉じたことが端末に残る (localStorage)
+  await page.reload();
+  await expect(page.getByText("あなたの受信URL")).toBeVisible();
+  await expect(notice).toBeHidden();
+});
