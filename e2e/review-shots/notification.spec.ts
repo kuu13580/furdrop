@@ -42,3 +42,25 @@ test("認証不要ページ: 確認 / 配信停止", async ({ page }) => {
   await expect(page.getByText("配信を停止しました")).toBeVisible({ timeout: 20_000 });
   await shot(page, "notification", "unsubscribe-done-ja");
 });
+
+test("受信者: ダッシュボードのリリース告知バナー", async ({ page }) => {
+  test.setTimeout(180_000);
+  await prepareReceiver(page, { photos: 2 });
+  await page.setViewportSize(VIEWPORTS.desktop);
+
+  await page.goto("/dashboard");
+  await expect(page.getByText("写真が届いたらメールでお知らせできるようになりました")).toBeVisible({
+    timeout: 20_000,
+  });
+  await shot(page, "notification", "dashboard-notice-ja");
+
+  await setLocale(page, "en");
+  await expect(page.getByText("You can now get an email when photos arrive")).toBeVisible({
+    timeout: 20_000,
+  });
+  await shot(page, "notification", "dashboard-notice-en");
+
+  await page.getByRole("button", { name: "Dismiss this notice" }).click();
+  await expect(page.getByText("You can now get an email when photos arrive")).toBeHidden();
+  await shot(page, "notification", "dashboard-notice-dismissed-en");
+});

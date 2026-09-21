@@ -448,6 +448,10 @@ msgstr "お問い合わせ"
 msgid "お問い合わせ・通報"
 msgstr "お問い合わせ・通報"
 
+#: src/components/EmailNoticeBanner.tsx
+msgid "お知らせを閉じる"
+msgstr "お知らせを閉じる"
+
 #: src/components/send/WatermarkDialog.tsx
 msgid "カスタム色"
 msgstr "カスタム色"
@@ -1175,6 +1179,10 @@ msgstr "写真"
 msgid "写真が届いたときや、保存期限・保存容量が近づいたときにメールでお知らせします。"
 msgstr "写真が届いたときや、保存期限・保存容量が近づいたときにメールでお知らせします。"
 
+#: src/components/EmailNoticeBanner.tsx
+msgid "写真が届いたらメールでお知らせできるようになりました"
+msgstr "写真が届いたらメールでお知らせできるようになりました"
+
 #: src/pages/SettingsPage.tsx
 msgid "写真が届いた日に、1日1回まとめてお知らせします"
 msgstr "写真が届いた日に、1日1回まとめてお知らせします"
@@ -1629,6 +1637,10 @@ msgstr "文字を入力"
 #: src/pages/DashboardPage.tsx
 msgid "新しい写真を受け取れません。不要な写真を削除して空きを作ってください。"
 msgstr "新しい写真を受け取れません。不要な写真を削除して空きを作ってください。"
+
+#: src/components/EmailNoticeBanner.tsx
+msgid "新着のほか、写真の削除予告と保存容量の警告もお送りします。"
+msgstr "新着のほか、写真の削除予告と保存容量の警告もお送りします。"
 
 #: src/pages/SettingsPage.tsx
 #: src/pages/UnsubscribePage.tsx
@@ -2164,6 +2176,10 @@ msgstr "通知の配信停止"
 #: src/pages/SettingsPage.tsx
 msgid "通知を解除する"
 msgstr "通知を解除する"
+
+#: src/components/EmailNoticeBanner.tsx
+msgid "通知を設定する →"
+msgstr "通知を設定する →"
 
 #: src/pages/SettingsPage.tsx
 msgid "通知先メールアドレス"

@@ -279,6 +279,8 @@ UploaderPage
 DashboardPage
   +-- QuotaWarning             // 使用率 80% 以上で警告 / 95% 以上でエラー (R07)
   +-- ExpiryWarning            // 60日以内に期限を迎える写真の予告 (R13)
+  +-- EmailNoticeBanner        // メール通知 (R09) のリリース告知。2027-03-22 までの期間限定で、
+  |                            // 閉じた状態は localStorage (`furdrop.dismissedNotices`) に持つ
   +-- PublicUrlCard            // user.receive_url を origin と結合して表示 (受付停止中は注意を出す)
   |     +-- CopyButton        // Clipboard API
   |     +-- QrCodeButton      // qrcode ライブラリ
