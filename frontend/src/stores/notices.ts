@@ -1,6 +1,8 @@
 import { atomWithStorage, createJSONStorage } from "jotai/utils";
 
-const baseStorage = createJSONStorage<string[]>(() => localStorage);
+// 既定の getStringStorage を使う (localStorage へのアクセス自体が SecurityError を投げる
+// 環境があり、jotai 側の try/catch はそこにしか無い)
+const baseStorage = createJSONStorage<string[]>();
 
 function sanitize(raw: unknown): string[] {
   if (!Array.isArray(raw)) return [];
